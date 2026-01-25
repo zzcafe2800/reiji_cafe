@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ — 改良版（シフト重複削除／注ぎ調整／スマホ対応）</title>
+<title>ゲームカフェ </title>
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
@@ -72,18 +72,18 @@
 
     <div class="order-area" role="main">
       <button id="orderBtn" class="order-btn disabled">注文</button>
-      <div class="small-info">下のボタンを押して注文できます（スタッフがシフトOKの間のみ）</div>
+      <div class="small-info">下のボタンを押して注文できます</div>
     </div>
 
     <div class="panel">
-      <strong>スタッフへの現在の未完了タスク（リアルタイム）</strong>
+      <strong>現在の未完了タスク</strong>
       <div id="openTasks" class="small-info">読み込み中...</div>
     </div>
   </main>
 
   <div class="stripes" style="position:absolute;top:0;right:0;bottom:0;width:40px;background:repeating-linear-gradient(45deg,#fff1e6 0 8px,#b33 8px 16px);opacity:0.06;pointer-events:none;"></div>
 
-  <footer>プロトタイプ — スタッフは「1232」で入室。注文は5分で期限切れ／不要データは自動削除。</footer>
+  <footer></footer>
 </div>
 
 <div class="guest-badge" id="guestBadge">あなたは現在：客</div>
@@ -125,7 +125,7 @@
   </div>
 
   <div class="panel">
-    <strong>スタッフ用 注文一覧（新しいもののみ表示、5分超は自動削除）</strong>
+    <strong>スタッフ用 注文一覧</strong>
     <div id="staffOrderList" class="order-list"></div>
   </div>
 
