@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ゲームカフェ飲食疑似提供サイト（プロトタイプ）</title>
+<style>
+  /* レトロ喫茶風のスタイル（赤白縞＋茶系） */
+  :root{
+    --bg:#f7efe7;
+    --accent:#b33;
+    --accent2:#fff1e6;
+    --paper:#fff8ef;
+    --dark:#3a2b20;
+    --muted:#8b6d5c;
+  }
+  html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
+  .container{max-width:1000px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid #b33;position:relative;min-height:720px;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:var(--dark);}
+  h1{margin:0;font-size:20px;}
+  .main{display:flex;gap:18px;padding:12px;}
+  /* 左：客ホーム（大きな注文ボタン） */
+  .left{flex:1;min-height:560px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+  .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid #b33;color:var(--dark);padding:28px 48px;border-radius:12px;font-size:36px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;}
+  .order-btn.disabled{opacity:0.35;cursor:not-allowed;box-shadow:none;}
+  .status-bar{position:absolute;top:12px;left:12px;background:var(--accent2);padding:8px 12px;border-radius:8px;border:2px solid #c66;color:var(--dark);font-weight:600;}
+  .small-pass{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,0.85);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;}
+  .small-pass input{width:80px;padding:4px;}
+  /* 右：スタッフホーム / 切替画面 */
+  .right{width:380px;background:linear-gradient(180deg,#fff8f2,#fff3ec);border-radius:8px;padding:12px;border:2px solid #e3b3b3;min-height:560px;display:flex;flex-direction:column;gap:12px;}
+  .panel{background:var(--paper);padding:10px;border-radius:8px;border:1px solid #e6d6cc;}
+  .hidden{display:none;}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;}
+  input[type="text"],input[type="time"],input[type="number"],textarea,select{width:100%;padding:8px;border-radius:6px;border:1px solid #d8c6bd;background:#fff;}
+  button.small{padding:6px 8px;border-radius:6px;border:1px solid #c99;background:#ffd;cursor:pointer;}
+  .shift-list{max-height:140px;overflow:auto;}
+  .order-list{max-height:220px;overflow:auto;}
+  .order-item{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:center;}
+  .order-item strong{display:block;}
+  .center-top{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;font-weight:700;color:var(--dark);}
+  /* modal */
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:60;}
+  .modal{background:#fff;padding:16px;border-radius:10px;width:680px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid #b33;}
+  .row{display:flex;gap:8px;align-items:center;}
+  .right-col{width:380px;}
+  .canvas-wrap{background:#fff;border:1px solid #caa;padding:8px;border-radius:8px;}
+  .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;}
+  img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
+  .small-info{font-size:12px;color:var(--muted);}
+  footer{padding:10px;text-align:center;font-size:12px;color:var(--muted);}
+  /* retro stripes */
+  .stripes{position:absolute;top:0;right:0;bottom:0;width:60px;background:repeating-linear-gradient(45deg,#fff1e6 0 8px,#b33 8px 16px);opacity:0.06;pointer-events:none;border-radius:0 10px 10px 0;}
+  .btn-red{background:#b33;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+  .btn-green{background:#2b8f4a;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header><h1>ゲームカフェ 飲食疑似提供サイト（プロトタイプ）</h1><div class="small-info">現在時刻: <span id="nowtime">--:--:--</span></div></header>
+
+  <div class="main">
+    <div class="left">
+      <div class="center-top" id="globalStatus">状況①：現在の状態を読み込み中...</div>
+
+      <button id="orderBtn" class="order-btn disabled">注文</button>
+
+      <div class="small-pass">
+        <label style="font-size:12px;margin:0">スタッフパスワード</label>
+        <input id="staffPass" placeholder=" 小さい" />
+        <button id="passOk" class="small">OK</button>
+      </div>
+
+    </div>
+
+    <div class="right" id="rightPanel">
+      <!-- 初期は「客」状態。スタッフモードになるとスタッフログイン表示 -->
+      <div id="guestPanel" class="panel">
+        <strong>あなたは現在：客</strong>
+        <p class="small-info">左下にスタッフ用パスワード欄があります。スタッフモードになるには「1232」を入力してください。</p>
+        <div class="panel" style="margin-top:8px;">
+          <strong>現在のシフト一覧（リアルタイム表示）</strong>
+          <div id="shiftSummary" class="shift-list small-info">スタッフがログインするとここに表示されます。</div>
+        </div>
+        <div class="panel" style="margin-top:8px;">
+          <strong>注文一覧（客視点）</strong>
+          <div id="customerOrders" class="order-list small-info">受け取った注文はここに表示されます。</div>
+        </div>
+      </div>
+
+      <div id="staffLogin" class="panel hidden">
+        <strong>スタッフログイン</strong>
+        <label>名前を入力してください</label>
+        <input id="staffNameInput" placeholder="スタッフ名" />
+        <div style="margin-top:8px;text-align:right;"><button id="enterStaff" class="btn-green">入室</button></div>
+      </div>
+
+      <div id="staffPanel" class="panel hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <strong>スタッフモード</strong>
+          <div>
+            <span id="staffBadge"></span>
+            <button id="logoutStaff" class="small">退室</button>
+          </div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <label>シフト開始 / 終了（24時間形式）</label>
+          <div style="display:flex;gap:6px;">
+            <input type="time" id="shiftStart" />
+            <input type="time" id="shiftEnd" />
+            <button id="saveShift" class="small">保存</button>
+          </div>
+          <div style="margin-top:6px;">
+            <label><input type="checkbox" id="onShiftCheck" /> シフト中（この人がOKを押している間、注文が可能になります）</label>
+            <label style="display:block"><input type="checkbox" id="breakCheck" /> 休憩中（休憩中は注文を受けられません）</label>
+            <div class="small-info">休憩ボタン：スタッフごとに休憩にできます（ここで切り替え）。</div>
+          </div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <strong>スタッフ用 注文一覧</strong>
+          <div id="staffOrderList" class="order-list"></div>
+        </div>
+
+        <div style="margin-top:8px;">
+          <strong>制作画面 / メッセージカード</strong>
+          <div class="small-info">注文を「対応」すると、担当者の制作画面に切り替わります。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="stripes"></div>
+
+  <footer>プロトタイプ — 将来的にFirebaseで同期、音声ファイル差し替え、商品追加を可能にします。</footer>
+</div>
+
+<!-- モーダル類 -->
+<!-- 名前入力（客が注文時） -->
+<div id="modalName" class="modal-back hidden">
+  <div class="modal">
+    <h3>注文者の名前を入力</h3>
+    <input id="orderName" placeholder="名前を入力" />
+    <div style="margin-top:10px;text-align:right;">
+      <button id="cancelOrderName" class="small">キャンセル</button>
+      <button id="okOrderName" class="btn-red">決定</button>
+    </div>
+  </div>
+</div>
+
+<!-- メニュー選択 -->
+<div id="modalMenu" class="modal-back hidden">
+  <div class="modal">
+    <h3>メニューを選択</h3>
+    <div class="menu-grid">
+      <div class="menu-item" data-id="latte">
+        <img class="menu-thumb" src="" id="latteThumb" alt="ラテ" />
+        <strong>カフェラテ</strong>
+        <div class="small-info">価格: ---</div>
+      </div>
+      <!-- 追加メニューはここに増やせます -->
+    </div>
+    <div style="margin-top:10px;text-align:right;">
+      <button id="backMenu" class="small">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- 調理（ラテ）制作画面 -->
+<div id="modalMakeLatte" class="modal-back hidden">
+  <div class="modal" style="width:760px;max-width:98%;">
+    <h3>カフェラテ制作（担当：<span id="makerName"></span>）</h3>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;">
+        <div class="canvas-wrap" style="height:220px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+          <div style="width:180px;height:180px;border-radius:12px;background:#fff8f2;display:flex;align-items:center;justify-content:center;border:2px solid #d2b6ab;position:relative;">
+            <div id="espressoArea" style="position:absolute;left:8px;top:8px;right:8px;bottom:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+              <div id="espressoCup" style="width:120px;height:120px;border-radius:60px;background:linear-gradient(#6b3,#4a2);overflow:hidden;position:relative;">
+                <canvas id="latteCanvas" width="120" height="120" style="display:block;"></canvas>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:8px;">
+            <div><strong>手順</strong></div>
+            <ol>
+              <li>エスプレッソを注ぐ：下のバーを押して注ぎ、合格範囲で止める</li>
+              <li>フームドミルクを注ぐ：同様に注ぐ</li>
+              <li>ラテアート：白ペンで描く（保存すると完成）</li>
+            </ol>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+          <div style="flex:1;">
+            <label>エスプレッソ注ぎ</label>
+            <div style="background:#eee;border-radius:6px;padding:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button id="startEsp" class="small">注ぐ（押し続け）</button>
+                <div style="flex:1;">
+                  <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;">
+                    <div id="espBar" style="height:100%;width:0%;background:linear-gradient(90deg,#a7552b,#6b3);"></div>
+                  </div>
+                </div>
+                <div id="espPct" style="width:44px;text-align:right;font-weight:700;">0%</div>
+              </div>
+              <div class="small-info">目標範囲で止めてください（合格すると次へ）</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+          <div style="flex:1;">
+            <label>フームドミルク注ぎ</label>
+            <div style="background:#eee;border-radius:6px;padding:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
+                <div style="flex:1;">
+                  <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;">
+                    <div id="milkBar" style="height:100%;width:0%;background:linear-gradient(90deg,#fff,#eee);"></div>
+                  </div>
+                </div>
+                <div id="milkPct" style="width:44px;text-align:right;font-weight:700;">0%</div>
+              </div>
+              <div class="small-info">白いミルクを注ぎます（同様に範囲で止める）</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="width:320px;">
+        <div style="background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
+          <strong>ラテアート（白ペン）</strong>
+          <div style="margin-top:8px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <label>ツール</label>
+              <select id="penMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
+              <label>サイズ</label>
+              <select id="penSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
+              <button id="clearArt" class="small">キャンバスクリア</button>
+            </div>
+            <div style="margin-top:8px;">
+              <canvas id="artCanvas" width="240" height="240" style="border:1px solid #d4c0b8;border-radius:6px;background:#b36e3c"></canvas>
+            </div>
+            <div style="margin-top:8px;text-align:right;">
+              <button id="saveArt" class="btn-green">保存して次へ</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
+          <strong>メッセージカード</strong>
+          <div style="margin-top:6px;">
+            <textarea id="messageCard" rows="4" placeholder="メッセージを入力（必須）"></textarea>
+          </div>
+          <div style="margin-top:6px;text-align:right;">
+            <button id="saveCard" class="small">カード保存</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;text-align:right;">
+          <button id="completeMake" class="btn-red" disabled>提供する（完了）</button>
+          <button id="cancelMake" class="small">中止</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 客の飲食画面モーダル -->
+<div id="modalEat" class="modal-back hidden">
+  <div class="modal">
+    <h3>飲食画面</h3>
+    <div style="display:flex;gap:12px;">
+      <div style="flex:1;">
+        <div style="width:320px;height:240px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
+          <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+          <button id="eatNext" class="small">食べる（次へ）</button>
+          <div id="eatSoundInfo" class="small-info">クリックで音（rate.mp3）</div>
+        </div>
+      </div>
+      <div style="width:200px;">
+        <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
+          <strong>メッセージカード</strong>
+          <div id="servedCard" style="margin-top:8px;background:#fff2e6;padding:8px;border-radius:6px;border:1px solid #e6d0c6;min-height:120px;">カードはここに表示されます。</div>
+          <div style="margin-top:8px;text-align:right;">
+            <button id="saveImageBtn" class="small">画像保存</button>
+            <button id="homeFromEat" class="small">ホームへ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+  プロトタイプの全体設計（ローカル単一ページ）
+  - state.staffs : スタッフ情報（名前, shiftStart, shiftEnd, onShift, onBreak）
+  - state.orders : 注文一覧（id,name,item,state,createdAt,timers,artData,cardData,servedImage）
+  - 注文の状態(state): "waiting" (スタッフ未対応) -> "inprogress" (対応中) -> "done" (完成・運搬中) -> "delivered"
+  - 顧客が注文を押すと名前入力→メニュー→注文作成。注文は5分間スタッフが「対応」を押すのを待つ。5分経ったら自動キャンセル。
+  - スタッフが対応を押すと、そのスタッフの制作モーダルが開く（ラテ制作）。制作完了で提供を押すと注文が削除され、客へ配信（ローカル配信）。
+*/
+
+const PASSWORD = "1232";
+
+/* シンプルな状態 */
+const state = {
+  staffs: [], // {id,name,shiftStart,shiftEnd,onShift,breaking}
+  orders: [], // {id,name,item,state,createdAt,expiresAt,assignedTo,artData,cardData,servedImage}
+  currentUser: {role:"guest", staffId:null} // role: guest | staff
+};
+
+/* DOM */
+const nowtime = document.getElementById('nowtime');
+const orderBtn = document.getElementById('orderBtn');
+const staffPass = document.getElementById('staffPass');
+const passOk = document.getElementById('passOk');
+const guestPanel = document.getElementById('guestPanel');
+const staffLogin = document.getElementById('staffLogin');
+const staffPanel = document.getElementById('staffPanel');
+const staffNameInput = document.getElementById('staffNameInput');
+const enterStaff = document.getElementById('enterStaff');
+const logoutStaff = document.getElementById('logoutStaff');
+const staffBadge = document.getElementById('staffBadge');
+const shiftStart = document.getElementById('shiftStart');
+const shiftEnd = document.getElementById('shiftEnd');
+const saveShift = document.getElementById('saveShift');
+const onShiftCheck = document.getElementById('onShiftCheck');
+const breakCheck = document.getElementById('breakCheck');
+const shiftSummary = document.getElementById('shiftSummary');
+const staffOrderList = document.getElementById('staffOrderList');
+const customerOrders = document.getElementById('customerOrders');
+const globalStatus = document.getElementById('globalStatus');
+
+/* modals */
+const modalName = document.getElementById('modalName');
+const modalMenu = document.getElementById('modalMenu');
+const modalMakeLatte = document.getElementById('modalMakeLatte');
+const modalEat = document.getElementById('modalEat');
+
+const orderName = document.getElementById('orderName');
+const cancelOrderName = document.getElementById('cancelOrderName');
+const okOrderName = document.getElementById('okOrderName');
+
+const latteThumb = document.getElementById('latteThumb');
+latteThumb.src = generateLatteThumb();
+
+/* メニュークリック */
+const menuLatte = document.querySelector('[data-id="latte"]');
+
+const startEsp = document.getElementById('startEsp');
+const espBar = document.getElementById('espBar');
+const espPct = document.getElementById('espPct');
+const startMilk = document.getElementById('startMilk');
+const milkBar = document.getElementById('milkBar');
+const milkPct = document.getElementById('milkPct');
+
+const artCanvas = document.getElementById('artCanvas');
+const artCtx = artCanvas.getContext('2d');
+const penMode = document.getElementById('penMode');
+const penSize = document.getElementById('penSize');
+const clearArt = document.getElementById('clearArt');
+const saveArt = document.getElementById('saveArt');
+
+const makerName = document.getElementById('makerName');
+const messageCard = document.getElementById('messageCard');
+const saveCard = document.getElementById('saveCard');
+const completeMake = document.getElementById('completeMake');
+const cancelMake = document.getElementById('cancelMake');
+
+const staffOrderListDiv = document.getElementById('staffOrderList');
+
+const servedImage = document.getElementById('servedImage');
+const servedCard = document.getElementById('servedCard');
+const saveImageBtn = document.getElementById('saveImageBtn');
+const homeFromEat = document.getElementById('homeFromEat');
+const eatNext = document.getElementById('eatNext');
+const eatSoundInfo = document.getElementById('eatSoundInfo');
+
+/* latteCanvas：カップ表示（ラテ背景＋重ねる描画） */
+const latteCanvas = document.getElementById('latteCanvas');
+const latteCtx = latteCanvas.getContext('2d');
+
+/* Utility */
+function uid(prefix="id"){ return prefix+Math.random().toString(36).slice(2,9); }
+function nowISO(){ return new Date().toISOString(); }
+function fmtTime(d){ return d.toLocaleTimeString(); }
+
+/* 初期更新ループ（時刻表示、注文ボタン状態など） */
+setInterval(()=>{
+  const d = new Date();
+  nowtime.textContent = d.toLocaleTimeString();
+  updateShiftSummary();
+  updateOrderButtonState();
+  renderOrderLists();
+}, 1000);
+
+/* 初期画面状態 */
+renderRole();
+
+/* パスワード欄のOK */
+passOk.addEventListener('click', ()=>{
+  if (staffPass.value === PASSWORD){
+    // スタッフログインモーダル表示
+    guestPanel.classList.add('hidden');
+    staffLogin.classList.remove('hidden');
+  }else{
+    alert('パスワードが違います');
+  }
+});
+
+/* スタッフ名入力して入室 */
+enterStaff.addEventListener('click', ()=>{
+  const name = staffNameInput.value.trim();
+  if (!name){ alert('名前を入れてください'); return; }
+  // 新しいスタッフ追加
+  const s = { id: uid('s'), name, shiftStart:"09:00", shiftEnd:"17:00", onShift:false, breaking:false };
+  state.staffs.push(s);
+  // set current user to this staff
+  state.currentUser.role = 'staff';
+  state.currentUser.staffId = s.id;
+  // populate staff fields
+  staffBadge.textContent = name;
+  shiftStart.value = s.shiftStart;
+  shiftEnd.value = s.shiftEnd;
+  onShiftCheck.checked = s.onShift;
+  breakCheck.checked = s.breaking;
+  staffLogin.classList.add('hidden');
+  staffPanel.classList.remove('hidden');
+  renderRole();
+});
+
+/* スタッフ退室 */
+logoutStaff.addEventListener('click', ()=>{
+  const id = state.currentUser.staffId;
+  if (id){
+    // remove staff from list
+    state.staffs = state.staffs.filter(s=>s.id!==id);
+    state.currentUser = {role:'guest', staffId:null};
+    staffPanel.classList.add('hidden');
+    guestPanel.classList.remove('hidden');
+    renderRole();
+  }
+});
+
+/* 保存シフト */
+saveShift.addEventListener('click', ()=>{
+  const id = state.currentUser.staffId;
+  if (!id) return;
+  const s = state.staffs.find(x=>x.id===id);
+  s.shiftStart = shiftStart.value || s.shiftStart;
+  s.shiftEnd = shiftEnd.value || s.shiftEnd;
+  onShiftCheck.checked = s.onShift;
+  breakCheck.checked = s.breaking;
+  alert('シフトを保存しました');
+  updateShiftSummary();
+});
+
+/* シフト・休憩チェック */
+onShiftCheck.addEventListener('change', ()=>{
+  const id = state.currentUser.staffId; if(!id) return;
+  const s = state.staffs.find(x=>x.id===id);
+  s.onShift = onShiftCheck.checked;
+  updateShiftSummary();
+});
+breakCheck.addEventListener('change', ()=>{
+  const id = state.currentUser.staffId; if(!id) return;
+  const s = state.staffs.find(x=>x.id===id);
+  s.breaking = breakCheck.checked;
+  updateShiftSummary();
+});
+
+/* 注文ボタン（客側） */
+orderBtn.addEventListener('click', ()=>{
+  if (orderBtn.classList.contains('disabled')) return;
+  // 全員にtyaimu音を鳴らす（ここでは簡易トーン）
+  playTone(880,0.15);
+  // 名前入力モーダル
+  modalName.classList.remove('hidden');
+  orderName.value = '';
+  orderName.focus();
+});
+
+/* 名前モーダル操作 */
+cancelOrderName.addEventListener('click', ()=>{
+  modalName.classList.add('hidden');
+});
+okOrderName.addEventListener('click', ()=>{
+  const name = orderName.value.trim();
+  if (!name){ alert('名前を入力してください'); return; }
+  modalName.classList.add('hidden');
+  // 次：メニュー表示
+  modalMenu.classList.remove('hidden');
+});
+
+/* メニュー選択 */
+menuLatte.addEventListener('click', ()=>{
+  // Create order with item latte
+  modalMenu.classList.add('hidden');
+  const name = orderName.value.trim() || "名無し";
+  const id = uid('o');
+  const createdAt = Date.now();
+  const expiresAt = createdAt + 5*60*1000; // 5分でスタッフ対応待ちタイムアウト
+  const order = { id, name, item:'latte', state:'waiting', createdAt, expiresAt, assignedTo:null, artData:null, cardData:null, servedImage:null };
+  state.orders.push(order);
+  // start cancellation timer
+  scheduleOrderTimeout(order);
+  // show countdown central top and in customer's order list
+  renderOrderLists();
+  // play sound for all
+  playTone(880,0.12);
+});
+
+/* 注文のタイムアウト（5分） */
+function scheduleOrderTimeout(order){
+  const remaining = order.expiresAt - Date.now();
+  if (remaining <= 0){
+    cancelOrder(order.id, "スタッフの応答がないため現在注文を取り消しになります");
+    return;
+  }
+  setTimeout(()=>{
+    const o = state.orders.find(x=>x.id===order.id);
+    if (!o) return;
+    if (o.state === 'waiting'){
+      cancelOrder(o.id, "スタッフの応答がないため現在注文を取り消しになります");
+    }
+  }, remaining);
+}
+
+/* 注文キャンセル（自動） */
+function cancelOrder(orderId, reason){
+  const idx = state.orders.findIndex(o=>o.id===orderId);
+  if (idx === -1) return;
+  const o = state.orders[idx];
+  // 表示メッセージをグローバルに示す
+  globalStatus.textContent = "注意：事故として必ずスタッフ（店員）が対応できない場合もございます — " + reason;
+  // remove order
+  state.orders.splice(idx,1);
+  renderOrderLists();
+}
+
+/* スタッフ側：注文一覧で「対応」ボタンを作る */
+function renderOrderLists(){
+  // staffOrderList
+  staffOrderList.innerHTML = '';
+  state.orders.slice().forEach(o=>{
+    const div = document.createElement('div'); div.className='order-item';
+    const left = document.createElement('div');
+    left.innerHTML = `<strong>${o.name}</strong><div class="small-info">${o.item} - 状態:${o.state} - 作成:${new Date(o.createdAt).toLocaleTimeString()}</div>`;
+    const right = document.createElement('div');
+    if (o.state === 'waiting'){
+      const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
+      btn.onclick = ()=> { assignOrderToCurrentStaff(o.id); };
+      right.appendChild(btn);
+    } else if (o.state === 'inprogress'){
+      right.innerHTML = `<div class="small-info">担当:${o.assignedToName || o.assignedTo}</div>`;
+    } else if (o.state === 'done'){
+      right.innerHTML = `<div class="small-info">運搬中</div>`;
+    }
+    div.appendChild(left); div.appendChild(right);
+    staffOrderList.appendChild(div);
+  });
+
+  // customerOrders（受け取った注文＝配信済み）
+  customerOrders.innerHTML = '';
+  state.orders.filter(o=>o.state==='delivered').forEach(o=>{
+    const div = document.createElement('div'); div.className='order-item';
+    div.innerHTML = `<strong>${o.name}</strong> ${o.item} が提供されました`;
+    const btn = document.createElement('button'); btn.textContent='見る'; btn.className='small'; btn.onclick = ()=> showServed(o.id);
+    div.appendChild(btn);
+    customerOrders.appendChild(div);
+  });
+
+  // update globalStatus summary
+  updateGlobalStatusText();
+}
+
+/* 注文を現在のスタッフが引き受ける */
+function assignOrderToCurrentStaff(orderId){
+  const staffId = state.currentUser.staffId;
+  if (!staffId){ alert('スタッフとしてログインしてください'); return; }
+  const staff = state.staffs.find(s=>s.id===staffId);
+  const order = state.orders.find(o=>o.id===orderId);
+  if (!order || order.state !== 'waiting') { alert('対応できません'); return; }
+  // assign
+  order.state = 'inprogress';
+  order.assignedTo = staffId;
+  order.assignedToName = staff.name;
+  // open make modal for this staff and this order
+  openMakeModal(order);
+  renderOrderLists();
+}
+
+/* 制作モーダル表示/初期化 */
+let currentMakingOrderId = null;
+function openMakeModal(order){
+  currentMakingOrderId = order.id;
+  makerName.textContent = order.assignedToName || order.assignedTo;
+  // reset latte cup canvas
+  resetLatteCanvas();
+  // espresso/milk bars reset
+  espBar.style.width='0%'; espPct.textContent='0%';
+  milkBar.style.width='0%'; milkPct.textContent='0%';
+  startEsp.disabled = false; startMilk.disabled = true;
+  // art canvas initialize: brown circle background
+  initArtCanvas();
+  messageCard.value = '';
+  completeMake.disabled = true;
+  modalMakeLatte.classList.remove('hidden');
+}
+
+/* ラテカップ初期描画 */
+function resetLatteCanvas(){
+  const ctx = latteCtx;
+  ctx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
+  // 背景：茶色の円（ラテ）
+  ctx.fillStyle = '#6b3b24';
+  ctx.beginPath(); ctx.arc(60,60,58,0,Math.PI*2); ctx.fill();
+}
+
+/* アートキャンバス初期化 */
+function initArtCanvas(){
+  // draw brown circle as base (中央に)
+  artCtx.clearRect(0,0,artCanvas.width,artCanvas.height);
+  artCtx.fillStyle = '#6b3b24';
+  artCtx.beginPath();
+  artCtx.arc(120,120,100,0,Math.PI*2);
+  artCtx.fill();
+  // set drawing defaults
+  artCtx.lineCap='round';
+  artCtx.lineJoin='round';
+}
+
+/* エスプレッソ注ぎ：押し続ける間増加、離すと判定 */
+let espInterval=null, milkInterval=null;
+startEsp.addEventListener('mousedown', ()=>{
+  startEsp.textContent='注ぎ中...';
+  let pct=0;
+  espInterval = setInterval(()=> {
+    pct = Math.min(100, pct + Math.random()*6 + 2);
+    espBar.style.width = pct + '%'; espPct.textContent = Math.round(pct)+'%';
+    // if overpoured beyond 100 => reset fail
+    if (pct >= 100){
+      clearInterval(espInterval); espInterval=null;
+      startEsp.textContent='注ぐ（押し続け）';
+      alert('注ぎ過ぎ！最初からやり直しになります');
+      espBar.style.width='0%'; espPct.textContent='0%';
+    }
+  }, 120);
+});
+startEsp.addEventListener('mouseup', ()=>{
+  if (espInterval) clearInterval(espInterval);
+  startEsp.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(espBar.style.width) || 0;
+  // 合格ライン 40%〜60%
+  if (pct >= 40 && pct <= 60){
+    // success
+    playTone(523,0.12); // 短い音
+    // latteCanvas に茶色追加（エスプレッソ層）
+    latteCtx.fillStyle = '#5a2f1a';
+    latteCtx.fillRect(0,60,latteCanvas.width,60);
+    startMilk.disabled = false;
+  } else {
+    alert('合格ラインを外しました。最初からやり直しになります');
+    espBar.style.width='0%'; espPct.textContent='0%';
+  }
+});
+
+/* モバイル対応のため touch イベントも追加 */
+startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
+startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
+
+/* ミルク注ぎ（同様） */
+startMilk.addEventListener('mousedown', ()=>{
+  startMilk.textContent='注ぎ中...';
+  let pct=0;
+  milkInterval = setInterval(()=> {
+    pct = Math.min(100, pct + Math.random()*5 + 2);
+    milkBar.style.width = pct + '%'; milkPct.textContent = Math.round(pct)+'%';
+    if (pct >= 100){
+      clearInterval(milkInterval); milkInterval=null;
+      startMilk.textContent='注ぐ（押し続け）';
+      alert('注ぎ過ぎ！最初からやり直しになります');
+      milkBar.style.width='0%'; milkPct.textContent='0%';
+    }
+  }, 120);
+});
+startMilk.addEventListener('mouseup', ()=>{
+  if (milkInterval) clearInterval(milkInterval);
+  startMilk.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(milkBar.style.width) || 0;
+  // 合格ライン 45%〜65%
+  if (pct >= 45 && pct <= 65){
+    playTone(660,0.12);
+    // latteCanvas にミルク層（白）を描く
+    latteCtx.fillStyle = '#f6efe6';
+    latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill();
+    // 進捗してアートセクションを有効に
+    // artCanvas元に描画（現物はartCanvas）
+  } else {
+    alert('ミルクの目標ラインを外しました。最初からやり直しになります');
+    milkBar.style.width='0%'; milkPct.textContent='0%';
+  }
+});
+startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
+startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
+
+/* アート描画 */
+let drawing=false;
+let lastPos={x:0,y:0};
+function getCanvasPos(e,canvas){
+  const r = canvas.getBoundingClientRect();
+  const touch = e.touches ? e.touches[0] : null;
+  const clientX = touch ? touch.clientX : e.clientX;
+  const clientY = touch ? touch.clientY : e.clientY;
+  return { x: (clientX - r.left) * (canvas.width / r.width), y: (clientY - r.top) * (canvas.height / r.height) };
+}
+artCanvas.addEventListener('mousedown',(e)=>{
+  drawing=true;
+  const p = getCanvasPos(e, artCanvas); lastPos = p;
+});
+artCanvas.addEventListener('mousemove',(e)=>{
+  if (!drawing) return;
+  const p = getCanvasPos(e, artCanvas);
+  const size = parseInt(penSize.value,10);
+  const mode = penMode.value;
+  if (mode === 'draw'){
+    artCtx.globalCompositeOperation = 'source-over';
+    artCtx.strokeStyle = '#ffffff';
+    artCtx.lineWidth = size;
+  } else {
+    artCtx.globalCompositeOperation = 'destination-out';
+    artCtx.lineWidth = size;
+  }
+  artCtx.beginPath(); artCtx.moveTo(lastPos.x,lastPos.y); artCtx.lineTo(p.x,p.y); artCtx.stroke();
+  lastPos = p;
+});
+artCanvas.addEventListener('mouseup',()=>{ drawing=false; artCtx.globalCompositeOperation='source-over'; });
+artCanvas.addEventListener('mouseleave',()=>{ drawing=false; artCtx.globalCompositeOperation='source-over'; });
+artCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); drawing=true; lastPos=getCanvasPos(e, artCanvas); });
+artCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); if (!drawing) return; const p=getCanvasPos(e,artCanvas); const size=parseInt(penSize.value,10); const mode=penMode.value; if(mode==='draw'){ artCtx.globalCompositeOperation='source-over'; artCtx.strokeStyle='#ffffff'; artCtx.lineWidth=size; } else { artCtx.globalCompositeOperation='destination-out'; artCtx.lineWidth=size; } artCtx.beginPath(); artCtx.moveTo(lastPos.x,lastPos.y); artCtx.lineTo(p.x,p.y); artCtx.stroke(); lastPos=p; });
+artCanvas.addEventListener('touchend',(e)=>{ drawing=false; artCtx.globalCompositeOperation='source-over'; });
+
+clearArt.addEventListener('click', ()=> initArtCanvas());
+
+saveArt.addEventListener('click', ()=>{
+  // artCanvas を縮小してlatteCanvas重ねイメージを作る（ここではdataURLを保存）
+  const data = artCanvas.toDataURL('image/png');
+  // 合成イメージをlatteCanvasに貼る
+  const img = new Image(); img.onload = ()=>{
+    latteCtx.drawImage(img, 0,0,latteCanvas.width,latteCanvas.height);
+    alert('アートを保存しました。次にメッセージカードを書いてください。');
+  };
+  img.src = data;
+});
+
+/* メッセージカード保存（画像化） */
+saveCard.addEventListener('click', ()=>{
+  if (!messageCard.value.trim()){ alert('メッセージを入力してください'); return; }
+  alert('カードを保存しました。提供ボタンを押せます。');
+  completeMake.disabled = false;
+});
+
+/* 提供（完成） */
+completeMake.addEventListener('click', ()=>{
+  if (!currentMakingOrderId) return;
+  const order = state.orders.find(o=>o.id===currentMakingOrderId);
+  if (!order) return;
+  // servedImage を生成（latteCanvas のdataURLを拡張）
+  // ここではlatteCanvasとartCanvasを合成してdataURLを生成
+  const tmp = document.createElement('canvas'); tmp.width=300; tmp.height=300;
+  const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
+  // draw cup (center)
+  tctx.drawImage(latteCanvas, 90,30,120,120);
+  // draw message card
+  tctx.fillStyle = '#fff2e6'; tctx.fillRect(40,180,220,80);
+  tctx.fillStyle = '#000';
+  tctx.font = '18px sans-serif';
+  wrapText(tctx, messageCard.value, 50,200,200,22);
+  const servedDataUrl = tmp.toDataURL('image/png');
+  // store art/card/served ddata in order
+  order.artData = artCanvas.toDataURL();
+  order.cardData = messageCard.value;
+  order.servedImage = servedDataUrl;
+  order.state = 'delivered';
+  // remove from staff list (state.orders keeps it as delivered so customer can view)
+  currentMakingOrderId = null;
+  modalMakeLatte.classList.add('hidden');
+  renderOrderLists();
+  alert('提供しました（一覧から依頼は消えます）。客は飲食画面で見ることができます。');
+});
+
+/* 中止 */
+cancelMake.addEventListener('click', ()=>{
+  if (confirm('制作を中止していいですか？')){ modalMakeLatte.classList.add('hidden'); currentMakingOrderId=null; renderOrderLists(); }
+});
+
+/* 客の飲食画面表示 */
+function showServed(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  if (!o || o.state !== 'delivered') return;
+  servedImage.src = o.servedImage;
+  servedCard.innerHTML = `<div style="font-size:14px;white-space:pre-wrap;">${escapeHtml(o.cardData || '')}</div>`;
+  modalEat.classList.remove('hidden');
+  // 食べるボタンで画像を切り替える（rate1->rate2...の簡易実装）
+  let clicks = 0;
+  eatNext.onclick = ()=>{
+    clicks++;
+    if (clicks === 1){
+      // simulating change to rate2
+      servedImage.style.filter = 'grayscale(20%)';
+      playTone(440,0.12);
+    } else if (clicks === 2){
+      servedImage.style.filter = 'grayscale(50%)';
+      playTone(330,0.12);
+    } else {
+      servedImage.style.filter = 'grayscale(100%)';
+      eatNext.disabled = true;
+    }
+  };
+  saveImageBtn.onclick = ()=> {
+    const a = document.createElement('a');
+    a.href = servedImage.src; a.download = `served_${o.id}.png`; a.click();
+  };
+  homeFromEat.onclick = ()=> { modalEat.classList.add('hidden'); };
+}
+
+/* ユーティリティ：テキストをcanvasに収める */
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  for(let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    if (testWidth > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    }
+    else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+/* 状態表示（シフトサマリ、グローバルステータス） */
+function updateShiftSummary(){
+  if (state.staffs.length === 0){
+    shiftSummary.textContent = 'スタッフが誰もいません';
+    return;
+  }
+  shiftSummary.innerHTML = '';
+  const now = new Date();
+  state.staffs.forEach(s=>{
+    const div = document.createElement('div');
+    const onNow = isNowWithinShift(s.shiftStart, s.shiftEnd, now);
+    div.innerHTML = `<strong>${s.name}</strong> ${s.shiftStart}〜${s.shiftEnd} ${s.onShift?'<span style="color:green">OK</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
+    shiftSummary.appendChild(div);
+  });
+}
+
+function isNowWithinShift(start, end, dateObj){
+  if (!start || !end) return false;
+  const [sh,sm] = start.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
+  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
+  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1); // overnight shifts
+  return dateObj >= sDate && dateObj <= eDate;
+}
+
+/* 注文ボタンの活性判定：
+   - 少なくとも1名のスタッフが onShift=true かつ 現在時刻がそのシフト内 かつ breaking=false の場合に有効
+*/
+function updateOrderButtonState(){
+  const now = new Date();
+  const anyAvailable = state.staffs.some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now) );
+  if (anyAvailable){
+    orderBtn.classList.remove('disabled');
+    globalStatus.textContent = '状況①：スタッフ対応可能です。中央の注文ボタンを押してください。';
+  } else {
+    orderBtn.classList.add('disabled');
+    globalStatus.textContent = '状況①：現在、スタッフ対応不可（シフト外または休憩中）';
+  }
+}
+
+/* 役割描画 */
+function renderRole(){
+  if (state.currentUser.role === 'guest'){
+    guestPanel.classList.remove('hidden');
+    staffLogin.classList.add('hidden');
+    staffPanel.classList.add('hidden');
+  } else if (state.currentUser.role === 'staff'){
+    guestPanel.classList.add('hidden');
+    staffLogin.classList.add('hidden');
+    staffPanel.classList.remove('hidden');
+  }
+}
+
+/* 副作用音（簡易） */
+function playTone(freq=440,duration=0.15){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type='sine';
+    o.frequency.value = freq;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.value = 0.12;
+    o.start();
+    setTimeout(()=>{ o.stop(); ctx.close(); }, duration*1000);
+  } catch(e){ console.warn('Audio not available'); }
+}
+
+/* helper: HTML escape */
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* 生成：ラテのサムネ画像（プレースホルダ，DataURL） */
+function generateLatteThumb(){
+  const c = document.createElement('canvas'); c.width=320; c.height=240;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff8ef'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle = '#6b3b24'; ctx.beginPath(); ctx.arc(160,110,60,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font='20px sans-serif'; ctx.fillText('Cafe Latte', 110,200);
+  return c.toDataURL();
+}
+
+/* global status text */
+function updateGlobalStatusText(){
+  // if any staff currently in shift & onShift show their names and times
+  const now = new Date();
+  let lines = [];
+  state.staffs.forEach(s=>{
+    if (s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now)){
+      lines.push(`${s.name} がシフト中 (${s.shiftStart}〜${s.shiftEnd})`);
+    }
+  });
+  if (lines.length > 0){
+    globalStatus.textContent = '状況①：' + lines.join(' / ');
+  }
+}
+
+/* 最後に、初期アートとラテカップ描画 */
+initArtCanvas();
+resetLatteCanvas();
+
+</script>
+</body>
+</html>
