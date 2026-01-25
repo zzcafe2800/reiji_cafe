@@ -628,16 +628,24 @@ function replayStrokesOnCtx(strokes, ctx, width, height){
   if(!strokes) return;
   strokes.forEach(s=>{
     if(!s.points || s.points.length<2) return;
-    ctx.beginPath();
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
     for(let i=0;i<s.points.length-1;i++){
-      const p1 = s.points[i]; const p2 = s.points[i+1];
+      const p1 = s.points[i], p2 = s.points[i+1];
       const x1 = p1.x * width, y1 = p1.y * height, x2 = p2.x * width, y2 = p2.y * height;
-      ctx.strokeStyle = (s.mode==='draw') ? (s.color || '#fff') : 'rgba(0,0,0,1)';
       ctx.lineWidth = s.width;
-      if(s.mode==='erase'){ ctx.globalCompositeOperation='destination-out'; } else { ctx.globalCompositeOperation='source-over'; }
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      if(s.mode === 'erase' || s.mode === 'destination-out'){
+        ctx.globalCompositeOperation = 'destination-out';
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = s.color || '#fff';
+      }
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
     }
-    ctx.globalCompositeOperation='source-over';
+    ctx.globalCompositeOperation = 'source-over';
   });
 }
 
