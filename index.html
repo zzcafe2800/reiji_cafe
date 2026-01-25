@@ -684,23 +684,7 @@ saveCard.addEventListener('click', async ()=>{
   }
 });
 
-/* replayStrokesOnCtx function (reused) */
-function replayStrokesOnCtx(strokes, ctx, width, height){
-  if(!strokes) return;
-  strokes.forEach(s=>{
-    if(!s.points || s.points.length<2) return;
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.beginPath();
-    for(let i=0;i<s.points.length-1;i++){
-      const p1 = s.points[i], p2 = s.points[i+1];
-      const x1 = p1.x*width, y1 = p1.y*height, x2 = p2.x*width, y2 = p2.y*height;
-      ctx.lineWidth = s.width;
-      if(s.mode === 'erase'){ ctx.globalCompositeOperation='destination-out'; } else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle = s.color || '#fff'; }
-      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-    }
-    ctx.globalCompositeOperation='source-over';
-  });
-}
+
 
 /* update small task status and enable/disable complete button */
 function updateTaskStatus(){
