@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ 飲食疑似提供サイト（Firebase同期版 修正版）</title>
+<title>ゲームカフェ 飲食疑似提供サイト（改良版）</title>
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
+    --card-skin:#fff2e6;
   }
   html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
   .container{max-width:1000px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid #b33;position:relative;min-height:760px;}
@@ -16,7 +17,7 @@
   .left{flex:1;min-height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
   .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid #b33;color:var(--dark);padding:28px 48px;border-radius:12px;font-size:36px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;}
   .order-btn.disabled{opacity:0.35;cursor:not-allowed;box-shadow:none;}
-  .center-top{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;font-weight:700;color:var(--dark);}
+  .center-top{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;font-weight:700;color:var(--dark);text-align:center;}
   .small-pass{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;}
   .small-pass input{width:100px;padding:4px;}
   .right{width:380px;background:linear-gradient(180deg,#fff8f2,#fff3ec);border-radius:8px;padding:12px;border:2px solid #e3b3b3;min-height:600px;display:flex;flex-direction:column;gap:12px;}
@@ -24,13 +25,13 @@
   .hidden{display:none !important;}
   label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px;}
   input[type="text"],input[type="time"],textarea,select{width:100%;padding:8px;border-radius:6px;border:1px solid #d8c6bd;background:#fff;}
-  button.small{padding:6px 8px;border-radius:6px;border:1px solid #c99;background:#ffd;cursor:pointer;}
+  button.small{padding:8px 10px;border-radius:6px;border:1px solid #c99;background:#ffd;cursor:pointer;}
   .shift-list{max-height:140px;overflow:auto;}
   .order-list{max-height:220px;overflow:auto;}
   .order-item{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:center;}
   .order-item strong{display:block;}
-  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:60;}
-  .modal{background:#fff;padding:16px;border-radius:10px;width:680px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid #b33;}
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .modal{background:#fff;padding:16px;border-radius:10px;width:760px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid #b33;}
   .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
   .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;}
   img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
@@ -39,6 +40,19 @@
   .btn-red{background:#b33;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
   .btn-green{background:#2b8f4a;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
   .small-info{font-size:12px;color:var(--muted);}
+  /* overlay for order status (client view) */
+  .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;}
+  .status-card{width:80%;max-width:720px;background:rgba(255,255,255,0.98);padding:40px;border-radius:12px;border:4px solid #b33;text-align:center;font-size:28px;font-weight:700;}
+  /* staff toggles large */
+  .big-toggle{display:flex;gap:8px;align-items:center;}
+  .big-toggle button{flex:1;padding:12px;border-radius:8px;font-size:16px;border:2px solid #c6b3b3;cursor:pointer;}
+  .big-toggle .on{background:#2b8f4a;color:#fff;border-color:#2b8f4a;}
+  .big-toggle .off{background:#f0f0f0;color:#666;}
+  /* art layered canvases */
+  .art-area{position:relative;width:240px;height:240px;border-radius:6px;overflow:hidden;border:1px solid #d4c0b8;background:#b36e3c;}
+  .art-area canvas{position:absolute;left:0;top:0;width:240px;height:240px;}
+  .card-canvas{border:1px solid #e6d0c6;background:var(--card-skin);border-radius:8px;}
+  .center-controls{display:flex;flex-direction:column;gap:8px;}
 </style>
 </head>
 <body>
@@ -81,7 +95,7 @@
 
       <div id="staffPanel" class="panel hidden">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <strong>スタッフモード</strong>
+          <strong>スタッフモード（全体画面）</strong>
           <div>
             <span id="staffBadge"></span>
             <button id="logoutStaff" class="small">退室</button>
@@ -89,15 +103,15 @@
         </div>
 
         <div style="margin-top:8px;">
-          <label>シフト開始 / 終了（24時間）</label>
-          <div style="display:flex;gap:6px;">
+          <label>シフト / 休憩</label>
+          <div class="big-toggle">
+            <button id="shiftBtn" class="on">シフト中</button>
+            <button id="breakBtn" class="off">休憩中</button>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:6px;">
             <input type="time" id="shiftStart" />
             <input type="time" id="shiftEnd" />
             <button id="saveShift" class="small">保存</button>
-          </div>
-          <div style="margin-top:6px;">
-            <label><input type="checkbox" id="onShiftCheck" /> シフト中（OK）</label>
-            <label style="display:block"><input type="checkbox" id="breakCheck" /> 休憩中</label>
           </div>
         </div>
 
@@ -112,7 +126,12 @@
 
   <div class="stripes"></div>
 
-  <footer>プロトタイプ — 画像は GitHub raw path から読み込み可能。</footer>
+  <footer>プロトタイプ — 画像・音声は GitHub raw パスから読み込みます。</footer>
+</div>
+
+<!-- Order status overlay (client-side) -->
+<div id="orderStatusOverlay" class="status-overlay hidden">
+  <div class="status-card" id="orderStatusCard">状態</div>
 </div>
 
 <!-- modals -->
@@ -137,79 +156,108 @@
   </div>
 </div>
 
+<!-- Make latte modal: integrated flow (pouring -> art -> card) -->
 <div id="modalMakeLatte" class="modal-back hidden">
   <div class="modal" style="width:760px;max-width:98%;">
     <h3>カフェラテ制作（担当：<span id="makerName"></span>）</h3>
     <div style="display:flex;gap:12px;">
+      <!-- Left: Pouring controls and cup preview -->
       <div style="flex:1;">
+        <!-- Cup preview -->
         <div style="height:220px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
           <div style="width:180px;height:180px;border-radius:12px;background:#fff8f2;display:flex;align-items:center;justify-content:center;border:2px solid #d2b6ab;position:relative;">
             <div id="espressoArea" style="position:absolute;left:8px;top:8px;right:8px;bottom:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-              <div id="espressoCup" style="width:120px;height:120px;border-radius:60px;overflow:hidden;position:relative;">
+              <div id="espressoCup" style="width:120px;height:120px;border-radius:60px;overflow:hidden;position:relative;background:#6b3b24;">
                 <canvas id="latteCanvas" width="120" height="120" style="display:block;"></canvas>
               </div>
             </div>
           </div>
         </div>
 
-        <div style="margin-top:8px;">
-          <label>エスプレッソ注ぎ</label>
-          <div style="background:#eee;border-radius:6px;padding:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startEsp" class="small">注ぐ（押し続け）</button>
-              <div style="flex:1;">
-                <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;">
-                  <div id="espBar" style="height:100%;width:0%;background:linear-gradient(90deg,#a7552b,#6b3);"></div>
+        <!-- Pour controls - show both, must clear both -->
+        <div id="pourControls">
+          <div style="margin-top:8px;">
+            <label>エスプレッソ注ぎ</label>
+            <div style="background:#eee;border-radius:6px;padding:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button id="startEsp" class="small">注ぐ（押し続け）</button>
+                <div style="flex:1;position:relative;">
+                  <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
+                    <div id="espBar" style="height:100%;width:0%;background:linear-gradient(90deg,#a7552b,#6b3);"></div>
+                  </div>
+                  <!-- success zone marker lines -->
+                  <div style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;">
+                    <div id="espMarkerLow" style="position:absolute;left:98%;top:0;bottom:0;width:2px;background:rgba(255,255,255,0.8);transform:translateX(-1px);"></div>
+                    <div id="espMarkerHigh" style="position:absolute;left:100%;top:0;bottom:0;width:2px;background:rgba(255,255,255,0.8);transform:translateX(-1px);"></div>
+                  </div>
                 </div>
+                <div id="espPct" style="width:44px;text-align:right;font-weight:700;">0%</div>
               </div>
-              <div id="espPct" style="width:44px;text-align:right;font-weight:700;">0%</div>
+              <div class="small-info">合格ゾーン: 98%〜100%（縦線で示しています）。120% に達すると注ぎ過ぎで失敗。</div>
             </div>
           </div>
-        </div>
 
-        <div style="margin-top:8px;">
-          <label>フームドミルク注ぎ</label>
-          <div style="background:#eee;border-radius:6px;padding:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
-              <div style="flex:1;">
-                <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;">
-                  <div id="milkBar" style="height:100%;width:0%;background:linear-gradient(90deg,#fff,#eee);"></div>
+          <div style="margin-top:8px;">
+            <label>フームドミルク注ぎ</label>
+            <div style="background:#eee;border-radius:6px;padding:6px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
+                <div style="flex:1;position:relative;">
+                  <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
+                    <div id="milkBar" style="height:100%;width:0%;background:linear-gradient(90deg,#fff,#eee);"></div>
+                  </div>
+                  <div style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;">
+                    <div id="milkMarkerLow" style="position:absolute;left:98%;top:0;bottom:0;width:2px;background:rgba(0,0,0,0.6);transform:translateX(-1px);"></div>
+                    <div id="milkMarkerHigh" style="position:absolute;left:100%;top:0;bottom:0;width:2px;background:rgba(0,0,0,0.6);transform:translateX(-1px);"></div>
+                  </div>
                 </div>
+                <div id="milkPct" style="width:44px;text-align:right;font-weight:700;">0%</div>
               </div>
-              <div id="milkPct" style="width:44px;text-align:right;font-weight:700;">0%</div>
+              <div class="small-info">合格ゾーン: 98%〜100%。120% 到達は即失敗。</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div style="width:320px;">
+      <!-- Right: art + message flow -->
+      <div style="width:360px;">
+        <!-- ART area: two-layer canvases (bg brown + layer for strokes) -->
         <div style="background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
           <strong>ラテアート（白ペン）</strong>
           <div style="margin-top:8px;">
-            <div style="display:flex;gap:6px;align-items:center;">
+            <div class="art-area" id="artArea">
+              <canvas id="artBg" width="240" height="240"></canvas>
+              <canvas id="artLayer" width="240" height="240"></canvas>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
               <label>ツール</label>
               <select id="penMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
-              <label>サイズ</label>
+              <label>太さ</label>
               <select id="penSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
               <button id="clearArt" class="small">キャンバスクリア</button>
             </div>
-            <div style="margin-top:8px;">
-              <canvas id="artCanvas" width="240" height="240" style="border:1px solid #d4c0b8;border-radius:6px;background:#b36e3c"></canvas>
-            </div>
+            <div style="margin-top:6px;" id="artOnlyNotice" class="small-info hidden">注ぎクリア後、アート画面に切り替わりました。描いて保存してください。</div>
             <div style="margin-top:8px;text-align:right;">
-              <button id="saveArt" class="btn-green">保存して次へ</button>
+              <button id="saveArt" class="btn-green" disabled>アート保存</button>
             </div>
           </div>
         </div>
 
-        <div style="margin-top:10px;background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
-          <strong>メッセージカード</strong>
+        <!-- Message card drawer (handwritten) -->
+        <div id="cardPanel" style="margin-top:10px;background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
+          <strong>メッセージカード（手書き）</strong>
           <div style="margin-top:6px;">
-            <textarea id="messageCard" rows="4" placeholder="メッセージを入力（必須）"></textarea>
+            <canvas id="cardCanvas" class="card-canvas" width="320" height="120"></canvas>
           </div>
-          <div style="margin-top:6px;text-align:right;">
-            <button id="saveCard" class="small">カード保存</button>
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+            <label>ツール</label>
+            <select id="cardMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
+            <label>太さ</label>
+            <select id="cardSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
+            <button id="clearCard" class="small">消す</button>
+          </div>
+          <div style="margin-top:8px;text-align:right;">
+            <button id="saveCard" class="small" disabled>カード保存</button>
           </div>
         </div>
 
@@ -222,6 +270,7 @@
   </div>
 </div>
 
+<!-- Drink view modal (customer drinks sequence) reuse served image modal -->
 <div id="modalEat" class="modal-back hidden">
   <div class="modal">
     <h3>飲食画面</h3>
@@ -232,13 +281,13 @@
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small">食べる（次へ）</button>
-          <div id="eatSoundInfo" class="small-info">クリックで音（rate.mp3相当）</div>
+          <div id="eatSoundInfo" class="small-info">クリックで rate.mp3 を順に再生します</div>
         </div>
       </div>
       <div style="width:200px;">
         <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
           <strong>メッセージカード</strong>
-          <div id="servedCard" style="margin-top:8px;background:#fff2e6;padding:8px;border-radius:6px;border:1px solid #e6d0c6;min-height:120px;">カードはここに表示されます。</div>
+          <div id="servedCard" style="margin-top:8px;background:var(--card-skin);padding:8px;border-radius:6px;border:1px solid #e6d0c6;min-height:120px;">カードはここに表示されます。</div>
           <div style="margin-top:8px;text-align:right;">
             <button id="saveImageBtn" class="small">画像保存</button>
             <button id="homeFromEat" class="small">ホームへ</button>
@@ -251,622 +300,801 @@
 
 <script type="module">
 /*
-  修正点まとめ（このファイル）：
-  - 前回の未定義関数エラーを解消（updateGlobalStatusText を追加）
-  - モーダルが常時表示されたりボタンが反応しない主要原因は、以前のJSエラーでイベントバインドが途中で止まっていたこと。
-    本ファイルではエラーが起きにくい順序に整理し、未定義参照を削除。
-  - 画像/音声の読み込みを GitHub raw URL に変換できる getAssetUrl() を追加。
-  - rate1..rateN の連番画像を自動でプリロードする preloadRateSequence() を追加（最大 12 まで試行）。
-  - メニューの画像フィールドは GitHub パス（例: @zzcafe2800/reiji_cafe/main/rate1.png）を使えるようにした。
-  - 主要な DOM 要素の取得とイベント登録はモジュール内で確実に実行されるようにした。
+  改良点（要望に基づく）
+  - 注ぎ（エスプレッソ / フームドミルク）：合格範囲 98~100 にマーカー、120% 到達で即失敗（やり直し）。
+  - ラテアート：描画は別レイヤ（artLayer）に行い、消しゴムは白いペン跡のみ消す（背景の茶色は残る）。
+  - アート保存 → メッセージカード（手書きキャンバス）画面 → 保存で「提供」有効化の順。
+  - メッセージはキー入力ではなく手描き（cardCanvas）。背景は薄い肌色のカード、文字は黒。
+  - 注文から5分で待機中ならキャンセル（既存）。さらに、cancelled は短時間後に削除、delivered は 5 分後に削除（Firestore）。
+  - 注文した客はリアルタイムで 4 ステータス全画面表示（overlay）。
+  - 音声ファイルは GitHub raw パスから読み込み：@zzcafe2800/reiji_cafe/files/tyaimu.mp3 など。
 */
 
-  // Firebase SDK imports（必要なら残してあります。無効でもローカルで動きます）
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-  import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
-  import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js";
 
-  // ユーザー提供の Firebase 設定（必要なら編集）
-  const firebaseConfig = {
-    apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
-    authDomain: "reiji-cafr.firebaseapp.com",
-    projectId: "reiji-cafr",
-    storageBucket: "reiji-cafr.firebasestorage.app",
-    messagingSenderId: "18020287382",
-    appId: "1:18020287382:web:1a87e6378598697ea3d3b7",
-    measurementId: "G-F35S7FGW9M"
-  };
+// Firebase config (provided earlier)
+const firebaseConfig = {
+  apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
+  authDomain: "reiji-cafr.firebaseapp.com",
+  projectId: "reiji-cafr",
+  storageBucket: "reiji-cafr.firebasestorage.app",
+  messagingSenderId: "18020287382",
+  appId: "1:18020287382:web:1a87e6378598697ea3d3b7",
+  measurementId: "G-F35S7FGW9M"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-  // try anonymous sign-in (failしてもローカルで動く)
-  signInAnonymously(auth).catch(e=>{
-    console.warn('Anonymous sign-in failed. Continue with local fallback.', e);
-  });
+// try anonymous sign-in but continue if disabled
+signInAnonymously(auth).catch(e=>console.warn('anonymous sign-in failed', e));
 
-  // DOM 参照
-  const nowtime = document.getElementById('nowtime');
-  const orderBtn = document.getElementById('orderBtn');
-  const staffPass = document.getElementById('staffPass');
-  const passOk = document.getElementById('passOk');
-  const guestPanel = document.getElementById('guestPanel');
-  const staffLogin = document.getElementById('staffLogin');
-  const staffPanel = document.getElementById('staffPanel');
-  const staffNameInput = document.getElementById('staffNameInput');
-  const enterStaff = document.getElementById('enterStaff');
-  const logoutStaff = document.getElementById('logoutStaff');
-  const staffBadge = document.getElementById('staffBadge');
-  const shiftStart = document.getElementById('shiftStart');
-  const shiftEnd = document.getElementById('shiftEnd');
-  const saveShift = document.getElementById('saveShift');
-  const onShiftCheck = document.getElementById('onShiftCheck');
-  const breakCheck = document.getElementById('breakCheck');
-  const shiftSummary = document.getElementById('shiftSummary');
-  const staffOrderList = document.getElementById('staffOrderList');
-  const customerOrders = document.getElementById('customerOrders');
-  const globalStatus = document.getElementById('globalStatus');
+// DOM refs
+const nowtime = document.getElementById('nowtime');
+const orderBtn = document.getElementById('orderBtn');
+const staffPass = document.getElementById('staffPass');
+const passOk = document.getElementById('passOk');
+const guestPanel = document.getElementById('guestPanel');
+const staffLogin = document.getElementById('staffLogin');
+const staffPanel = document.getElementById('staffPanel');
+const staffNameInput = document.getElementById('staffNameInput');
+const enterStaff = document.getElementById('enterStaff');
+const logoutStaff = document.getElementById('logoutStaff');
+const staffBadge = document.getElementById('staffBadge');
+const shiftStart = document.getElementById('shiftStart');
+const shiftEnd = document.getElementById('shiftEnd');
+const saveShift = document.getElementById('saveShift');
+const shiftSummary = document.getElementById('shiftSummary');
+const staffOrderList = document.getElementById('staffOrderList');
+const customerOrders = document.getElementById('customerOrders');
+const globalStatus = document.getElementById('globalStatus');
+const shiftBtn = document.getElementById('shiftBtn');
+const breakBtn = document.getElementById('breakBtn');
 
-  const modalName = document.getElementById('modalName');
-  const modalMenu = document.getElementById('modalMenu');
-  const modalMakeLatte = document.getElementById('modalMakeLatte');
-  const modalEat = document.getElementById('modalEat');
+const modalName = document.getElementById('modalName');
+const modalMenu = document.getElementById('modalMenu');
+const modalMakeLatte = document.getElementById('modalMakeLatte');
+const modalEat = document.getElementById('modalEat');
+const orderName = document.getElementById('orderName');
+const cancelOrderName = document.getElementById('cancelOrderName');
+const okOrderName = document.getElementById('okOrderName');
+const menuGrid = document.getElementById('menuGrid');
 
-  const orderName = document.getElementById('orderName');
-  const cancelOrderName = document.getElementById('cancelOrderName');
-  const okOrderName = document.getElementById('okOrderName');
+const startEsp = document.getElementById('startEsp');
+const espBar = document.getElementById('espBar');
+const espPct = document.getElementById('espPct');
+const startMilk = document.getElementById('startMilk');
+const milkBar = document.getElementById('milkBar');
+const milkPct = document.getElementById('milkPct');
 
-  const menuGrid = document.getElementById('menuGrid');
+const artBg = document.getElementById('artBg');
+const artLayer = document.getElementById('artLayer');
+const artBgCtx = artBg.getContext('2d');
+const artLayerCtx = artLayer.getContext('2d');
+const penMode = document.getElementById('penMode');
+const penSize = document.getElementById('penSize');
+const clearArt = document.getElementById('clearArt');
+const saveArt = document.getElementById('saveArt');
+const artOnlyNotice = document.getElementById('artOnlyNotice');
 
-  const startEsp = document.getElementById('startEsp');
-  const espBar = document.getElementById('espBar');
-  const espPct = document.getElementById('espPct');
-  const startMilk = document.getElementById('startMilk');
-  const milkBar = document.getElementById('milkBar');
-  const milkPct = document.getElementById('milkPct');
+const cardCanvas = document.getElementById('cardCanvas');
+const cardCtx = cardCanvas.getContext('2d');
+const cardMode = document.getElementById('cardMode');
+const cardSize = document.getElementById('cardSize');
+const clearCard = document.getElementById('clearCard');
+const saveCard = document.getElementById('saveCard');
 
-  const artCanvas = document.getElementById('artCanvas');
-  const artCtx = artCanvas.getContext('2d');
-  const penMode = document.getElementById('penMode');
-  const penSize = document.getElementById('penSize');
-  const clearArt = document.getElementById('clearArt');
-  const saveArt = document.getElementById('saveArt');
+const makerName = document.getElementById('makerName');
+const messageCard = document.getElementById('messageCard'); // note: no longer used for keyboard input, left for backward compat
+const completeMake = document.getElementById('completeMake');
+const cancelMake = document.getElementById('cancelMake');
 
-  const makerName = document.getElementById('makerName');
-  const messageCard = document.getElementById('messageCard');
-  const saveCard = document.getElementById('saveCard');
-  const completeMake = document.getElementById('completeMake');
-  const cancelMake = document.getElementById('cancelMake');
+const latteCanvas = document.getElementById('latteCanvas');
+const latteCtx = latteCanvas.getContext('2d');
 
-  const servedImage = document.getElementById('servedImage');
-  const servedCard = document.getElementById('servedCard');
-  const saveImageBtn = document.getElementById('saveImageBtn');
-  const homeFromEat = document.getElementById('homeFromEat');
-  const eatNext = document.getElementById('eatNext');
+const orderStatusOverlay = document.getElementById('orderStatusOverlay');
+const orderStatusCard = document.getElementById('orderStatusCard');
 
-  const latteCanvas = document.getElementById('latteCanvas');
-  const latteCtx = latteCanvas.getContext('2d');
+const servedImage = document.getElementById('servedImage');
+const servedCard = document.getElementById('servedCard');
+const eatNext = document.getElementById('eatNext');
+const saveImageBtn = document.getElementById('saveImageBtn');
+const homeFromEat = document.getElementById('homeFromEat');
+const eatSoundInfo = document.getElementById('eatSoundInfo');
 
-  const PASSWORD = "1232";
+const PASSWORD = "1232";
 
-  // アセット読み込みユーティリティ
-  function getAssetUrl(path){
-    // 指定のパターン "@owner/repo/branch/path..." を raw.githubusercontent に変換
-    if (!path) return '';
-    if (path.startsWith('@')){
-      // @owner/repo/branch/....png
-      const p = path.slice(1);
-      return 'https://raw.githubusercontent.com/' + p;
-    }
-    // そのまま URL の場合は返す
+// audio assets (GitHub raw via special @ path)
+function getAssetUrl(path){
+  if (!path) return '';
+  if (path.startsWith('@')) {
+    // format: @owner/repo/path...
+    return 'https://raw.githubusercontent.com/' + path.slice(1);
+  }
+  try { return new URL(path).href } catch(e){ return path; }
+}
+
+const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'));
+const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'));
+const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'));
+
+// menu configuration
+const menuItems = [
+  { id: 'latte', title: 'カフェラテ', imageBase: '@zzcafe2800/reiji_cafe/main/rate' }
+];
+
+// preload small thumb for menu
+async function buildMenu(){
+  menuGrid.innerHTML = '';
+  for(const it of menuItems){
+    const div = document.createElement('div'); div.className='menu-item'; div.dataset.id = it.id;
+    const img = document.createElement('img'); img.className='menu-thumb';
+    img.alt = it.title;
+    const firstUrl = getAssetUrl(it.imageBase + '1.png');
     try {
-      const u = new URL(path);
-      return u.href;
-    } catch(e){
-      // 相対パス (ローカル) を返す
-      return path;
-    }
+      const res = await fetch(firstUrl);
+      if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); }
+      else img.src = makePlaceholder(it.title);
+    } catch(e){ img.src = makePlaceholder(it.title); }
+    div.appendChild(img);
+    const h = document.createElement('strong'); h.textContent = it.title; div.appendChild(h);
+    div.addEventListener('click', ()=> onMenuSelect(it));
+    menuGrid.appendChild(div);
   }
+}
 
-  // 指定ベースから rate1..rateN をプリロードする（maxCount 個まで試行）
-  async function preloadRateSequence(basePath, maxCount=12){
-    const images = [];
-    for(let i=1;i<=maxCount;i++){
-      const candidate = `${basePath}${i}.png`;
-      const url = getAssetUrl(candidate);
-      try {
-        const res = await fetch(url, { method:'GET' });
-        if (!res.ok) {
-          // 404 ならループ終了
-          if (res.status === 404) break;
-          // その他はスキップして続行
-          break;
-        }
-        // blob -> objectURL for performance
-        const blob = await res.blob();
-        const objUrl = URL.createObjectURL(blob);
-        images.push(objUrl);
-      } catch(e){
-        // 通信不通の可能性で終了
-        break;
-      }
-    }
-    return images;
-  }
+function makePlaceholder(title){
+  const c = document.createElement('canvas'); c.width=320; c.height=240;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff8ef'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.fillStyle = '#6b3b24'; ctx.beginPath(); ctx.arc(160,110,60,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font='20px sans-serif'; ctx.fillText(title, 100,200);
+  return c.toDataURL();
+}
 
-  // ユーティリティ
-  function uid(prefix="id"){ return prefix+Math.random().toString(36).slice(2,9); }
-  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// state
+const state = { staffs: [], orders: [], currentUser: { role:'guest', staffId: null }, currentOrderIdForClient: null, menuRateSequences: {} };
 
-  // アプリ状態（Firestore と同期する想定だが、失敗時のローカルフォールバックも保持）
-  const state = { staffs: [], orders: [], currentUser: { role: 'guest', staffId: null } };
+// Firestore refs
+const staffsCol = collection(db, 'staffs');
+const ordersCol = collection(db, 'orders');
 
-  // Firestore コレクション参照
-  const staffsCol = collection(db, 'staffs');
-  const ordersCol = collection(db, 'orders');
+// real-time listeners
+try {
+  const qS = query(staffsCol, orderBy('createdAt','asc'));
+  onSnapshot(qS, snap => {
+    state.staffs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    state.staffs.forEach(s => { s.onShift = !!s.onShift; s.breaking = !!s.breaking; s.shiftStart ||= "09:00"; s.shiftEnd ||= "17:00"; });
+    updateShiftSummary(); updateOrderButtonState(); renderOrderLists();
+  }, err => console.warn('staffs snapshot error', err));
+} catch(e){ console.warn('attach staffs snapshot failed', e); }
 
-  // Firestore snapshot リスナ（エラーが出ても動作継続するよう try..catch）
+try {
+  const qO = query(ordersCol, orderBy('createdAt','asc'));
+  onSnapshot(qO, snap => {
+    state.orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // update overlay if current client has an order
+    renderOrderLists();
+    updateClientOverlay();
+  }, err => console.warn('orders snapshot error', err));
+} catch(e){ console.warn('attach orders snapshot failed', e); }
+
+// periodic UI
+setInterval(()=>{ nowtime.textContent = new Date().toLocaleTimeString(); updateShiftSummary(); updateOrderButtonState(); }, 1000);
+
+// init canvases
+function initArtBg(){
+  artBgCtx.clearRect(0,0,artBg.width,artBg.height);
+  artBgCtx.fillStyle = '#6b3b24'; // brown base
+  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
+}
+function initArtLayer(){ artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.globalCompositeOperation='source-over'; }
+initArtBg(); initArtLayer();
+
+// card canvas init (skin background)
+function initCardCanvas(){
+  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin').trim() || '#fff2e6';
+  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
+  // optional guide lines etc.
+}
+initCardCanvas();
+
+// pouring variables
+let espInterval=null, milkInterval=null;
+let espPctVal=0, milkPctVal=0;
+let espDone=false, milkDone=false;
+
+// drawing variables for artLayer (white strokes only)
+let artDrawing=false, artLast={x:0,y:0};
+
+// drawing variables for card
+let cardDrawing=false, cardLast={x:0,y:0};
+
+// utility
+function uid(prefix='id'){ return prefix + Math.random().toString(36).slice(2,9); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// --- UI handlers for menu/order ---
+passOk.addEventListener('click', ()=> {
+  if (staffPass.value === PASSWORD){ guestPanel.classList.add('hidden'); staffLogin.classList.remove('hidden'); }
+  else alert('パスワードが違います');
+});
+enterStaff.addEventListener('click', async ()=>{
+  const name = staffNameInput.value.trim(); if (!name){ alert('名前'); return; }
   try {
-    const qS = query(staffsCol, orderBy('createdAt','asc'));
-    onSnapshot(qS, snap => {
-      state.staffs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      state.staffs.forEach(s => { s.onShift = !!s.onShift; s.breaking = !!s.breaking; s.shiftStart ||= "09:00"; s.shiftEnd ||= "17:00"; });
-      updateShiftSummary(); updateOrderButtonState(); renderOrderLists();
-    }, err => { console.warn('staffs onSnapshot error', err); });
-  } catch(e){ console.warn('attach staffs snapshot failed', e); }
+    const r = await addDoc(staffsCol, { name, shiftStart: "09:00", shiftEnd: "17:00", onShift: true, breaking: false, createdAt: Date.now() });
+    state.currentUser.role = 'staff'; state.currentUser.staffId = r.id;
+    staffBadge.textContent = name;
+    staffLogin.classList.add('hidden'); staffPanel.classList.remove('hidden');
+    renderRole();
+  } catch(e){
+    console.warn('add staff failed', e);
+    const s = { id: uid('s'), name, shiftStart: "09:00", shiftEnd: "17:00", onShift: true, breaking:false, createdAt: Date.now() };
+    state.staffs.push(s); state.currentUser.role='staff'; state.currentUser.staffId=s.id;
+    staffLogin.classList.add('hidden'); staffPanel.classList.remove('hidden');
+    renderRole();
+  }
+});
+logoutStaff.addEventListener('click', async ()=>{
+  const id = state.currentUser.staffId; if (!id) return;
+  try { await deleteDoc(doc(db,'staffs',id)); } catch(e){ /* ignore */ }
+  state.currentUser = { role:'guest', staffId:null }; staffPanel.classList.add('hidden'); guestPanel.classList.remove('hidden'); renderRole();
+});
 
+// Shift toggle big buttons
+shiftBtn.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) { alert('スタッフとしてログイン'); return; }
+  // set onShift true, breaking false
+  try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){ const s=state.staffs.find(x=>x.id===id); if(s){ s.onShift=true; s.breaking=false; } }
+});
+breakBtn.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) { alert('スタッフとしてログイン'); return; }
+  // set breaking true, onShift false
+  try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){ const s=state.staffs.find(x=>x.id===id); if(s){ s.onShift=false; s.breaking=true; } }
+});
+
+// save shift
+saveShift.addEventListener('click', async ()=>{
+  const id = state.currentUser.staffId; if (!id) return;
+  const newStart = shiftStart.value || "09:00"; const newEnd = shiftEnd.value || "17:00";
+  try { await updateDoc(doc(db,'staffs',id), { shiftStart: newStart, shiftEnd: newEnd }); alert('保存'); } catch(e){ console.warn(e); }
+});
+
+// build menu on load
+buildMenu().catch(()=>{});
+
+// order button for customers
+orderBtn.addEventListener('click', ()=>{
+  if (orderBtn.classList.contains('disabled')) return;
+  try { audioTyaimu.currentTime=0; audioTyaimu.play(); } catch(e){ /* ignore */ }
+  showModal(modalName);
+});
+
+// name modal
+cancelOrderName.addEventListener('click', ()=> hideModal(modalName));
+okOrderName.addEventListener('click', ()=> {
+  const name = orderName.value.trim(); if (!name){ alert('名前を入力してください'); return; }
+  hideModal(modalName);
+  buildMenu(); showModal(modalMenu);
+});
+
+// menu selection
+async function onMenuSelect(item){
+  hideModal(modalMenu);
+  const name = orderName.value.trim() || '名無し';
+  const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
+  const orderObj = { name, item: item.id, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artDataUrl:null, cardDataUrl:null, servedImageUrl:null };
   try {
-    const qO = query(ordersCol, orderBy('createdAt','asc'));
-    onSnapshot(qO, snap => {
-      state.orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderOrderLists();
-    }, err => { console.warn('orders onSnapshot error', err); });
-  } catch(e){ console.warn('attach orders snapshot failed', e); }
-
-  // 定期 UI 更新
-  setInterval(()=>{ nowtime.textContent = new Date().toLocaleTimeString(); updateShiftSummary(); updateOrderButtonState(); }, 1000);
-
-  // 初期描画
-  initArtCanvas(); resetLatteCanvas();
-
-  // --- UI 操作ハンドラ ---
-  passOk.addEventListener('click', ()=> {
-    if (staffPass.value === PASSWORD) {
-      guestPanel.classList.add('hidden');
-      staffLogin.classList.remove('hidden');
-    } else alert('パスワードが違います');
-  });
-
-  enterStaff.addEventListener('click', async ()=> {
-    const name = staffNameInput.value.trim();
-    if (!name) { alert('名前を入れてください'); return; }
-    // Firestore に登録（失敗したらローカル追加）
-    try {
-      const docRef = await addDoc(staffsCol, { name, shiftStart:"09:00", shiftEnd:"17:00", onShift:false, breaking:false, createdAt: Date.now() });
-      state.currentUser.role = 'staff'; state.currentUser.staffId = docRef.id;
-      staffLogin.classList.add('hidden'); staffPanel.classList.remove('hidden'); staffBadge.textContent = name;
-      renderRole();
-    } catch(e){
-      console.warn('add staff failed', e);
-      const s = { id: uid('s'), name, shiftStart:"09:00", shiftEnd:"17:00", onShift:false, breaking:false, createdAt: Date.now() };
-      state.staffs.push(s);
-      state.currentUser.role = 'staff'; state.currentUser.staffId = s.id;
-      staffLogin.classList.add('hidden'); staffPanel.classList.remove('hidden'); staffBadge.textContent = name;
-      renderRole();
-    }
-  });
-
-  logoutStaff.addEventListener('click', async ()=> {
-    const id = state.currentUser.staffId;
-    if (!id) return;
-    try { await deleteDoc(doc(db,'staffs',id)); } catch(e){ /* ignore */ }
-    state.staffs = state.staffs.filter(s=>s.id !== id);
-    state.currentUser = { role:'guest', staffId: null };
-    staffPanel.classList.add('hidden'); guestPanel.classList.remove('hidden'); renderRole();
-  });
-
-  saveShift.addEventListener('click', async ()=> {
-    const id = state.currentUser.staffId; if (!id) return;
-    const newStart = shiftStart.value || "09:00"; const newEnd = shiftEnd.value || "17:00";
-    try { await updateDoc(doc(db,'staffs',id), { shiftStart:newStart, shiftEnd:newEnd }); alert('シフトを保存しました'); }
-    catch(e){ console.warn('saveShift failed', e); const s = state.staffs.find(x=>x.id===id); if (s){ s.shiftStart=newStart; s.shiftEnd=newEnd; } alert('ローカル保存'); }
-    updateShiftSummary();
-  });
-
-  onShiftCheck.addEventListener('change', async ()=> {
-    const id = state.currentUser.staffId; if (!id) return;
-    const val = onShiftCheck.checked;
-    try { await updateDoc(doc(db,'staffs',id), { onShift: val }); } catch(e){ const s=state.staffs.find(x=>x.id===id); if (s) s.onShift = val; }
-    updateShiftSummary();
-  });
-
-  breakCheck.addEventListener('change', async ()=> {
-    const id = state.currentUser.staffId; if (!id) return;
-    const val = breakCheck.checked;
-    try { await updateDoc(doc(db,'staffs',id), { breaking: val }); } catch(e){ const s=state.staffs.find(x=>x.id===id); if (s) s.breaking = val; }
-    updateShiftSummary();
-  });
-
-  // 注文ボタン
-  orderBtn.addEventListener('click', ()=> {
-    if (orderBtn.classList.contains('disabled')) return;
-    playTone(880,0.15);
-    showModal(modalName);
-  });
-
-  cancelOrderName.addEventListener('click', ()=> hideModal(modalName));
-  okOrderName.addEventListener('click', ()=> {
-    const name = orderName.value.trim();
-    if (!name) { alert('名前を入力してください'); return; }
-    hideModal(modalName);
-    // show menu modal and populate menu if needed
-    buildMenu();
-    showModal(modalMenu);
-  });
-
-  document.getElementById('backMenu').addEventListener('click', ()=> hideModal(modalMenu));
-
-  // メニュー構成（拡張に対応）
-  // 各商品の imageBase は GitHub raw path ベース（例: "@zzcafe2800/reiji_cafe/main/rate"）
-  const menuItems = [
-    {
-      id: 'latte',
-      title: 'カフェラテ',
-      // ここに Github path のベースを入れておくと rate1.png〜rateN.png を自動取得します
-      imageBase: '@zzcafe2800/reiji_cafe/main/rate', // will preload rate1.png, rate2.png...
-      soundBase: '@zzcafe2800/reiji_cafe/main/tyaimu' // 例: ty amu mp3 base (tyaimu.mp3 etc.)
-    }
-    // 将来ここへ別メニューを追加可能
-  ];
-
-  // メニューを DOM に構築（画像はプリロード後に差し替え）
-  async function buildMenu(){
-    menuGrid.innerHTML = '';
-    for(const it of menuItems){
-      const div = document.createElement('div'); div.className='menu-item'; div.dataset.id = it.id;
-      const img = document.createElement('img'); img.className='menu-thumb';
-      img.alt = it.title;
-      // try preload first image (rate1) from base; fallback to placeholder
-      const firstUrl = getAssetUrl(it.imageBase + '1.png');
-      try {
-        const res = await fetch(firstUrl);
-        if (res.ok) {
-          const blob = await res.blob(); img.src = URL.createObjectURL(blob);
-        } else img.src = makePlaceholder(it.title);
-      } catch(e){ img.src = makePlaceholder(it.title); }
-      div.appendChild(img);
-      const h = document.createElement('strong'); h.textContent = it.title; div.appendChild(h);
-      div.addEventListener('click', ()=> onMenuSelect(it));
-      menuGrid.appendChild(div);
-    }
-  }
-
-  function makePlaceholder(title){
-    const c = document.createElement('canvas'); c.width=320; c.height=240;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#fff8ef'; ctx.fillRect(0,0,c.width,c.height);
-    ctx.fillStyle = '#6b3b24'; ctx.beginPath(); ctx.arc(160,110,60,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.font='20px sans-serif'; ctx.fillText(title, 100,200);
-    return c.toDataURL();
-  }
-
-  // メニュー選択時
-  async function onMenuSelect(item){
-    hideModal(modalMenu);
-    // create order in firestore (expiresAt set)
-    const name = orderName.value.trim() || '名無し';
-    const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-    const orderObj = { name, item: item.id, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artDataUrl:null, cardData:null, servedImageUrl:null };
-    try {
-      await addDoc(ordersCol, orderObj);
-      playTone(880,0.12);
-    } catch(e){
-      console.warn('add order failed', e);
-      orderObj.id = uid('o'); state.orders.push(orderObj);
-      scheduleOrderTimeout(orderObj);
-      renderOrderLists();
-      playTone(880,0.12);
-    }
-    // preload rate images for this item (in background)
-    if (item.imageBase) {
-      preloadRateSequence(item.imageBase).then(list => {
-        item._rateImages = list; // object URLs
-      });
-    }
-  }
-
-  // order timeout scheduling (client-side best-effort fallback)
-  function scheduleOrderTimeout(order){
-    const remaining = (order.expiresAt || 0) - Date.now();
-    if (remaining <= 0) return;
-    setTimeout(async ()=>{
-      try {
-        const snap = await getDoc(doc(db,'orders',order.id));
-        if (snap.exists()){
-          const o = snap.data();
-          if (o.state === 'waiting') await updateDoc(doc(db,'orders',order.id), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
-        }
-      } catch(e){
-        const idx = state.orders.findIndex(o=>o.id===order.id);
-        if (idx !== -1 && state.orders[idx].state === 'waiting') {
-          state.orders.splice(idx,1);
-        }
-      }
-    }, remaining);
-  }
-
-  // スタッフ側が注文を引き受ける
-  async function assignOrderToCurrentStaff(orderId){
-    const staffId = state.currentUser.staffId;
-    if (!staffId){ alert('スタッフとしてログインしてください'); return; }
-    const staff = state.staffs.find(s=>s.id===staffId);
-    const order = state.orders.find(o=>o.id===orderId);
-    if (!order || order.state !== 'waiting') { alert('対応できません'); return; }
-    try {
-      await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: staff.name });
-    } catch(e){
-      order.state = 'inprogress'; order.assignedTo = staffId; order.assignedToName = staff.name;
-    }
-    openMakeModal(order);
+    const ref = await addDoc(ordersCol, orderObj);
+    // track client current order id to show overlay
+    state.currentOrderIdForClient = ref.id;
+    showClientStatusOverlay('現在対応待ち中');
+    // play tyaimu handled earlier
+    scheduleOrderTimeout(orderObj, ref.id);
+  } catch(e){
+    console.warn('add order failed', e);
+    orderObj.id = uid('o'); state.orders.push(orderObj);
+    state.currentOrderIdForClient = orderObj.id;
+    showClientStatusOverlay('現在対応待ち中');
+    scheduleOrderTimeout(orderObj, orderObj.id);
     renderOrderLists();
   }
+}
 
-  // render staff/customer order lists
-  function renderOrderLists(){
-    staffOrderList.innerHTML = '';
-    (state.orders||[]).forEach(o=>{
-      if (!o || o.state === 'cancelled') return;
-      if (o.state === 'delivered' || o.state === 'served') return; // スタッフ一覧には見せない
-      const div = document.createElement('div'); div.className='order-item';
-      const left = document.createElement('div');
-      left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
-      const right = document.createElement('div');
-      if (o.state === 'waiting'){
-        const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
-        btn.onclick = ()=> assignOrderToCurrentStaff(o.id);
-        right.appendChild(btn);
-      } else if (o.state === 'inprogress') {
-        right.innerHTML = `<div class="small-info">担当:${escapeHtml(o.assignedToName || o.assignedTo || '')}</div>`;
-      } else if (o.state === 'done') {
-        right.innerHTML = `<div class="small-info">運搬中</div>`;
-      }
-      div.appendChild(left); div.appendChild(right);
-      staffOrderList.appendChild(div);
-    });
-
-    // customer delivered list
-    customerOrders.innerHTML = '';
-    (state.orders||[]).filter(o=>o.state === 'delivered' || o.state === 'served').forEach(o=>{
-      const div = document.createElement('div'); div.className = 'order-item';
-      div.innerHTML = `<strong>${escapeHtml(o.name)}</strong> ${escapeHtml(o.item)} が提供されました`;
-      const btn = document.createElement('button'); btn.textContent='見る'; btn.className='small';
-      btn.onclick = ()=> showServed(o.id);
-      div.appendChild(btn);
-      customerOrders.appendChild(div);
-    });
-
-    updateGlobalStatusText();
-  }
-
-  // ここで updateGlobalStatusText を必ず定義（前回の未定義エラーの原因）
-  function updateGlobalStatusText(){
-    const now = new Date();
-    const lines = [];
-    (state.staffs||[]).forEach(s=>{
-      if (s && s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now)){
-        lines.push(`${escapeHtml(s.name)} がシフト中 (${s.shiftStart}〜${s.shiftEnd})`);
-      }
-    });
-    if (lines.length) globalStatus.textContent = '状況①：' + lines.join(' / ');
-    else updateOrderButtonState();
-  }
-
-  // open/close modal utilities
-  function showModal(modal){ modal.classList.remove('hidden'); }
-  function hideModal(modal){ modal.classList.add('hidden'); }
-
-  // open make modal for assigned order
-  let currentMakingOrderId = null;
-  function openMakeModal(order){
-    currentMakingOrderId = order.id;
-    makerName.textContent = order.assignedToName || order.assignedTo || '';
-    resetLatteCanvas(); espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%';
-    startEsp.disabled = false; startMilk.disabled = true;
-    initArtCanvas();
-    messageCard.value = '';
-    completeMake.disabled = true;
-    showModal(modalMakeLatte);
-  }
-
-  // 制作の各種 UI（エスプレッソ・ミルク・アート）
-  function resetLatteCanvas(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle = '#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
-  function initArtCanvas(){ artCtx.clearRect(0,0,artCanvas.width,artCanvas.height); artCtx.fillStyle = '#6b3b24'; artCtx.beginPath(); artCtx.arc(120,120,100,0,Math.PI*2); artCtx.fill(); artCtx.lineCap='round'; artCtx.lineJoin='round'; }
-
-  // 押し続けロジック（エスプレッソ / ミルク）
-  let espInterval = null, milkInterval = null;
-  startEsp.addEventListener('mousedown', ()=> {
-    startEsp.textContent='注ぎ中...';
-    let pct=0;
-    espInterval = setInterval(()=> {
-      pct = Math.min(100, pct + Math.random()*6 + 2);
-      espBar.style.width = pct + '%'; espPct.textContent = Math.round(pct)+'%';
-      if (pct >= 100){ clearInterval(espInterval); espInterval=null; startEsp.textContent='注ぐ（押し続け）'; alert('注ぎ過ぎ！最初から'); espBar.style.width='0%'; espPct.textContent='0%'; }
-    }, 120);
-  });
-  startEsp.addEventListener('mouseup', ()=> {
-    if (espInterval) clearInterval(espInterval);
-    startEsp.textContent='注ぐ（押し続け）';
-    const pct = parseFloat(espBar.style.width) || 0;
-    if (pct >= 40 && pct <= 60){ playTone(523,0.12); latteCtx.fillStyle = '#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); startMilk.disabled = false; }
-    else { alert('合格ラインを外しました。最初から'); espBar.style.width='0%'; espPct.textContent='0%'; }
-  });
-  startEsp.addEventListener('touchstart', (e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
-  startEsp.addEventListener('touchend', (e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
-
-  startMilk.addEventListener('mousedown', ()=> {
-    startMilk.textContent='注ぎ中...';
-    let pct=0;
-    milkInterval = setInterval(()=> {
-      pct = Math.min(100, pct + Math.random()*5 + 2);
-      milkBar.style.width = pct + '%'; milkPct.textContent = Math.round(pct)+'%';
-      if (pct >= 100){ clearInterval(milkInterval); milkInterval=null; startMilk.textContent='注ぐ（押し続け）'; alert('注ぎ過ぎ！最初から'); milkBar.style.width='0%'; milkPct.textContent='0%'; }
-    }, 120);
-  });
-  startMilk.addEventListener('mouseup', ()=> {
-    if (milkInterval) clearInterval(milkInterval);
-    startMilk.textContent='注ぐ（押し続け）';
-    const pct = parseFloat(milkBar.style.width) || 0;
-    if (pct >= 45 && pct <= 65){ playTone(660,0.12); latteCtx.fillStyle = '#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
-    else { alert('ミルクの目標ラインを外しました。最初から'); milkBar.style.width='0%'; milkPct.textContent='0%'; }
-  });
-  startMilk.addEventListener('touchstart', (e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
-  startMilk.addEventListener('touchend', (e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
-
-  // アート描画（タッチ対応）
-  let drawing=false, lastPos={x:0,y:0};
-  function getCanvasPos(e,canvas){ const r = canvas.getBoundingClientRect(); const t = e.touches ? e.touches[0] : null; const cx = t ? t.clientX : e.clientX; const cy = t ? t.clientY : e.clientY; return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) }; }
-  artCanvas.addEventListener('mousedown',(e)=>{ drawing=true; lastPos=getCanvasPos(e,artCanvas); });
-  artCanvas.addEventListener('mousemove',(e)=>{ if(!drawing) return; const p=getCanvasPos(e,artCanvas); const size=parseInt(penSize.value,10); const mode=penMode.value; if(mode==='draw'){ artCtx.globalCompositeOperation='source-over'; artCtx.strokeStyle='#ffffff'; artCtx.lineWidth=size; } else { artCtx.globalCompositeOperation='destination-out'; artCtx.lineWidth=size; } artCtx.beginPath(); artCtx.moveTo(lastPos.x,lastPos.y); artCtx.lineTo(p.x,p.y); artCtx.stroke(); lastPos=p; });
-  artCanvas.addEventListener('mouseup',()=>{ drawing=false; artCtx.globalCompositeOperation='source-over'; });
-  artCanvas.addEventListener('mouseleave',()=>{ drawing=false; artCtx.globalCompositeOperation='source-over'; });
-  artCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); drawing=true; lastPos=getCanvasPos(e,artCanvas); });
-  artCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); if(!drawing) return; const p=getCanvasPos(e,artCanvas); const size=parseInt(penSize.value,10); const mode=penMode.value; if(mode==='draw'){ artCtx.globalCompositeOperation='source-over'; artCtx.strokeStyle='#ffffff'; artCtx.lineWidth=size; } else { artCtx.globalCompositeOperation='destination-out'; artCtx.lineWidth=size; } artCtx.beginPath(); artCtx.moveTo(lastPos.x,lastPos.y); artCtx.lineTo(p.x,p.y); artCtx.stroke(); lastPos=p; });
-  artCanvas.addEventListener('touchend',(e)=>{ drawing=false; artCtx.globalCompositeOperation='source-over'; });
-
-  clearArt.addEventListener('click', ()=> initArtCanvas());
-  saveArt.addEventListener('click', ()=> {
-    const data = artCanvas.toDataURL('image/png');
-    const img = new Image(); img.onload = ()=> { latteCtx.drawImage(img, 0,0,latteCanvas.width,latteCanvas.height); alert('アートを保存しました'); }; img.src = data;
-  });
-
-  saveCard.addEventListener('click', ()=> {
-    if (!messageCard.value.trim()){ alert('メッセージを入力してください'); return; }
-    alert('カードを保存しました');
-    completeMake.disabled = false;
-  });
-
-  // 提供（画像を Storage にアップロード → orders doc を更新）
-  completeMake.addEventListener('click', async ()=> {
-    if (!currentMakingOrderId) return;
-    const orderId = currentMakingOrderId;
-    const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600;
-    const tctx = tmp.getContext('2d');
-    tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-    tctx.drawImage(latteCanvas, 240,120,240,240);
-    tctx.fillStyle = '#fff2e6'; tctx.fillRect(80,380,440,160);
-    tctx.fillStyle = '#000'; tctx.font='22px sans-serif'; wrapText(tctx, messageCard.value || '', 100,410,400,28);
-    const dataUrl = tmp.toDataURL('image/png');
-
+// schedule auto-cancel and deletion
+function scheduleOrderTimeout(order, orderIdProvided){
+  const id = orderIdProvided || order.id;
+  const remaining = (order.expiresAt || 0) - Date.now();
+  if (remaining <= 0) return;
+  setTimeout(async ()=>{
     try {
-      const sRef = storageRef(storage, `served_images/${orderId}.png`);
-      await uploadString(sRef, dataUrl, 'data_url');
-      const url = await getDownloadURL(sRef);
-      await updateDoc(doc(db,'orders',orderId), { state:'delivered', artDataUrl: artCanvas.toDataURL(), cardData: messageCard.value, servedImageUrl: url, deliveredAt: Date.now() });
-      currentMakingOrderId = null; hideModal(modalMakeLatte); renderOrderLists(); alert('提供しました（クラウド保存）');
+      const snap = await getDoc(doc(db,'orders', id));
+      if (snap.exists()){
+        const o = snap.data();
+        if (o.state === 'waiting'){
+          await updateDoc(doc(db,'orders',id), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
+          // after 10s remove doc
+          setTimeout(async ()=>{ try{ await deleteDoc(doc(db,'orders',id)); } catch(e){} }, 10000);
+        }
+      } else {
+        // local fallback removal
+        const idx = state.orders.findIndex(x=>x.id===id);
+        if (idx!==-1) state.orders.splice(idx,1);
+      }
     } catch(e){
-      console.warn('upload/update failed', e);
-      // ローカルフォールバック
-      const o = state.orders.find(x=>x.id===orderId);
-      if (o){ o.artData = artCanvas.toDataURL(); o.cardData = messageCard.value; o.servedImage = dataUrl; o.state = 'delivered'; }
-      currentMakingOrderId = null; hideModal(modalMakeLatte); renderOrderLists(); alert('提供しました（ローカル保存）');
+      console.warn('scheduleOrderTimeout error', e);
     }
+  }, remaining);
+}
+
+// staff assign
+async function assignOrderToCurrentStaff(orderId){
+  const staffId = state.currentUser.staffId;
+  if (!staffId){ alert('スタッフとしてログインしてください'); return; }
+  const staff = state.staffs.find(s=>s.id===staffId);
+  const order = state.orders.find(o=>o.id===orderId);
+  if (!order || order.state !== 'waiting') { alert('対応できません'); return; }
+  try {
+    await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: staff.name });
+    // play cook bgm for waiting client? play for the waiting client only - we'll play for all clients with that order id locally
+    audioCookbgm.currentTime = 0; audioCookbgm.loop = true; try{ audioCookbgm.play(); } catch(e){}
+  } catch(e){
+    console.warn('assign failed', e);
+  }
+}
+
+// render lists
+function renderOrderLists(){
+  staffOrderList.innerHTML = '';
+  (state.orders || []).forEach(o=>{
+    if (!o) return;
+    if (o.state === 'cancelled') return;
+    if (o.state === 'delivered' || o.state === 'served') return;
+    const div = document.createElement('div'); div.className = 'order-item';
+    const left = document.createElement('div');
+    left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+    const right = document.createElement('div');
+    if (o.state === 'waiting'){
+      const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
+      btn.onclick = ()=> assignOrderToCurrentStaff(o.id);
+      right.appendChild(btn);
+    } else if (o.state === 'inprogress'){
+      right.innerHTML = `<div class="small-info">担当:${escapeHtml(o.assignedToName || o.assignedTo || '')}</div>`;
+      const doneBtn = document.createElement('button'); doneBtn.textContent='完成'; doneBtn.className='small'; doneBtn.onclick = async ()=>{
+        try { await updateDoc(doc(db,'orders',o.id), { state:'done' }); } catch(e){ console.warn(e); }
+      };
+      right.appendChild(doneBtn);
+    } else if (o.state === 'done'){
+      const deliverBtn = document.createElement('button'); deliverBtn.textContent='提供'; deliverBtn.className='small btn-green';
+      deliverBtn.onclick = async ()=>{
+        // open make modal for this order to perform latte flow
+        openMakeModal(o);
+      };
+      right.appendChild(deliverBtn);
+    }
+    div.appendChild(left); div.appendChild(right);
+    staffOrderList.appendChild(div);
   });
 
-  cancelMake.addEventListener('click', ()=> { if (confirm('制作を中止しますか？')){ hideModal(modalMakeLatte); currentMakingOrderId=null; renderOrderLists(); } });
+  // customer delivered list
+  customerOrders.innerHTML = '';
+  (state.orders||[]).filter(o=>o.state==='delivered' || o.state==='served').forEach(o=>{
+    const div = document.createElement('div'); div.className='order-item';
+    div.innerHTML = `<strong>${escapeHtml(o.name)}</strong> ${escapeHtml(o.item)} が提供されました`;
+    const btn = document.createElement('button'); btn.textContent='見る'; btn.className='small';
+    btn.onclick = ()=> showServed(o.id);
+    div.appendChild(btn);
+    customerOrders.appendChild(div);
+  });
 
-  // 飲食画面表示
-  function showServed(orderId){
+  updateGlobalStatusText();
+}
+
+// update global status (shift summary)
+function updateGlobalStatusText(){
+  const now = new Date();
+  const lines = [];
+  (state.staffs || []).forEach(s=>{
+    if (s && s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now)){
+      lines.push(`${escapeHtml(s.name)} がシフト中 (${s.shiftStart}〜${s.shiftEnd})`);
+    }
+  });
+  if (lines.length) globalStatus.textContent = '状況①：' + lines.join(' / ');
+  else updateOrderButtonState();
+}
+
+// update shift summary area
+function updateShiftSummary(){
+  if (!state.staffs || state.staffs.length === 0){ shiftSummary.textContent = 'スタッフが誰もいません'; return; }
+  shiftSummary.innerHTML = '';
+  const now = new Date();
+  state.staffs.forEach(s=>{
+    const d = document.createElement('div');
+    const onNow = isNowWithinShift(s.shiftStart, s.shiftEnd, now);
+    d.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart || ''}〜${s.shiftEnd || ''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
+    shiftSummary.appendChild(d);
+  });
+}
+
+// check time inside shift
+function isNowWithinShift(start,end,dateObj){
+  if (!start || !end) return false;
+  const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
+  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
+  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
+  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
+  return dateObj >= sDate && dateObj <= eDate;
+}
+
+// order button activation rule
+function updateOrderButtonState(){
+  const now = new Date();
+  const anyAvailable = (state.staffs||[]).some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+  if (anyAvailable){ orderBtn.classList.remove('disabled'); globalStatus.textContent = '状況①：スタッフ対応可能です。注文できます。'; }
+  else { orderBtn.classList.add('disabled'); globalStatus.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）'; }
+}
+
+// render role view
+function renderRole(){
+  if (state.currentUser.role === 'guest'){ guestPanel.classList.remove('hidden'); staffLogin.classList.add('hidden'); staffPanel.classList.add('hidden'); }
+  else if (state.currentUser.role === 'staff'){ guestPanel.classList.add('hidden'); staffLogin.classList.add('hidden'); staffPanel.classList.remove('hidden');
+    const s = state.staffs.find(x=>x.id===state.currentUser.staffId);
+    if (s){ staffBadge.textContent = s.name; shiftStart.value = s.shiftStart || "09:00"; shiftEnd.value = s.shiftEnd || "17:00"; if (s.onShift) { shiftBtn.classList.add('on'); shiftBtn.classList.remove('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); } else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.add('on'); breakBtn.classList.remove('off'); } }
+  }
+}
+
+// modal utilities
+function showModal(m){ m.classList.remove('hidden'); }
+function hideModal(m){ m.classList.add('hidden'); }
+
+// ----------------- Pouring logic (new rules) -----------------
+function resetPouring(){
+  clearInterval(espInterval); clearInterval(milkInterval);
+  espInterval = null; milkInterval = null;
+  espPctVal = 0; milkPctVal = 0;
+  espBar.style.width = '0%'; espPct.textContent='0%';
+  milkBar.style.width = '0%'; milkPct.textContent='0%';
+  espDone = false; milkDone = false;
+  startEsp.disabled = false; startMilk.disabled = true;
+  // redraw latte cup base
+  resetLatteCanvas();
+}
+
+function resetLatteCanvas(){
+  latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
+  latteCtx.fillStyle = '#6b3b24';
+  latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill();
+}
+
+// helper for pour increment
+function startPouring(button, barElem, pctDisplayElem, onSuccessCallback, setPctVarRef){
+  // button: DOM button pressed
+  let pct = 0;
+  // increment loop: deterministic gradually increasing for UX
+  const interval = setInterval(()=>{
+    pct = Math.min(130, pct + Math.random()*4 + 1); // can reach >120
+    barElem.style.width = pct + '%';
+    pctDisplayElem.textContent = Math.round(pct) + '%';
+    if (pct >= 120){
+      // immediate fail
+      clearInterval(interval);
+      // flash fail
+      alert('注ぎ過ぎ！（120%）最初からやり直しになります');
+      // reset whole sequence
+      resetPouring();
+    }
+  }, 100);
+  return interval;
+}
+
+// Espresso
+startEsp.addEventListener('mousedown', ()=>{
+  if (espInterval) return;
+  startEsp.textContent='注ぎ中...';
+  espInterval = startPouring(startEsp, espBar, espPct, ()=>{}, 'espPctVal');
+});
+startEsp.addEventListener('mouseup', ()=>{
+  if (espInterval) { clearInterval(espInterval); espInterval = null; }
+  startEsp.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(espBar.style.width) || 0;
+  if (pct >= 98 && pct <= 100){
+    // success
+    espDone = true; playTone(523,0.12);
+    // render espresso layer on cup
+    latteCtx.fillStyle = '#5a2f1a';
+    latteCtx.fillRect(0,60,latteCanvas.width,60);
+    // allow milk
+    startMilk.disabled = false;
+    checkBothPours();
+  } else if (pct >= 120){
+    // already handled in interval
+  } else {
+    alert('合格ラインを外しました。最初からやり直しになります');
+    resetPouring();
+  }
+});
+startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
+startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
+
+// Milk
+startMilk.addEventListener('mousedown', ()=>{
+  if (milkInterval) return;
+  startMilk.textContent='注ぎ中...';
+  milkInterval = startPouring(startMilk, milkBar, milkPct, ()=>{}, 'milkPctVal');
+});
+startMilk.addEventListener('mouseup', ()=>{
+  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
+  startMilk.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(milkBar.style.width) || 0;
+  if (pct >= 98 && pct <= 100){
+    milkDone = true; playTone(660,0.12);
+    // draw milk top
+    latteCtx.fillStyle = '#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill();
+    checkBothPours();
+  } else if (pct >= 120){
+    // handled
+  } else {
+    alert('ミルクの合格ラインを外しました。最初からやり直しになります');
+    resetPouring();
+  }
+});
+startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
+startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
+
+// check when both done -> enable art-only flow
+function checkBothPours(){
+  if (espDone && milkDone){
+    // switch UI: hide pour controls, show art-only notice and enable saveArt
+    artOnlyNotice.classList.remove('hidden');
+    // artLayer is already active: allow drawing and enable save after drawing
+    saveArt.disabled = false;
+    // visually disable pour controls
+    startEsp.disabled = true; startMilk.disabled = true;
+  }
+}
+
+// --- Art drawing on artLayer only ---
+function art_getPos(e, canvas){
+  const r = canvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : null;
+  const x = (t ? t.clientX : e.clientX) - r.left;
+  const y = (t ? t.clientY : e.clientY) - r.top;
+  return { x: x * (canvas.width / r.width), y: y * (canvas.height / r.height) };
+}
+artLayer.addEventListener('mousedown',(e)=>{ artDrawing=true; artLast = art_getPos(e, artLayer); });
+artLayer.addEventListener('mousemove',(e)=>{ if (!artDrawing) return; const p = art_getPos(e, artLayer); drawArtStroke(artLast, p); artLast = p; });
+artLayer.addEventListener('mouseup', ()=> { artDrawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
+artLayer.addEventListener('mouseleave', ()=> { artDrawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
+artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artDrawing=true; artLast = art_getPos(e, artLayer); });
+artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); if(!artDrawing) return; const p = art_getPos(e, artLayer); drawArtStroke(artLast,p); artLast=p; });
+artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artDrawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
+
+function drawArtStroke(from, to){
+  const size = parseInt(penSize.value,10);
+  const mode = penMode.value;
+  if (mode === 'draw'){
+    artLayerCtx.globalCompositeOperation = 'source-over';
+    artLayerCtx.strokeStyle = '#ffffff';
+    artLayerCtx.lineWidth = size;
+  } else {
+    // eraser should erase only white strokes: simply use destination-out on layer which only contains white strokes
+    artLayerCtx.globalCompositeOperation = 'destination-out';
+    artLayerCtx.lineWidth = size;
+  }
+  artLayerCtx.beginPath(); artLayerCtx.moveTo(from.x, from.y); artLayerCtx.lineTo(to.x, to.y); artLayerCtx.stroke();
+}
+
+clearArt.addEventListener('click', ()=> { initArtLayer(); initArtBg(); artOnlyNotice.classList.add('hidden'); saveArt.disabled = false; });
+
+// when saveArt -> composite artLayer onto latteCanvas and lock art, then enable card panel
+saveArt.addEventListener('click', async ()=>{
+  // composite: draw artBg then artLayer scaled to latteCanvas size
+  const tmp = document.createElement('canvas'); tmp.width=latteCanvas.width; tmp.height=latteCanvas.height;
+  const tctx = tmp.getContext('2d');
+  // draw brown base (simulate same as artBg)
+  tctx.fillStyle = '#6b3b24'; tctx.beginPath(); tctx.arc(60,60,58,0,Math.PI*2); tctx.fill();
+  // draw artLayer scaled
+  tctx.drawImage(artLayer, 0, 0, tmp.width, tmp.height);
+  // paint onto latteCanvas (used later for served image)
+  latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
+  latteCtx.drawImage(tmp,0,0);
+  // lock art drawing (optional)
+  saveArt.disabled = true;
+  artOnlyNotice.classList.add('hidden');
+  // enable card writing
+  saveCard.disabled = false;
+  alert('アートを保存しました。次にメッセージカードを書いてください（手書き）。');
+});
+
+// --- Card drawing (handwritten messages) ---
+function card_getPos(e){
+  const r = cardCanvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : null;
+  const x = (t ? t.clientX : e.clientX) - r.left;
+  const y = (t ? t.clientY : e.clientY) - r.top;
+  return { x: x * (cardCanvas.width / r.width), y: y * (cardCanvas.height / r.height) };
+}
+cardCanvas.addEventListener('mousedown', (e)=>{ cardDrawing=true; cardLast = card_getPos(e); });
+cardCanvas.addEventListener('mousemove', (e)=>{ if(!cardDrawing) return; const p=card_getPos(e); drawCardStroke(cardLast,p); cardLast=p; });
+cardCanvas.addEventListener('mouseup', ()=> { cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
+cardCanvas.addEventListener('mouseleave', ()=> { cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
+cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardDrawing=true; cardLast=card_getPos(e); });
+cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); if(!cardDrawing) return; const p=card_getPos(e); drawCardStroke(cardLast,p); cardLast=p; });
+cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
+
+function drawCardStroke(from, to){
+  const size = parseInt(cardSize.value,10);
+  const mode = cardMode.value;
+  if (mode === 'draw'){
+    cardCtx.globalCompositeOperation = 'source-over';
+    cardCtx.strokeStyle = '#000'; // black text
+    cardCtx.lineWidth = size;
+  } else {
+    cardCtx.globalCompositeOperation = 'destination-out';
+    cardCtx.lineWidth = size;
+  }
+  cardCtx.beginPath(); cardCtx.moveTo(from.x, from.y); cardCtx.lineTo(to.x, to.y); cardCtx.stroke();
+}
+clearCard.addEventListener('click', ()=> initCardCanvas());
+
+saveCard.addEventListener('click', ()=>{
+  // mark card saved
+  saveCard.disabled = true;
+  completeMake.disabled = false;
+  alert('カードを保存しました。提供ボタンを押せます。');
+});
+
+// completeMake: produce served image, upload, and set order state delivered
+completeMake.addEventListener('click', async ()=>{
+  if (!currentMakingOrderId) return;
+  const orderId = currentMakingOrderId;
+  // compose served image: blank background, cup (latteCanvas scaled) and card drawn
+  const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600;
+  const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
+  // cup draw (scaled)
+  tctx.drawImage(latteCanvas, 180,120,240,240);
+  // card draw
+  tctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin').trim() || '#fff2e6';
+  tctx.fillRect(160,380,280,120);
+  tctx.drawImage(cardCanvas, 170,390,260,100);
+  const dataUrl = tmp.toDataURL('image/png');
+
+  try {
+    const sRef = storageRef(storage, `served_images/${orderId}.png`);
+    await uploadString(sRef, dataUrl, 'data_url');
+    const url = await getDownloadURL(sRef);
+    await updateDoc(doc(db,'orders',orderId), { state:'delivered', artDataUrl: latteCanvas.toDataURL(), cardDataUrl: cardCanvas.toDataURL(), servedImageUrl: url, deliveredAt: Date.now() });
+    hideModal(modalMakeLatte);
+    currentMakingOrderId = null;
+    alert('提供しました（クラウド保存）');
+    // stop cook bgm
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
+    // schedule deletion of order after 5 minutes
+    setTimeout(async ()=>{ try{ await deleteDoc(doc(db,'orders',orderId)); } catch(e){} }, 5*60*1000);
+  } catch(e){
+    console.warn('completeMake upload failed', e);
+    // fallback local update
     const o = state.orders.find(x=>x.id===orderId);
-    if (!o || !(o.state==='delivered' || o.state==='served')) return;
-    servedImage.src = o.servedImageUrl || o.servedImage || o.artDataUrl || makePlaceholder('Cafe Latte');
-    servedCard.innerHTML = `<div style="font-size:14px;white-space:pre-wrap;">${escapeHtml(o.cardData || '')}</div>`;
-    showModal(modalEat);
-    let clicks = 0;
-    eatNext.onclick = ()=> {
-      clicks++;
-      if (clicks === 1){ servedImage.style.filter = 'grayscale(20%)'; playTone(440,0.12); }
-      else if (clicks === 2){ servedImage.style.filter = 'grayscale(50%)'; playTone(330,0.12); }
-      else { servedImage.style.filter = 'grayscale(100%)'; eatNext.disabled = true; }
-    };
-    saveImageBtn.onclick = ()=> { const a = document.createElement('a'); a.href = servedImage.src; a.download = `served_${o.id}.png`; a.click(); };
-    homeFromEat.onclick = ()=> hideModal(modalEat);
+    if (o){ o.state='delivered'; o.servedImage = dataUrl; o.artData = latteCanvas.toDataURL(); o.cardData = cardCanvas.toDataURL(); }
+    hideModal(modalMakeLatte);
+    currentMakingOrderId = null;
+    alert('提供しました（ローカル）。クラウド同期に失敗しました。');
+    setTimeout(()=>{ const idx = state.orders.findIndex(x=>x.id===orderId); if (idx!==-1) state.orders.splice(idx,1); renderOrderLists(); }, 5*60*1000);
   }
+});
 
-  // テキスト折返し
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight){
-    const words = text.split(' ');
-    let line = '';
-    for (let n=0;n<words.length;n++){
-      const testLine = line + words[n] + ' ';
-      const metrics = ctx.measureText(testLine);
-      const testWidth = metrics.width;
-      if (testWidth > maxWidth && n > 0){ ctx.fillText(line, x, y); line = words[n] + ' '; y += lineHeight; }
-      else { line = testLine; }
+// cancel make
+cancelMake.addEventListener('click', ()=>{ if (confirm('制作を中止しますか？')){ hideModal(modalMakeLatte); currentMakingOrderId=null; renderOrderLists(); } });
+
+// open make modal for staff to perform creation (invoked when staff presses "提供" or when assigned staff picks)
+let currentMakingOrderId = null;
+function openMakeModal(order){
+  currentMakingOrderId = order.id;
+  makerName.textContent = order.assignedToName || order.assignedTo || '';
+  // reset flows
+  resetLatteCanvas();
+  initArtBg(); initArtLayer();
+  initCardCanvas();
+  resetPouring();
+  saveArt.disabled = true; saveCard.disabled = true; completeMake.disabled = true;
+  showModal(modalMakeLatte);
+}
+
+// show served to customer
+function showServed(orderId){
+  const o = state.orders.find(x=>x.id===orderId);
+  if (!o) return;
+  servedImage.src = o.servedImageUrl || o.servedImage || o.artDataUrl || makePlaceholder('Cafe Latte');
+  servedCard.innerHTML = `<div style="font-size:14px;white-space:pre-wrap;">${o.cardData || ''}</div>`;
+  showModal(modalEat);
+  let clicks=0;
+  eatNext.onclick = ()=>{
+    clicks++;
+    if (clicks===1){ servedImage.style.filter='grayscale(20%)'; try{ audioRate.currentTime=0; audioRate.play(); } catch(e){}; }
+    else if (clicks===2){ servedImage.style.filter='grayscale(50%)'; try{ audioRate.currentTime=0; audioRate.play(); } catch(e){}; }
+    else { servedImage.style.filter='grayscale(100%)'; eatNext.disabled=true; }
+  };
+  saveImageBtn.onclick = ()=> { const a=document.createElement('a'); a.href = servedImage.src; a.download = `served_${o.id}.png`; a.click(); };
+  homeFromEat.onclick = ()=> hideModal(modalEat);
+}
+
+// ----------------- Customer order status overlay (real-time) -----------------
+function showClientStatusOverlay(text){
+  orderStatusCard.textContent = text;
+  orderStatusOverlay.classList.remove('hidden');
+}
+function hideClientStatusOverlay(){ orderStatusOverlay.classList.add('hidden'); }
+
+function updateClientOverlay(){
+  if (!state.currentOrderIdForClient) return;
+  const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
+  if (!o) return;
+  // states mapping
+  if (o.state === 'waiting'){
+    orderStatusCard.innerHTML = `<div>注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div><div style="margin-top:12px;font-size:30px">現在対応待ち中</div>`;
+    orderStatusOverlay.classList.remove('hidden');
+  } else if (o.state === 'inprogress'){
+    orderStatusCard.innerHTML = `<div>注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div><div style="margin-top:12px;font-size:30px">現在調理中…</div>`;
+    orderStatusOverlay.classList.remove('hidden');
+    // start cook bgm for this client
+    try{ audioCookbgm.currentTime = 0; audioCookbgm.play(); } catch(e){}
+  } else if (o.state === 'done' || o.state === 'delivered'){
+    orderStatusCard.innerHTML = `<div>注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div><div style="margin-top:12px;font-size:30px">只今、運搬中</div>`;
+    orderStatusOverlay.classList.remove('hidden');
+    // after delivered, hide overlay and let user view served when ready
+    if (o.state === 'delivered'){
+      // show served button or auto open modal? We'll auto-hide after brief moment
+      setTimeout(()=>{ hideClientStatusOverlay(); }, 3000);
     }
-    ctx.fillText(line, x, y);
+  } else if (o.state === 'cancelled'){
+    orderStatusCard.innerHTML = `<div>注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div><div style="margin-top:12px;font-size:30px">スタッフの応答がないため現在注文を取り消しになります</div>`;
+    orderStatusOverlay.classList.remove('hidden');
+    // after 10s go home and clear client current order
+    setTimeout(()=>{ hideClientStatusOverlay(); state.currentOrderIdForClient = null; }, 10000);
   }
+}
 
-  // シフト表示・ボタン活性化
-  function updateShiftSummary(){
-    if (!state.staffs || state.staffs.length === 0){ shiftSummary.textContent = 'スタッフが誰もいません'; return; }
-    shiftSummary.innerHTML = '';
-    const now = new Date();
-    state.staffs.forEach(s=>{
-      const d = document.createElement('div');
-      const onNow = isNowWithinShift(s.shiftStart, s.shiftEnd, now);
-      d.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart || ''}〜${s.shiftEnd || ''} ${s.onShift?'<span style="color:green">OK</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
-      shiftSummary.appendChild(d);
-    });
-  }
+// If client closes overlay, reset currentOrderId? Not required; overlay handled by order state changes.
 
-  function isNowWithinShift(start, end, dateObj){
-    if (!start || !end) return false;
-    const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
-    const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
-    const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
-    if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
-    return dateObj >= sDate && dateObj <= eDate;
-  }
+// small tone generator fallback
+function playTone(freq=440,duration=0.12){ try{ const ctx = new (window.AudioContext || window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value = freq; o.connect(g); g.connect(ctx.destination); g.gain.value = 0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, duration*1000); } catch(e){} }
 
-  function updateOrderButtonState(){
-    const now = new Date();
-    const anyAvailable = (state.staffs||[]).some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-    if (anyAvailable){ orderBtn.classList.remove('disabled'); globalStatus.textContent = '状況①：スタッフ対応可能です。注文できます。'; }
-    else { orderBtn.classList.add('disabled'); globalStatus.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）'; }
-  }
+// initial role render
+renderRole();
 
-  function renderRole(){
-    if (state.currentUser.role === 'guest'){ guestPanel.classList.remove('hidden'); staffLogin.classList.add('hidden'); staffPanel.classList.add('hidden'); }
-    else if (state.currentUser.role === 'staff'){ guestPanel.classList.add('hidden'); staffLogin.classList.add('hidden'); staffPanel.classList.remove('hidden');
-      const s = state.staffs.find(x=>x.id===state.currentUser.staffId); if (s){ staffBadge.textContent = s.name; shiftStart.value=s.shiftStart||"09:00"; shiftEnd.value=s.shiftEnd||"17:00"; onShiftCheck.checked=!!s.onShift; breakCheck.checked=!!s.breaking; }
+// schedule deletion of cancelled/delivered orders from snapshots (client-side best-effort)
+function postProcessOrders(){
+  (state.orders || []).forEach(o=>{
+    if (!o) return;
+    if (o.state === 'cancelled'){
+      // ensure deletion after 10s
+      setTimeout(async ()=>{ try{ await deleteDoc(doc(db,'orders',o.id)); } catch(e){} }, 10000);
+    } else if (o.state === 'delivered'){
+      // delete after 5 minutes
+      setTimeout(async ()=>{ try{ await deleteDoc(doc(db,'orders',o.id)); } catch(e){} }, 5*60*1000);
     }
-  }
+  });
+}
 
-  // 音
-  function playTone(freq=440,duration=0.15){ try { const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, duration*1000); } catch(e){ console.warn('Audio not available', e); } }
+// Hook into rendering to call postProcessOrders lightly
+setInterval(()=>{ postProcessOrders(); }, 15000);
 
-  // placeholder generator for thumbnails
-  function generateLatteThumb(){ return makePlaceholder('Cafe Latte'); }
+// Helper: schedule timeouts for local-only created orders already done in scheduleOrderTimeout
 
-  // 初回メニュービルド（画面読み込み時は非表示のモーダルなので遅延ビルドでも OK）
-  // ただしユーザーからの操作でメニューを開くたびに最新画像を試行読み込みする
-  // （既定の画像が GitHub raw で存在すればそれを表示）
-  // ----- 初期化 -----
-  renderRole();
-  // preload menu thumbnails minimum for UX
-  buildMenu().catch(()=>{/*ignore*/});
+// finally: expose some functions for debugging (optional)
+window.__reiji = { state, getAssetUrl };
 
-  // schedule existing orders expiry for local fallback
-  (function scheduleExistingOrderTimeouts(){
-    (state.orders||[]).forEach(o=>{ if (o.state==='waiting' && o.expiresAt) scheduleOrderTimeout(o); });
-  })();
+// Hide modal helper
+function hideAllModals(){ hideModal(modalName); hideModal(modalMenu); hideModal(modalMakeLatte); hideModal(modalEat); }
 
-  // Expose something to global for debugging (optional)
-  window.__reiji_state = state;
-
+// renderOrderLists invoked by snapshots; ensure updateClientOverlay called after
 </script>
 </body>
 </html>
