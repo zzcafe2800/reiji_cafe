@@ -313,11 +313,11 @@
   const db = getFirestore(app);
   const storage = getStorage(app);
 
-  // anonymous sign-in (便利のため)
+  // Try anonymous sign-in; if it fails, warn and continue (app still works with local fallback)
   signInAnonymously(auth).then(()=> {
     console.log('Signed in anonymously to Firebase');
   }).catch(err => {
-    console.warn('Anonymous sign-in failed', err);
+    console.warn('Anonymous sign-in failed (check Firebase auth settings):', err);
   });
 
   // Collections
@@ -331,7 +331,7 @@
     currentUser: {role:"guest", staffId:null}
   };
 
-  // DOM references (同じものを前のプロトタイプ���共有)
+  // DOM refs
   const nowtime = document.getElementById('nowtime');
   const orderBtn = document.getElementById('orderBtn');
   const staffPass = document.getElementById('staffPass');
@@ -387,14 +387,11 @@
   const completeMake = document.getElementById('completeMake');
   const cancelMake = document.getElementById('cancelMake');
 
-  const staffOrderListDiv = document.getElementById('staffOrderList');
-
   const servedImage = document.getElementById('servedImage');
   const servedCard = document.getElementById('servedCard');
   const saveImageBtn = document.getElementById('saveImageBtn');
   const homeFromEat = document.getElementById('homeFromEat');
   const eatNext = document.getElementById('eatNext');
-  const eatSoundInfo = document.getElementById('eatSoundInfo');
 
   const latteCanvas = document.getElementById('latteCanvas');
   const latteCtx = latteCanvas.getContext('2d');
@@ -407,13 +404,33 @@
   function fmtTime(d){ return d.toLocaleTimeString(); }
   function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
+  // ---------- ここで updateGlobalStatusText を定義（renderOrderLists で使用） ----------
+  function updateGlobalStatusText(){
+    const now = new Date();
+    const lines = [];
+    (state.staffs || []).forEach(s=>{
+      if (s && s.onShift && !s.breaking && isNowWithinShift(s.shiftStart, s.shiftEnd, now)){
+        lines.push(`${s.name} がシフト中 (${s.shiftStart}〜${s.shiftEnd})`);
+      }
+    });
+    if (lines.length > 0){
+      globalStatus.textContent = '状況①：' + lines.join(' / ');
+    } else {
+      // デフォルトのメッセージは updateOrderButtonState へ委ねるが、ここでも補完
+      const anyAvailable = (state.staffs || []).some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+      if (anyAvailable){
+        globalStatus.textContent = '状況①：スタッフ対応可能です。中央の注文ボタンを押してください。';
+      } else {
+        globalStatus.textContent = '状況①：現在、スタッフ対応不可（シフト外または休憩中）';
+      }
+    }
+  }
+
   // --- Firestore realtime listeners ---
-  // Listen to staffs collection
   try {
     const qStaffs = query(staffsCol, orderBy('createdAt','asc'));
     onSnapshot(qStaffs, snapshot => {
       state.staffs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // normalize booleans / fields that may be missing
       state.staffs.forEach(s => {
         s.onShift = !!s.onShift;
         s.breaking = !!s.breaking;
@@ -430,15 +447,10 @@
     console.warn('Could not attach staffs snapshot', e);
   }
 
-  // Listen to orders collection
   try {
     const qOrders = query(ordersCol, orderBy('createdAt','asc'));
     onSnapshot(qOrders, snapshot => {
       state.orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // ensure numeric timestamps where applicable
-      state.orders.forEach(o => {
-        // expiresAt might be stored as number; normalize
-      });
       renderOrderLists();
     }, err => {
       console.warn('orders onSnapshot error', err);
@@ -469,7 +481,6 @@
   enterStaff.addEventListener('click', async ()=>{
     const name = staffNameInput.value.trim();
     if (!name){ alert('名前を入れてください'); return; }
-    // create staff doc in Firestore
     try {
       const docRef = await addDoc(staffsCol, {
         name,
@@ -479,18 +490,15 @@
         breaking: false,
         createdAt: Date.now()
       });
-      // set current user to this staff
       state.currentUser.role = 'staff';
       state.currentUser.staffId = docRef.id;
       staffBadge.textContent = name;
-      // populate UI fields from local state (listener will update them)
       staffLogin.classList.add('hidden');
       staffPanel.classList.remove('hidden');
       renderRole();
-      alert('スタッフとして入室しました（リアルタイム同期中）');
+      alert('スタッフとして入室しました（リアルタイム同期）');
     } catch(err){
       console.warn('Failed to create staff on Firestore, falling back to local-only', err);
-      // fallback local-only (not recommended)
       const s = { id: uid('s'), name, shiftStart:"09:00", shiftEnd:"17:00", onShift:false, breaking:false, createdAt: Date.now() };
       state.staffs.push(s);
       state.currentUser.role = 'staff';
@@ -505,11 +513,9 @@
   logoutStaff.addEventListener('click', async ()=>{
     const id = state.currentUser.staffId;
     if (id){
-      // remove staff document
       try {
         await deleteDoc(doc(db, 'staffs', id));
       } catch(e){
-        // if delete fails (e.g., no permission), remove locally
         state.staffs = state.staffs.filter(s=>s.id!==id);
       }
       state.currentUser = {role:'guest', staffId:null};
@@ -522,15 +528,15 @@
   saveShift.addEventListener('click', async ()=>{
     const id = state.currentUser.staffId;
     if (!id) return;
-    const s = state.staffs.find(x=>x.id===id);
-    const newStart = shiftStart.value || s.shiftStart;
-    const newEnd = shiftEnd.value || s.shiftEnd;
+    const newStart = shiftStart.value || "09:00";
+    const newEnd = shiftEnd.value || "17:00";
     try {
       await updateDoc(doc(db,'staffs',id), { shiftStart: newStart, shiftEnd: newEnd });
       alert('シフトを保存しました（クラウド同期）');
     } catch(e){
       console.warn('Shift save failed', e);
-      s.shiftStart = newStart; s.shiftEnd = newEnd;
+      const s = state.staffs.find(x=>x.id===id);
+      if (s){ s.shiftStart=newStart; s.shiftEnd=newEnd; }
       alert('シフトをローカル保存しました（クラウド同期失敗）');
     }
     updateShiftSummary();
@@ -538,26 +544,24 @@
 
   onShiftCheck.addEventListener('change', async ()=>{
     const id = state.currentUser.staffId; if(!id) return;
-    const s = state.staffs.find(x=>x.id===id);
     const val = onShiftCheck.checked;
     try {
       await updateDoc(doc(db,'staffs',id), { onShift: val });
     } catch(e){
       console.warn('onShift update failed', e);
-      s.onShift = val;
+      const s = state.staffs.find(x=>x.id===id); if (s) s.onShift = val;
     }
     updateShiftSummary();
   });
 
   breakCheck.addEventListener('change', async ()=>{
     const id = state.currentUser.staffId; if(!id) return;
-    const s = state.staffs.find(x=>x.id===id);
     const val = breakCheck.checked;
     try {
       await updateDoc(doc(db,'staffs',id), { breaking: val });
     } catch(e){
       console.warn('breaking update failed', e);
-      s.breaking = val;
+      const s = state.staffs.find(x=>x.id===id); if (s) s.breaking = val;
     }
     updateShiftSummary();
   });
@@ -584,14 +588,13 @@
     const createdAt = Date.now();
     const expiresAt = createdAt + 5*60*1000;
     const orderObj = {
-      name, item:'latte', state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artData:null, cardData:null, servedImageUrl:null
+      name, item:'latte', state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artDataUrl:null, cardData:null, servedImageUrl:null
     };
     try {
       await addDoc(ordersCol, orderObj);
       playTone(880,0.12);
     } catch(e){
       console.warn('Failed to add order to Firestore', e);
-      // fallback local-only
       orderObj.id = uid('o');
       state.orders.push(orderObj);
       scheduleOrderTimeout(orderObj);
@@ -600,12 +603,10 @@
     }
   });
 
-  // Timeout scheduling for local-only orders (Firestore orders rely on onSnapshot to reflect expiry if you implement a backend job)
   function scheduleOrderTimeout(order){
-    const remaining = order.expiresAt - Date.now();
+    const remaining = (order.expiresAt || 0) - Date.now();
     if (remaining <= 0){ cancelOrder(order.id, "スタッフの応答がないため現在注文を取り消しになります"); return; }
     setTimeout(async ()=>{
-      // fetch latest order doc
       try {
         const docRef = doc(db,'orders', order.id);
         const snap = await getDoc(docRef);
@@ -616,7 +617,6 @@
           }
         }
       } catch(e){
-        // fallback local removal
         const idx = state.orders.findIndex(o=>o.id===order.id);
         if (idx !== -1 && state.orders[idx].state === 'waiting'){
           cancelOrder(order.id, "スタッフの応答がないため現在注文を取り消しになります");
@@ -626,11 +626,9 @@
   }
 
   async function cancelOrder(orderId, reason){
-    // try to update Firestore
     try {
       await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason: reason });
     } catch(e){
-      // remove locally
       const idx = state.orders.findIndex(o=>o.id===orderId);
       if (idx !== -1) state.orders.splice(idx,1);
     }
@@ -638,7 +636,6 @@
     renderOrderLists();
   }
 
-  // Assign order to current staff
   async function assignOrderToCurrentStaff(orderId){
     const staffId = state.currentUser.staffId;
     if (!staffId){ alert('スタッフとしてログインしてください'); return; }
@@ -655,32 +652,33 @@
     renderOrderLists();
   }
 
-  // render lists (uses state from Firestore snapshots)
   function renderOrderLists(){
     staffOrderList.innerHTML = '';
-    state.orders.slice().forEach(o=>{
-      if (o.state === 'cancelled') return;
-      const div = document.createElement('div'); div.className='order-item';
-      const left = document.createElement('div');
-      left.innerHTML = `<strong>${o.name}</strong><div class="small-info">${o.item} - 状態:${o.state} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
-      const right = document.createElement('div');
-      if (o.state === 'waiting'){
-        const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
-        btn.onclick = ()=> { assignOrderToCurrentStaff(o.id); };
-        right.appendChild(btn);
-      } else if (o.state === 'inprogress'){
-        right.innerHTML = `<div class="small-info">担当:${o.assignedToName || o.assignedTo}</div>`;
-      } else if (o.state === 'delivered' || o.state === 'served'){
-        // do not show in staff list (but keep for customers)
-        return;
+    (state.orders || []).slice().forEach(o=>{
+      if (!o || o.state === 'cancelled') return;
+      if (o.state === 'delivered' || o.state === 'served') {
+        // do not show delivered in staff list
+      } else {
+        const div = document.createElement('div'); div.className='order-item';
+        const left = document.createElement('div');
+        left.innerHTML = `<strong>${o.name}</strong><div class="small-info">${o.item} - 状態:${o.state} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+        const right = document.createElement('div');
+        if (o.state === 'waiting'){
+          const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
+          btn.onclick = ()=> { assignOrderToCurrentStaff(o.id); };
+          right.appendChild(btn);
+        } else if (o.state === 'inprogress'){
+          right.innerHTML = `<div class="small-info">担当:${o.assignedToName || o.assignedTo}</div>`;
+        } else if (o.state === 'done'){
+          right.innerHTML = `<div class="small-info">運搬中</div>`;
+        }
+        div.appendChild(left); div.appendChild(right);
+        staffOrderList.appendChild(div);
       }
-      div.appendChild(left); div.appendChild(right);
-      staffOrderList.appendChild(div);
     });
 
-    // customerOrders: show delivered items
     customerOrders.innerHTML = '';
-    state.orders.filter(o=>o.state==='delivered' || o.state==='served').forEach(o=>{
+    (state.orders || []).filter(o=>o.state==='delivered' || o.state==='served').forEach(o=>{
       const div = document.createElement('div'); div.className='order-item';
       div.innerHTML = `<strong>${o.name}</strong> ${o.item} が提供されました`;
       const btn = document.createElement('button'); btn.textContent='見る'; btn.className='small'; btn.onclick = ()=> showServed(o.id);
@@ -691,7 +689,6 @@
     updateGlobalStatusText();
   }
 
-  // Open make modal using latest order data
   let currentMakingOrderId = null;
   function openMakeModal(order){
     currentMakingOrderId = order.id;
@@ -706,7 +703,6 @@
     modalMakeLatte.classList.remove('hidden');
   }
 
-  // Latte drawing and art (same as previous implementation)
   function resetLatteCanvas(){
     const ctx = latteCtx;
     ctx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
@@ -838,35 +834,24 @@
     completeMake.disabled = false;
   });
 
-  // Provide (complete) order: upload image to Storage and update Firestore order doc
   completeMake.addEventListener('click', async ()=>{
     if (!currentMakingOrderId) return;
     const orderId = currentMakingOrderId;
-    const order = state.orders.find(o=>o.id===orderId);
-    if (!order) return;
-
-    // compose served image
     const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600;
     const tctx = tmp.getContext('2d');
     tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-    // draw cup (scaled)
     tctx.drawImage(latteCanvas, 240,120,120*2,120*2);
-    // draw message card background and text
     tctx.fillStyle = '#fff2e6'; tctx.fillRect(80,380,440,160);
     tctx.fillStyle = '#000';
     tctx.font = '22px sans-serif';
     wrapText(tctx, messageCard.value, 100,410,400,28);
-
     const dataUrl = tmp.toDataURL('image/png');
 
-    // upload to Storage
     try {
       const path = `served_images/${orderId}.png`;
       const sRef = storageRef(storage, path);
-      // upload base64 data URL
       await uploadString(sRef, dataUrl, 'data_url');
       const url = await getDownloadURL(sRef);
-      // update order doc
       await updateDoc(doc(db,'orders',orderId), {
         state: 'delivered',
         artDataUrl: artCanvas.toDataURL(),
@@ -880,7 +865,7 @@
       alert('提供しました（クラウドに保存・配信されました）');
     } catch(e){
       console.warn('Upload/update failed, trying local fallback', e);
-      // fallback local: save to order.servedImage (dataUrl) and set state delivered locally then try to update Firestore later
+      const order = state.orders.find(o=>o.id===orderId);
       if (order) {
         order.artData = artCanvas.toDataURL();
         order.cardData = messageCard.value;
@@ -898,7 +883,6 @@
     if (confirm('制作を中止していいですか？')){ modalMakeLatte.classList.add('hidden'); currentMakingOrderId=null; renderOrderLists(); }
   });
 
-  // Customer view: show served
   function showServed(orderId){
     const o = state.orders.find(x=>x.id===orderId);
     if (!o || !(o.state === 'delivered' || o.state === 'served')) return;
@@ -926,7 +910,6 @@
     homeFromEat.onclick = ()=> { modalEat.classList.add('hidden'); };
   }
 
-  // Wrap text util
   function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
     let line = '';
@@ -973,7 +956,7 @@
 
   function updateOrderButtonState(){
     const now = new Date();
-    const anyAvailable = state.staffs.some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now) );
+    const anyAvailable = (state.staffs || []).some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now) );
     if (anyAvailable){
       orderBtn.classList.remove('disabled');
       globalStatus.textContent = '状況①：スタッフ対応可能です。中央の注文ボタンを押してください。';
@@ -993,7 +976,6 @@
       staffLogin.classList.add('hidden');
       staffPanel.classList.remove('hidden');
 
-      // populate fields from state
       const s = state.staffs.find(x=>x.id===state.currentUser.staffId);
       if (s){
         staffBadge.textContent = s.name;
@@ -1005,7 +987,6 @@
     }
   }
 
-  // simple tone generator
   function playTone(freq=440,duration=0.15){
     try{
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1033,12 +1014,9 @@
   initArtCanvas();
   resetLatteCanvas();
 
-  // Expose assign function for UI buttons (bound earlier)
-  // Note: staffOrderList rendering uses assignOrderToCurrentStaff closure
-  // No-op extra: try to set local listeners for Firestore-created docs (timeouts)
-  // For orders created from Firestore we cannot schedule timeouts client-side reliably unless we also store expiresAt; we stored earlier as client-side number when creating orders.
+  // スナップショットで受け取った既存の waiting/orders に対して、ローカルタイマーを設定（expiresAt を使う）
   (function scheduleExistingOrderTimeouts(){
-    state.orders.forEach(o=>{
+    (state.orders || []).forEach(o=>{
       if (o.state === 'waiting' && o.expiresAt) scheduleOrderTimeout(o);
     });
   })();
