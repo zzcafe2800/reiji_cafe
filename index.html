@@ -911,17 +911,7 @@ async function showClientServed(order){
 }
 
 /* replay helper (same as used earlier) */
-function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx){
-  if (!strokes || !strokes.length) return;
-  for (const s of strokes){
-    ctx.beginPath(); ctx.lineWidth = s.width || 3;
-    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; if (canvasEl === artLayer || canvasEl === servedArtMini) ctx.strokeStyle = '#ffffff'; else ctx.strokeStyle = '#000'; }
-    else { ctx.globalCompositeOperation='destination-out'; }
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const den = denormPoint(p, canvasEl); if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y); }
-    ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
-  }
-}
+
 
 /* preload rate sequence */
 async function preloadRateSequence(basePath, maxCount=6){
