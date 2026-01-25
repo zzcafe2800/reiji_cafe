@@ -660,7 +660,7 @@ async function assignOrderToCurrentStaff(orderId){
 function normPointInCanvas(pt, canvas){
   return { x: pt.x / canvas.width, y: pt.y / canvas.height };
 }
-
+function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
 
 /* art canvas initialization */
 function initArtCanvas(){
@@ -955,7 +955,7 @@ function replayStrokesOnCanvas(strokes, canvasEl, ctx){
 }
 
 /* helper denorm and norm (used earlier) */
-function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+
 function normPoint(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
 
 /* completeMake handler */
@@ -1198,7 +1198,7 @@ window.__reiji = { state, openMakeModalFromOrderId };
 /* Initial setup */
 buildMenu().catch(()=>{});
 initArtCanvas(); initCardCanvas();
-function initArtCanvas(){ artBgCtx.clearRect(0,0,artBg.width,artBg.height); artBgCtx.fillStyle='#6b3b24'; artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill(); artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round'; }
+
 function initCardCanvas(){ cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6'; cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.lineCap='round'; cardCtx.lineJoin='round'; }
 
 /* Note:
