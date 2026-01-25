@@ -3,28 +3,24 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ 飲食疑似提供サイト（最新版）</title>
+<title>ゲームカフェ — 改良版（保存/提供の修正）</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
-    --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
-    --card-skin:#fff2e6;
+    --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c; --card-skin:#fff2e6;
   }
-  html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);-webkit-font-smoothing:antialiased;}
+  html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
   .container{max-width:1000px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid var(--accent);position:relative;min-height:720px;display:flex;flex-direction:column;}
   header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:var(--dark);}
   h1{margin:0;font-size:18px;}
-  .content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
-  /* Order button block */
+  .content{flex:1;display:flex;align-items:center;justify-content:center;padding:12px;}
   .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
   .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:22px 36px;border-radius:12px;font-size:34px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:420px;}
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
   .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
   .small-pass input{width:100px;padding:4px;}
-  /* guest footer small card */
   .guest-mini{position:fixed;right:12px;bottom:12px;background:var(--paper);padding:8px;border-radius:8px;border:1px solid #e6d6cc;font-size:13px;box-shadow:0 6px 12px rgba(0,0,0,0.08);}
-  /* staff full screen mode container */
   .staff-full{position:fixed;inset:0;background:linear-gradient(180deg,#fff8f2,#fff3ec);padding:18px;z-index:90;display:none;flex-direction:column;overflow:auto;}
   .staff-full.show{display:flex;}
   .staff-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
@@ -38,27 +34,22 @@
   .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
   .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;}
   img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
-  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:100;}
   .modal{background:#fff;padding:16px;border-radius:10px;width:760px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid var(--accent);}
   .art-area{position:relative;width:240px;height:240px;border-radius:6px;overflow:hidden;border:1px solid #d4c0b8;background:#b36e3c;}
   .art-area canvas{position:absolute;left:0;top:0;width:240px;height:240px;}
   .card-canvas{border:1px solid #e6d0c6;background:var(--card-skin);border-radius:8px;}
   .small-info{font-size:12px;color:var(--muted);}
-  .note-small{font-size:12px;color:#6b4;}
-  /* responsive adjustments */
+  .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;}
+  .status-card{width:80%;max-width:720px;background:rgba(255,255,255,0.98);padding:28px;border-radius:12px;border:4px solid var(--accent);text-align:center;font-size:26px;font-weight:700;}
+  .status-sub{font-size:14px;color:#444;margin-top:8px;}
   @media (max-width:600px){
     .order-btn{font-size:28px;padding:18px 28px;}
     .modal{width:94%;}
-    .modal .modal{width:94%;}
     .staff-body{flex-direction:column;}
     .staff-panel{max-height:none;}
     .guest-mini{right:8px;bottom:8px;font-size:12px;padding:6px;}
   }
-  /* order status overlay for clients */
-  .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;}
-  .status-card{width:80%;max-width:720px;background:rgba(255,255,255,0.98);padding:28px;border-radius:12px;border:4px solid var(--accent);text-align:center;font-size:26px;font-weight:700;}
-  .status-sub{font-size:14px;color:#444;margin-top:8px;}
-  .task-badge{font-size:12px;color:#fff;background:#c60;padding:4px 6px;border-radius:6px;margin-right:8px;}
 </style>
 </head>
 <body>
@@ -88,7 +79,7 @@
   </div>
 </div>
 
-<!-- Staff full screen (single screen when in staff mode) -->
+<!-- Staff full-screen UI -->
 <div id="staffFull" class="staff-full" aria-hidden="true">
   <div class="staff-top">
     <div>
@@ -114,30 +105,29 @@
   </div>
 
   <div class="staff-body">
-    <div class="staff-panel" style="flex:1;">
+    <div class="staff-panel">
       <strong>現在のシフト一覧</strong>
       <div id="shiftList" class="shift-list small-info" style="margin-top:8px">読み込み中…</div>
     </div>
 
-    <div class="staff-panel" style="flex:1;">
+    <div class="staff-panel">
       <strong>スタッフ用 注文一覧 <small id="pendingTasksSmall" class="small-info"></small></strong>
       <div id="staffOrderList" class="order-list" style="margin-top:8px">注文を待っています</div>
     </div>
   </div>
 </div>
 
-<!-- Order status overlay for client -->
-<div id="orderStatusOverlay" class="status-overlay" style="display:none;">
-  <div class="status-card" id="orderStatusCard">
-    状態
+<!-- Status overlay for client -->
+<div id="orderStatusOverlay" class="status-overlay">
+  <div class="status-card" id="orderStatusCard">状態
     <div class="status-sub" id="orderStatusSub">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
   </div>
 </div>
 
 <!-- Modals -->
-<div id="modalName" class="modal-back" style="display:none;">
+<div id="modalName" class="modal-back">
   <div class="modal">
-    <h3>注文者の名前を入力</h3>
+    <h3>名前を入力</h3>
     <input id="orderName" placeholder="名前を入力" />
     <div style="margin-top:10px;text-align:right;">
       <button id="cancelOrderName" class="small">キャンセル</button>
@@ -146,17 +136,16 @@
   </div>
 </div>
 
-<div id="modalMenu" class="modal-back" style="display:none;">
+<div id="modalMenu" class="modal-back">
   <div class="modal">
     <h3>メニューを選択</h3>
     <div class="menu-grid" id="menuGrid"></div>
-    <div style="margin-top:10px;text-align:right;">
-      <button id="backMenu" class="small">戻る</button>
-    </div>
+    <div style="margin-top:10px;text-align:right;"><button id="backMenu" class="small">戻る</button></div>
   </div>
 </div>
 
-<div id="modalMakeLatte" class="modal-back" style="display:none;">
+<!-- Make latte modal -->
+<div id="modalMakeLatte" class="modal-back">
   <div class="modal" style="width:95%;max-width:920px;">
     <h3>カフェラテ制作（担当：<span id="makerName"></span>）</h3>
     <div style="display:flex;flex-wrap:wrap;gap:12px;">
@@ -187,7 +176,7 @@
               </div>
               <div id="espPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
             </div>
-            <div class="small-info">合格ゾーン: 95%〜105%。120% で注ぎ過ぎ（失敗）。</div>
+            <div class="small-info">合格: 95%〜105%。120% は注ぎ過ぎ（失敗）。</div>
           </div>
         </div>
 
@@ -207,7 +196,7 @@
               </div>
               <div id="milkPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
             </div>
-            <div class="small-info">合格ゾーン: 95%〜105%。120% 到達で失敗。</div>
+            <div class="small-info">合格: 95%〜105%。120% 到達で失敗。</div>
           </div>
         </div>
       </div>
@@ -261,7 +250,7 @@
 </div>
 
 <!-- Eat modal -->
-<div id="modalEat" class="modal-back" style="display:none;">
+<div id="modalEat" class="modal-back">
   <div class="modal">
     <h3>飲食画面</h3>
     <div style="display:flex;gap:12px;">
@@ -289,15 +278,12 @@
 </div>
 
 <script type="module">
-/* Full updated JS implementing requested changes with minimal disruption */
-
-/* Firebase imports */
+/* --- Firebase setup --- */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-storage.js";
 
-/* Firebase config (unchanged) */
 const firebaseConfig = {
   apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
   authDomain: "reiji-cafr.firebaseapp.com",
@@ -311,28 +297,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
-signInAnonymously(auth).catch(e=>console.warn('匿名サインイン失敗', e));
+signInAnonymously(auth).catch(e=>console.warn('anon sign-in failed', e));
 
-/* DOM refs */
+/* --- DOM refs --- */
 const nowtime = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
 const staffPassInput = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
-const guestMini = document.getElementById('guestMini');
 const shiftShort = document.getElementById('shiftShort');
 const helperSmall = document.getElementById('helperSmall');
-const orderStatusOverlay = document.getElementById('orderStatusOverlay');
-const orderStatusCard = document.getElementById('orderStatusCard');
-const orderStatusSub = document.getElementById('orderStatusSub');
-
-const modalName = document.getElementById('modalName');
-const orderName = document.getElementById('orderName');
-const cancelOrderName = document.getElementById('cancelOrderName');
-const okOrderName = document.getElementById('okOrderName');
-const modalMenu = document.getElementById('modalMenu');
-const menuGrid = document.getElementById('menuGrid');
-const backMenu = document.getElementById('backMenu');
-
 const staffFull = document.getElementById('staffFull');
 const staffBadge = document.getElementById('staffBadge');
 const logoutStaff = document.getElementById('logoutStaff');
@@ -345,6 +318,14 @@ const shiftList = document.getElementById('shiftList');
 const staffOrderList = document.getElementById('staffOrderList');
 const pendingTasksSmall = document.getElementById('pendingTasksSmall');
 
+const modalName = document.getElementById('modalName');
+const orderName = document.getElementById('orderName');
+const cancelOrderName = document.getElementById('cancelOrderName');
+const okOrderName = document.getElementById('okOrderName');
+const modalMenu = document.getElementById('modalMenu');
+const menuGrid = document.getElementById('menuGrid');
+const backMenu = document.getElementById('backMenu');
+
 const modalMakeLatte = document.getElementById('modalMakeLatte');
 const makerName = document.getElementById('makerName');
 const startEsp = document.getElementById('startEsp');
@@ -353,6 +334,7 @@ const espPct = document.getElementById('espPct');
 const startMilk = document.getElementById('startMilk');
 const milkBar = document.getElementById('milkBar');
 const milkPct = document.getElementById('milkPct');
+
 const artBg = document.getElementById('artBg');
 const artLayer = document.getElementById('artLayer');
 const artBgCtx = artBg.getContext('2d');
@@ -361,12 +343,14 @@ const penMode = document.getElementById('penMode');
 const penSize = document.getElementById('penSize');
 const clearArt = document.getElementById('clearArt');
 const saveArt = document.getElementById('saveArt');
+
 const cardCanvas = document.getElementById('cardCanvas');
 const cardCtx = cardCanvas.getContext('2d');
 const cardMode = document.getElementById('cardMode');
 const cardSize = document.getElementById('cardSize');
 const clearCard = document.getElementById('clearCard');
 const saveCard = document.getElementById('saveCard');
+
 const taskStatusSmall = document.getElementById('taskStatusSmall');
 const completeMake = document.getElementById('completeMake');
 const cancelMake = document.getElementById('cancelMake');
@@ -378,665 +362,625 @@ const eatNext = document.getElementById('eatNext');
 const saveImageBtn = document.getElementById('saveImageBtn');
 const homeFromEat = document.getElementById('homeFromEat');
 
-/* assets (GitHub raw) */
-function getAssetUrl(path){
-  if (!path) return '';
-  if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
-  try { return new URL(path).href; } catch(e){ return path; }
-}
+const orderStatusOverlay = document.getElementById('orderStatusOverlay');
+const orderStatusCard = document.getElementById('orderStatusCard');
+const orderStatusSub = document.getElementById('orderStatusSub');
+
+/* --- assets --- */
+function getAssetUrl(path){ if (!path) return ''; if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1); try{ return new URL(path).href } catch(e){ return path; } }
 const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'));
 const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'));
 const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'));
 
-/* collections */
+/* --- collections --- */
 const staffsCol = collection(db,'staffs');
 const ordersCol = collection(db,'orders');
 
-/* local state */
-const state = { staffs: [], orders: [], currentUser: { role:'guest', staffId:null }, currentOrderIdForClient:null };
+/* --- local state --- */
+const state = { staffs: [], orders: [], currentUser: { role:'guest', staffId:null }, currentOrderIdForClient: null };
 
-/* utilities */
+/* --- utilities --- */
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function show(el){ if (!el) return; el.style.display = ''; }
 function hide(el){ if (!el) return; el.style.display = 'none'; }
 function showModal(m){ m.style.display = 'flex'; }
 function hideModal(m){ m.style.display = 'none'; }
-
-/* time UI */
 setInterval(()=> nowtime.textContent = new Date().toLocaleTimeString(), 1000);
 
-/* init small UI layout: right panel removed; we show small guest and shift text above order button */
-function renderGuestMini(){ document.getElementById('guestRole').innerHTML = `<strong>あなたは現在：客</strong>`; }
-
-/* Firestore realtime: staffs */
+/* --- Firestore realtime listeners --- */
 try {
   const qS = query(staffsCol, orderBy('createdAt','asc'));
-  onSnapshot(qS, async snap => {
-    // map docs
+  onSnapshot(qS, snap => {
     state.staffs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    // normalize
-    state.staffs.forEach(s => { s.onShift = !!s.onShift; s.breaking = !!s.breaking; s.shiftStart ||= "09:00"; s.shiftEnd ||= "17:00"; });
-    // dedupe staff names: keep newest by createdAt
-    await dedupeStaffsByName(state.staffs);
-    // update displays
-    updateShiftShort();
-    renderShiftList();
-    updateOrderButtonState();
-    renderOrderLists();
-  }, err => console.warn('staffs snapshot error', err));
+    state.staffs.forEach(s => { s.onShift = !!s.onShift; s.breaking = !!s.breaking; s.shiftStart ||= '09:00'; s.shiftEnd ||= '17:00'; });
+    dedupeStaffsByName(); updateShiftShort(); renderShiftList(); updateOrderButtonState(); renderOrderLists();
+  }, err => console.warn('staffs snapshot', err));
 } catch(e){ console.warn(e); }
 
-/* Firestore realtime: orders */
 try {
   const qO = query(ordersCol, orderBy('createdAt','asc'));
-  onSnapshot(qO, async snap => {
+  onSnapshot(qO, snap => {
     state.orders = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    // dedupe orders by name (only keep newest) to satisfy requirement
-    await dedupeOrdersByName(state.orders);
-    renderOrderLists();
-    updateClientOverlay();
-  }, err => console.warn('orders snapshot error', err));
+    dedupeOrdersByName(); renderOrderLists(); updateClientOverlay();
+  }, err => console.warn('orders snapshot', err));
 } catch(e){ console.warn(e); }
 
-/* dedupe staff by name: if duplicates, keep the newest createdAt, delete older docs (server attempt), and keep the newest in local state */
-async function dedupeStaffsByName(staffs){
-  try {
-    const byName = {};
-    staffs.forEach(s => {
-      const name = (s.name || '').trim();
-      if (!name) return;
-      byName[name] = byName[name] || [];
-      byName[name].push(s);
-    });
-    for(const name in byName){
-      const arr = byName[name].sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-      // keep arr[0], delete others
-      for(let i=1;i<arr.length;i++){
-        const s = arr[i];
-        try { await deleteDoc(doc(db,'staffs',s.id)); } catch(e){ /* ignore if fails */ }
-      }
-    }
-  } catch(e){ console.warn('dedupe staff error', e); }
+/* --- dedupe helpers --- */
+async function dedupeStaffsByName(){
+  // keep newest by createdAt
+  const byName = {};
+  state.staffs.forEach(s => { const n=(s.name||'').trim(); if(!n) return; byName[n]=byName[n]||[]; byName[n].push(s); });
+  for(const n in byName){
+    const arr = byName[n].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+    for(let i=1;i<arr.length;i++){ try{ await deleteDoc(doc(db,'staffs',arr[i].id)); } catch(e){} }
+  }
+}
+async function dedupeOrdersByName(){
+  // keep newest order per name
+  const byName = {};
+  state.orders.forEach(o=>{ const n=(o.name||'').trim(); if(!n) return; byName[n]=byName[n]||[]; byName[n].push(o); });
+  for(const n in byName){
+    const arr = byName[n].sort((a,b)=> (b.createdAt||0)-(a.createdAt||0));
+    for(let i=1;i<arr.length;i++){ try{ await deleteDoc(doc(db,'orders',arr[i].id)); } catch(e){} }
+  }
 }
 
-/* dedupe orders by name: keep only newest order per same name (applies to waiting/inprogress/done/delivered?), user requested same-name older removed - we'll remove older orders regardless of state to keep newest only */
-async function dedupeOrdersByName(orders){
-  try {
-    const byName = {};
-    orders.forEach(o => {
-      const name = (o.name || '').trim();
-      if (!name) return;
-      byName[name] = byName[name] || [];
-      byName[name].push(o);
-    });
-    for(const name in byName){
-      const arr = byName[name].sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-      // keep arr[0], delete others older than it
-      for(let i=1;i<arr.length;i++){
-        const o = arr[i];
-        try { await deleteDoc(doc(db,'orders',o.id)); } catch(e){ /* ignore */ }
-      }
-    }
-  } catch(e){ console.warn('dedupe orders error', e); }
-}
-
-/* update short shift text above order button (show names currently on shift) */
+/* --- UI updates --- */
 function updateShiftShort(){
   const now = new Date();
-  const active = (state.staffs || []).filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (active.length === 0) shiftShort.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）';
-  else shiftShort.textContent = '状況①：' + active.map(s=> s.name + ` (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+  const active = (state.staffs||[]).filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+  if(!active.length) shiftShort.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）';
+  else shiftShort.textContent = '状況①：' + active.map(s=> `${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
-
-/* render full shift list (in staff screen) */
 function renderShiftList(){
-  shiftList.innerHTML = '';
-  const now = new Date();
-  (state.staffs || []).forEach(s=>{
-    const d = document.createElement('div');
-    const onNow = isNowWithinShift(s.shiftStart, s.shiftEnd, now);
-    d.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart}〜${s.shiftEnd} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
-    shiftList.appendChild(d);
-  });
+  shiftList.innerHTML = ''; const now=new Date();
+  (state.staffs||[]).forEach(s=>{ const d=document.createElement('div'); const onNow=isNowWithinShift(s.shiftStart,s.shiftEnd,now); d.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart}〜${s.shiftEnd} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-'}</span>} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`; shiftList.appendChild(d); });
 }
+function isNowWithinShift(start,end,dateObj){ if(!start||!end) return false; const [sh,sm]=start.split(':').map(Number); const [eh,em]=end.split(':').map(Number); const sDate=new Date(dateObj); sDate.setHours(sh,sm,0,0); const eDate=new Date(dateObj); eDate.setHours(eh,em,0,0); if(eDate<=sDate) eDate.setDate(eDate.getDate()+1); return dateObj>=sDate && dateObj<=eDate; }
+function updateOrderButtonState(){ const now=new Date(); const any=(state.staffs||[]).some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now)); if(any) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled'); }
 
-/* check time-in-shift */
-function isNowWithinShift(start,end,dateObj){
-  if (!start || !end) return false;
-  const [sh,sm] = start.split(':').map(Number);
-  const [eh,em] = end.split(':').map(Number);
-  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
-  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
-  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
-  return dateObj >= sDate && dateObj <= eDate;
-}
-
-/* update order button availability */
-function updateOrderButtonState(){
-  const now = new Date();
-  const anyAvailable = (state.staffs||[]).some(s=> s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (anyAvailable) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled');
-}
-
-/* render staff order list (in staff full screen) */
+/* --- render staff order list --- */
 function renderOrderLists(){
   staffOrderList.innerHTML = '';
   const now = Date.now();
-  // show orders that are waiting or inprogress or done
-  (state.orders || []).forEach(o=>{
-    if (!o || o.state === 'cancelled') return;
-    // auto remove 5 minutes after creation in staff list as requested: schedule deletion
-    if ((now - (o.createdAt || now)) > 5*60*1000){
-      try { deleteDoc(doc(db,'orders',o.id)); } catch(e){ /* ignore */ }
-      return;
+  (state.orders||[]).forEach(o=>{
+    if(!o || o.state==='cancelled') return;
+    // hide delivered/served from staff list to simulate removal
+    if(o.state==='delivered' || o.state==='served') return;
+    // auto-remove after 5 minutes: delete doc (best effort)
+    if((now - (o.createdAt||now)) > 5*60*1000){
+      try{ deleteDoc(doc(db,'orders',o.id)); } catch(e){}; return;
     }
-    if (o.state === 'delivered' || o.state === 'served') return; // not for staff list
     const div = document.createElement('div'); div.className='order-item';
-    const left = document.createElement('div');
-    left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
     const right = document.createElement('div');
-    // tasks indicator small: show what remains to do (only when inprogress/assigned)
-    const taskSpan = document.createElement('span'); taskSpan.className='small-info';
     const tasks = computeOrderTasks(o);
-    if (tasks.length) taskSpan.textContent = '未完了: ' + tasks.join(', ');
-    right.appendChild(taskSpan);
-    if (o.state === 'waiting'){
-      const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
-      btn.onclick = ()=> assignOrderToCurrentStaff(o.id);
-      right.appendChild(btn);
-    } else if (o.state === 'inprogress'){
-      const info = document.createElement('div'); info.className='small-info'; info.textContent = `担当: ${o.assignedToName || o.assignedTo || ''}`;
-      right.appendChild(info);
-      const startMake = document.createElement('button'); startMake.textContent='制作'; startMake.className='small';
-      startMake.onclick = ()=> {
-        // open make modal for this staff (immediately start)
-        openMakeModal(o);
-      };
-      right.appendChild(startMake);
-    } else if (o.state === 'done'){
-      const deliverBtn = document.createElement('button'); deliverBtn.textContent='提供'; deliverBtn.className='small btn-green';
-      deliverBtn.onclick = async ()=>{
-        // open make modal to finalize providing (should work even if not in inprogress)
-        openMakeModal(o);
-      };
-      right.appendChild(deliverBtn);
+    if(tasks.length) { const t = document.createElement('div'); t.className='small-info'; t.textContent = '未完了: ' + tasks.join(', '); right.appendChild(t); }
+    if(o.state === 'waiting'){
+      const btn=document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green'; btn.onclick=()=> assignOrderToCurrentStaff(o.id); right.appendChild(btn);
+    } else if(o.state === 'inprogress'){
+      const info=document.createElement('div'); info.className='small-info'; info.textContent=`担当: ${o.assignedToName||o.assignedTo||''}`; right.appendChild(info);
+      const makeBtn=document.createElement('button'); makeBtn.textContent='制作'; makeBtn.className='small'; makeBtn.onclick=()=> openMakeModal(o); right.appendChild(makeBtn);
+    } else if(o.state === 'done'){
+      const provideBtn=document.createElement('button'); provideBtn.textContent='提供'; provideBtn.className='small btn-green'; provideBtn.onclick=()=> openMakeModal(o); right.appendChild(provideBtn);
     }
-    div.appendChild(left); div.appendChild(right);
-    staffOrderList.appendChild(div);
+    div.appendChild(left); div.appendChild(right); staffOrderList.appendChild(div);
   });
-
-  // pending tasks small summary
-  const pending = (state.orders||[]).filter(o=> o.state === 'waiting' || o.state === 'inprogress').length;
-  pendingTasksSmall.textContent = pending ? ` 未処理: ${pending}` : '';
+  pendingTasksSmall.textContent = (state.orders||[]).filter(o=> o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(state.orders||[]).filter(o=> o.state==='waiting' || o.state==='inprogress').length}` : '';
 }
 
-/* compute tasks for an order (based on stored fields) - used to show what's not done */
-function computeOrderTasks(order){
-  const pending = [];
-  if (!order) return pending;
-  // if in waiting -> needs assign
-  if (order.state === 'waiting') pending.push('対応待ち');
-  if (order.state === 'inprogress' || order.state === 'done'){
-    // check art/card/serving markers
-    if (!order.artDataUrl && !order.artData) pending.push('アート');
-    if (!order.cardData && !order.cardDataUrl && !order.cardDataLocal) pending.push('カード');
-    if (order.state !== 'delivered' && order.state !== 'served' && order.state !== 'done') pending.push('提供待ち');
+/* compute tasks for order */
+function computeOrderTasks(o){
+  const pending=[];
+  if(!o) return pending;
+  if(o.state==='waiting') pending.push('対応待ち');
+  if(o.state === 'inprogress' || o.state==='done'){
+    if(!o.artStrokes && !o.artDataUrl) pending.push('アート');
+    if(!o.cardStrokes && !o.cardDataUrl) pending.push('���ード');
+    if(o.state !== 'delivered' && o.state !== 'served') pending.push('提供待ち');
   }
   return pending;
 }
 
-/* assign order to current staff */
-async function assignOrderToCurrentStaff(orderId){
-  const staffId = state.currentUser.staffId;
-  if (!staffId){ alert('スタッフとしてログインしてください'); return; }
-  const staff = state.staffs.find(s=>s.id===staffId);
-  const order = state.orders.find(o=>o.id===orderId);
-  if (!order || order.state !== 'waiting') { alert('対応できません'); return; }
-  try {
-    await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: staff.name });
-    // play cook bgm (global)
-    try{ audioCookbgm.currentTime = 0; audioCookbgm.loop = true; audioCookbgm.play(); } catch(e){}
-  } catch(e){
-    console.warn(e);
-  }
-}
-
-/* UI: show/hide staff full screen */
-function enterStaffFull(name, staffId){
-  state.currentUser.role = 'staff';
-  state.currentUser.staffId = staffId;
-  staffBadge.textContent = name;
-  staffFull.classList.add('show');
-  // populate shift inputs
-  const s = state.staffs.find(x=>x.id===staffId);
-  if (s){ shiftStart.value = s.shiftStart || '09:00'; shiftEnd.value = s.shiftEnd || '17:00'; if (s.onShift) { shiftBtn.classList.add('on'); shiftBtn.classList.remove('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); } else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.add('on'); breakBtn.classList.remove('off'); } }
-  renderShiftList();
-  renderOrderLists();
-}
-function exitStaffFull(){
-  state.currentUser = { role:'guest', staffId:null };
-  staffFull.classList.remove('show');
-}
-
-/* staff login flow: password unlock staff login modal earlier; here we allow entering name */
-passOk.addEventListener('click', ()=>{
-  if (staffPassInput.value === '1232'){
-    // show prompt for name entry - reuse modalName
-    showModal(modalName);
-    document.getElementById('orderName').placeholder = 'スタッフ名を入力';
-    okOrderName.onclick = async ()=>{
-      const name = orderName.value.trim(); if (!name){ alert('名前'); return; }
-      hideModal(modalName);
-      // create staff doc; dedupe duplicates on server as implemented in snapshot handler
-      try {
-        const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
-        // after creation, move to staff full
-        enterStaffFull(name, ref.id);
-      } catch(e){
-        console.warn(e);
-        // local fallback
-        const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
-        state.staffs.push(s);
-        enterStaffFull(name, s.id);
-      }
-    };
-  } else {
-    alert('パスワードが違います');
-  }
-});
-
-/* staff full controls */
-logoutStaff.addEventListener('click', async ()=>{
-  const id = state.currentUser.staffId;
-  if (!id) { exitStaffFull(); return; }
-  try { await deleteDoc(doc(db,'staffs',id)); } catch(e){}
-  exitStaffFull();
-});
-
-shiftBtn.addEventListener('click', async ()=>{
-  const id = state.currentUser.staffId; if (!id) return;
-  try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){ const s=state.staffs.find(x=>x.id===id); if(s){ s.onShift=true; s.breaking=false; } }
-  renderShiftList(); updateShiftShort(); updateOrderButtonState();
-});
-breakBtn.addEventListener('click', async ()=>{
-  const id = state.currentUser.staffId; if (!id) return;
-  try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){ const s=state.staffs.find(x=>x.id===id); if(s){ s.onShift=false; s.breaking=true; } }
-  renderShiftList(); updateShiftShort(); updateOrderButtonState();
-});
-
-saveShift.addEventListener('click', async ()=>{
-  const id = state.currentUser.staffId; if (!id) return;
-  const newStart = shiftStart.value || '09:00', newEnd = shiftEnd.value || '17:00';
-  try { await updateDoc(doc(db,'staffs',id), { shiftStart:newStart, shiftEnd:newEnd }); alert('保存'); } catch(e){ console.warn(e); }
-});
-
-/* Menu & ordering */
-const menuItems = [
-  { id:'latte', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate' }
-];
+/* --- menu / ordering UI --- */
+const menuItems = [{ id:'latte', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate' }];
 
 async function buildMenu(){
   menuGrid.innerHTML = '';
   for(const it of menuItems){
-    const div = document.createElement('div'); div.className='menu-item';
-    const img = document.createElement('img'); img.className='menu-thumb';
-    img.alt = it.title;
-    const url = getAssetUrl(it.imageBase + '1.png');
-    try {
-      const res = await fetch(url);
-      if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); }
-      else img.src = makePlaceholder(it.title);
-    } catch(e){ img.src = makePlaceholder(it.title); }
-    div.appendChild(img);
-    const h = document.createElement('div'); h.textContent = it.title; div.appendChild(h);
+    const div=document.createElement('div'); div.className='menu-item';
+    const img=document.createElement('img'); img.className='menu-thumb'; img.alt=it.title;
+    const url=getAssetUrl(it.imageBase+'1.png');
+    try{ const res=await fetch(url); if(res.ok){ const blob=await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = placeholder(it.title); } catch(e){ img.src = placeholder(it.title); }
+    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
     div.addEventListener('click', ()=> onMenuSelect(it));
     menuGrid.appendChild(div);
   }
 }
-function makePlaceholder(title){
-  const c = document.createElement('canvas'); c.width=320; c.height=240; const ctx=c.getContext('2d'); ctx.fillStyle='#fff8ef'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='#6b3b24'; ctx.beginPath(); ctx.arc(160,110,60,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='20px sans-serif'; ctx.fillText(title, 100,200); return c.toDataURL();
-}
+function placeholder(title){ const c=document.createElement('canvas'); c.width=320; c.height=240; const ctx=c.getContext('2d'); ctx.fillStyle='#fff8ef'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='#6b3b24'; ctx.beginPath(); ctx.arc(160,110,60,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='20px sans-serif'; ctx.fillText(title,100,200); return c.toDataURL(); }
 
 /* ordering flow */
 orderBtn.addEventListener('click', ()=>{
-  if (orderBtn.classList.contains('disabled')) return;
-  try{ audioTyaimu.currentTime=0; audioTyaimu.play(); } catch(e){}
-  showModal(modalName);
-  document.getElementById('orderName').placeholder = '名前を入力';
+  if(orderBtn.classList.contains('disabled')) return;
+  try{ audioTyaimu.currentTime=0; audioTyaimu.play(); }catch(e){}
+  showModal(modalName); orderName.value=''; orderName.placeholder='名前を入力';
   okOrderName.onclick = ()=> {
-    const name = orderName.value.trim();
-    if (!name) { alert('名前を入力してください'); return; }
-    hideModal(modalName);
-    buildMenu(); showModal(modalMenu);
+    const name = orderName.value.trim(); if(!name){ alert('名前'); return; } hideModal(modalName); buildMenu(); showModal(modalMenu);
+    okOrderName.onclick = null;
   };
 });
-
 backMenu.addEventListener('click', ()=> hideModal(modalMenu));
 
 async function onMenuSelect(item){
   hideModal(modalMenu);
   const name = orderName.value.trim() || '名無し';
   const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-  const orderObj = { name, item:item.id, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artDataUrl:null, cardDataUrl:null, servedImageUrl:null };
-  try {
-    const ref = await addDoc(ordersCol, orderObj);
-    // keep track client order
+  const order = { name, item: item.id, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageUrl:null };
+  try{
+    const ref = await addDoc(ordersCol, order);
     state.currentOrderIdForClient = ref.id;
     showClientOverlay('現在対応待ち中');
-    // schedule cancel (handled elsewhere)
   } catch(e){
-    console.warn('add order failed', e);
-    orderObj.id = uid('o');
-    state.orders.push(orderObj);
-    state.currentOrderIdForClient = orderObj.id;
-    showClientOverlay('現在対応待ち中');
-    renderOrderLists();
+    console.warn('add order fail', e);
+    order.id = uid('o'); state.orders.push(order); state.currentOrderIdForClient = order.id; showClientOverlay('現在対応待ち中'); renderOrderLists();
   }
 }
 
-/* schedule cancellations and deletions are handled in snapshot processing and separate timeouts; also ensure staff list items auto-delete after 5 min via snapshot handler */
+/* --- staff interactions --- */
+passOk.addEventListener('click', ()=>{
+  if(staffPassInput.value === '1232'){ showModal(modalName); orderName.placeholder='スタッフ名を入力'; okOrderName.onclick = async ()=> { const name = orderName.value.trim(); if(!name){ alert('名前'); return; } hideModal(modalName); try{ const r = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() }); enterStaffFull(name, r.id); } catch(e){ console.warn(e); const s={id:uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now()}; state.staffs.push(s); enterStaffFull(name, s.id); } okOrderName.onclick = null; }; } else alert('パスワードが違います'); });
 
-/* Open make modal (should be usable immediately when staff presses "対応" or "制作") */
-let currentMakingOrderId = null;
-function openMakeModal(order){
-  currentMakingOrderId = order.id;
-  makerName.textContent = order.assignedToName || order.assignedTo || '';
-  // reset pouring and art/card canvases
-  resetLatteCanvas(); initArtBg(); initArtLayer(); initCardCanvas();
-  resetPouring();
-  saveArt.disabled = true; saveCard.disabled = true; completeMake.disabled = true;
-  taskStatusSmall.textContent = '';
-  showModal(modalMakeLatte);
+function enterStaffFull(name, id){ state.currentUser.role='staff'; state.currentUser.staffId=id; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); }
+logoutStaff.addEventListener('click', async ()=>{ const id = state.currentUser.staffId; if(id){ try{ await deleteDoc(doc(db,'staffs',id)); } catch(e){} } state.currentUser={role:'guest',staffId:null}; staffFull.classList.remove('show'); });
+
+shiftBtn.addEventListener('click', async ()=>{ const id = state.currentUser.staffId; if(!id) return; try{ await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){} });
+breakBtn.addEventListener('click', async ()=>{ const id = state.currentUser.staffId; if(!id) return; try{ await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){} });
+saveShift.addEventListener('click', async ()=>{ const id = state.currentUser.staffId; if(!id) return; try{ await updateDoc(doc(db,'staffs',id), { shiftStart: shiftStart.value||'09:00', shiftEnd: shiftEnd.value||'17:00' }); alert('保存'); } catch(e){ console.warn(e); } });
+
+/* assign order to staff */
+async function assignOrderToCurrentStaff(orderId){
+  const staffId = state.currentUser.staffId; if(!staffId){ alert('スタッフとしてログイン'); return; }
+  const staff = state.staffs.find(s=>s.id===staffId);
+  try { await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: staff.name }); audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){ console.warn(e); }
 }
 
-/* implement pour logic with new acceptance range 95-105 and failure at >=120 */
+/* --- Make modal: pouring, art, card --- */
+/* latte canvas */
 const latteCanvas = document.getElementById('latteCanvas');
 const latteCtx = latteCanvas.getContext('2d');
-function resetLatteCanvas(){
-  latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
-  latteCtx.fillStyle = '#6b3b24';
-  latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill();
-}
+function resetLatteCanvas(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle = '#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
 resetLatteCanvas();
 
+/* pouring logic: new acceptance 95-105, 120 => fail */
 let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
-
-function startPourLoop(barEl, pctEl, onOver120){
-  let pct = 0;
-  const it = setInterval(()=>{
-    pct = Math.min(130, pct + Math.random()*4 + 1);
-    barEl.style.width = pct + '%';
-    pctEl.textContent = Math.round(pct) + '%';
-    if (pct >= 120){
-      clearInterval(it);
-      onOver120();
-    }
-  }, 100);
+function resetPouring(){ if(espInterval) clearInterval(espInterval); if(milkInterval) clearInterval(milkInterval); espInterval=null; milkInterval=null; espDone=false; milkDone=false; espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; startEsp.disabled=false; startMilk.disabled=true; resetLatteCanvas(); updateTaskStatus(); }
+function startLoop(barEl,pctEl,over120Callback){
+  let pct=0;
+  const it = setInterval(()=>{ pct=Math.min(130,pct + Math.random()*4 + 1); barEl.style.width = pct + '%'; pctEl.textContent = Math.round(pct)+'%'; if(pct>=120){ clearInterval(it); over120Callback(); } }, 100);
   return { it, getPct: ()=> pct };
 }
-
-startEsp.addEventListener('mousedown', ()=>{
-  if (espInterval) return;
-  startEsp.textContent = '注ぎ中...';
-  const res = startPourLoop(espBar, espPct, ()=>{
-    alert('注ぎ過ぎ（120%）最初からやり直しになります');
-    resetPouring();
-  });
-  espInterval = res.it;
-});
-startEsp.addEventListener('mouseup', ()=>{
-  if (espInterval) { clearInterval(espInterval); espInterval=null; }
-  startEsp.textContent = '注ぐ（押し続け）';
-  const pct = parseFloat(espBar.style.width) || 0;
-  if (pct >= 95 && pct <= 105){
-    espDone = true; playTone(523,0.12);
-    latteCtx.fillStyle = '#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60);
-    startMilk.disabled = false;
-    updateTaskStatus();
-  } else {
-    alert('合格ラインを外しました。最初からやり直しになります');
-    resetPouring();
-  }
-});
+startEsp.addEventListener('mousedown', ()=>{ if(espInterval) return; startEsp.textContent='注ぎ中...'; const res = startLoop(espBar,espPct, ()=>{ alert('注ぎ過ぎ（120%）。最初からやり直し'); resetPouring(); }); espInterval = res.it; });
+startEsp.addEventListener('mouseup', ()=>{ if(espInterval){ clearInterval(espInterval); espInterval=null; } startEsp.textContent='注ぐ（押し続け）'; const pct=parseFloat(espBar.style.width)||0; if(pct>=95 && pct<=105){ espDone=true; playTone(523,0.12); latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); startMilk.disabled=false; updateTaskStatus(); } else{ alert('合格ラインを外しました。最初から'); resetPouring(); } });
 startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
 startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
 
-startMilk.addEventListener('mousedown', ()=>{
-  if (milkInterval) return;
-  startMilk.textContent = '注ぎ中...';
-  const res = startPourLoop(milkBar, milkPct, ()=>{
-    alert('注ぎ過ぎ（120%）最初からやり直しになります');
-    resetPouring();
-  });
-  milkInterval = res.it;
-});
-startMilk.addEventListener('mouseup', ()=>{
-  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
-  startMilk.textContent = '注ぐ（押し続け）';
-  const pct = parseFloat(milkBar.style.width) || 0;
-  if (pct >= 95 && pct <= 105){
-    milkDone = true; playTone(660,0.12);
-    latteCtx.fillStyle = '#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill();
-    updateTaskStatus();
-  } else {
-    alert('合格ラインを外しました。最初からやり直しになります');
-    resetPouring();
-  }
-});
+startMilk.addEventListener('mousedown', ()=>{ if(milkInterval) return; startMilk.textContent='注ぎ中...'; const res = startLoop(milkBar,milkPct, ()=>{ alert('注ぎ過ぎ（120%）。最初からやり直し'); resetPouring(); }); milkInterval = res.it; });
+startMilk.addEventListener('mouseup', ()=>{ if(milkInterval){ clearInterval(milkInterval); milkInterval=null; } startMilk.textContent='注ぐ（押し続け）'; const pct=parseFloat(milkBar.style.width)||0; if(pct>=95 && pct<=105){ milkDone=true; playTone(660,0.12); latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初から'); resetPouring(); } });
 startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
 startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
 
-function resetPouring(){
-  if (espInterval) { clearInterval(espInterval); espInterval=null; }
-  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
-  espDone = false; milkDone = false;
-  espBar.style.width='0%'; espPct.textContent='0%';
-  milkBar.style.width='0%'; milkPct.textContent='0%';
-  startEsp.disabled = false; startMilk.disabled = true;
-  resetLatteCanvas();
-  saveArt.disabled = true;
-  saveCard.disabled = true;
-  completeMake.disabled = true;
-  taskStatusSmall.textContent = '未完了: 注ぎ';
-}
+/* --- Art strokes serialization (数字変換) --- */
+/* stroke format: { mode:'draw'|'erase', color:'#fff', width:number, points:[{x:0..1,y:0..1}, ...] } */
+let artStrokes = []; let currentArtStroke = null;
+function initArt(){ artBgCtx.clearRect(0,0,artBg.width,artBg.height); artBgCtx.fillStyle='#6b3b24'; artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill(); artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.globalCompositeOperation='source-over'; artStrokes = []; saveArt.disabled = true; }
+initArt();
 
-/* art drawing apps: artBg is brown circle, artLayer holds white strokes. eraser should only erase strokes on artLayer (destination-out) */
-function initArtBg(){ artBgCtx.clearRect(0,0,artBg.width,artBg.height); artBgCtx.fillStyle = '#6b3b24'; artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill(); }
-function initArtLayer(){ artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.globalCompositeOperation='source-over'; }
-initArtBg(); initArtLayer();
-
-let drawing=false, lastPos={x:0,y:0};
-function getCanvasPos(e, canvas){
-  const r = canvas.getBoundingClientRect();
+/* drawing on artLayer and recording strokes */
+let artDrawing=false, artLast={x:0,y:0};
+function artGetPos(e){
+  const r = artLayer.getBoundingClientRect();
   const t = e.touches ? e.touches[0] : null;
-  const cx = t ? t.clientX : e.clientX;
-  const cy = t ? t.clientY : e.clientY;
-  return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
+  const cx = t ? t.clientX : e.clientX; const cy = t ? t.clientY : e.clientY;
+  return { x: (cx - r.left) * (artLayer.width / r.width), y: (cy - r.top) * (artLayer.height / r.height) };
 }
-artLayer.addEventListener('mousedown',(e)=>{ drawing=true; lastPos = getCanvasPos(e, artLayer); });
-artLayer.addEventListener('mousemove',(e)=>{ if(!drawing) return; const p=getCanvasPos(e,artLayer); drawArtStroke(lastPos,p); lastPos=p; });
-artLayer.addEventListener('mouseup', ()=> { drawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
-artLayer.addEventListener('mouseleave', ()=> { drawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
-artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); drawing=true; lastPos = getCanvasPos(e,artLayer); });
-artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); if(!drawing) return; const p=getCanvasPos(e,artLayer); drawArtStroke(lastPos,p); lastPos=p; });
-artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); drawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
+artLayer.addEventListener('mousedown',(e)=>{ artDrawing=true; artLast = artGetPos(e); currentArtStroke = { mode: penMode.value, color: (penMode.value==='draw'?'#ffffff':'#000'), width: parseInt(penSize.value,10), points: [ { x: artLast.x / artLayer.width, y: artLast.y / artLayer.height } ] }; });
+artLayer.addEventListener('mousemove',(e)=>{ if(!artDrawing) return; const p = artGetPos(e); drawArtSegment(artLast,p); artLast = p; currentArtStroke.points.push({ x: p.x / artLayer.width, y: p.y / artLayer.height }); });
+artLayer.addEventListener('mouseup',()=>{ if(artDrawing && currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } artDrawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
+artLayer.addEventListener('mouseleave',()=>{ if(artDrawing && currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } artDrawing=false; artLayerCtx.globalCompositeOperation='source-over'; });
+artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY } )); });
+artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY } )); });
+artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); });
 
-function drawArtStroke(from,to){
+function drawArtSegment(from,to){
   const size = parseInt(penSize.value,10);
   const mode = penMode.value;
-  if (mode === 'draw'){
-    artLayerCtx.globalCompositeOperation = 'source-over';
-    artLayerCtx.strokeStyle = '#ffffff';
-    artLayerCtx.lineWidth = size;
-  } else {
-    // eraser: remove only strokes on artLayer (destination-out)
-    artLayerCtx.globalCompositeOperation = 'destination-out';
-    artLayerCtx.lineWidth = size;
-  }
+  if(mode==='draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle='#ffffff'; artLayerCtx.lineWidth = size; }
+  else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth = size; }
   artLayerCtx.beginPath(); artLayerCtx.moveTo(from.x,from.y); artLayerCtx.lineTo(to.x,to.y); artLayerCtx.stroke();
 }
 
-clearArt.addEventListener('click', ()=> { initArtLayer(); initArtBg(); saveArt.disabled = true; updateTaskStatus(); });
-
-saveArt.addEventListener('click', ()=>{
-  // composite artLayer onto latteCanvas
-  const tmp = document.createElement('canvas'); tmp.width=latteCanvas.width; tmp.height=latteCanvas.height;
-  const tctx = tmp.getContext('2d');
-  // draw background equivalent
-  tctx.fillStyle = '#6b3b24'; tctx.beginPath(); tctx.arc(60,60,58,0,Math.PI*2); tctx.fill();
-  tctx.drawImage(artLayer, 0, 0, tmp.width, tmp.height);
-  latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
-  latteCtx.drawImage(tmp,0,0);
-  saveArt.disabled = true;
-  updateTaskStatus();
-  alert('アートを保存しました。次にカードを手書きしてください。');
+/* saveArt: write strokes numeric data to order doc */
+saveArt.addEventListener('click', async ()=>{
+  if(!currentMakingOrderId){ alert('対象注文がありません'); return; }
+  try {
+    // draw strokes onto latteCanvas for preview
+    // convert strokes to image too for convenience
+    const tmp = document.createElement('canvas'); tmp.width=latteCanvas.width; tmp.height=latteCanvas.height; const tctx = tmp.getContext('2d');
+    // draw brown base
+    tctx.fillStyle = '#6b3b24'; tctx.beginPath(); tctx.arc(60,60,58,0,Math.PI*2); tctx.fill();
+    // replay strokes
+    replayStrokesOnCtx(artStrokes, tctx, tmp.width, tmp.height);
+    const artDataUrl = tmp.toDataURL('image/png');
+    // update order with artStrokes numeric and artDataUrl for fallback
+    await updateDoc(doc(db,'orders',currentMakingOrderId), { artStrokes: artStrokes, artDataUrl: artDataUrl });
+    saveArt.disabled = true; updateTaskStatus();
+    alert('アートを保存しました（数値化＆保存）。');
+  } catch(e){
+    console.warn('saveArt failed', e);
+    alert('アート保存に失敗しました（ネットワーク） — ローカルのみ保存');
+    saveArt.disabled = true; updateTaskStatus();
+  }
 });
 
-/* card canvas drawing */
-function initCardCanvas(){
-  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
-  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.lineCap = 'round'; cardCtx.lineJoin = 'round';
+/* replay strokes on given 2D ctx (for art and card) */
+function replayStrokesOnCtx(strokes, ctx, width, height){
+  if(!strokes) return;
+  strokes.forEach(s=>{
+    if(!s.points || s.points.length<2) return;
+    ctx.beginPath();
+    for(let i=0;i<s.points.length-1;i++){
+      const p1 = s.points[i]; const p2 = s.points[i+1];
+      const x1 = p1.x * width, y1 = p1.y * height, x2 = p2.x * width, y2 = p2.y * height;
+      ctx.strokeStyle = (s.mode==='draw') ? (s.color || '#fff') : 'rgba(0,0,0,1)';
+      ctx.lineWidth = s.width;
+      if(s.mode==='erase'){ ctx.globalCompositeOperation='destination-out'; } else { ctx.globalCompositeOperation='source-over'; }
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+    ctx.globalCompositeOperation='source-over';
+  });
 }
-initCardCanvas();
+
+/* --- Card strokes serialization --- */
+let cardStrokes = []; let currentCardStroke = null;
+function initCard(){ cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6'; cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height); cardStrokes = []; saveCard.disabled=true; }
+initCard();
 
 let cardDrawing=false, cardLast={x:0,y:0};
-cardCanvas.addEventListener('mousedown',(e)=>{ cardDrawing=true; cardLast=getCardPos(e); });
-cardCanvas.addEventListener('mousemove',(e)=>{ if(!cardDrawing) return; const p=getCardPos(e); drawCardStroke(cardLast,p); cardLast=p; });
-cardCanvas.addEventListener('mouseup',()=>{ cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
-cardCanvas.addEventListener('mouseleave',()=>{ cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
-cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardDrawing=true; cardLast=getCardPos(e); });
-cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); if(!cardDrawing) return; const p=getCardPos(e); drawCardStroke(cardLast,p); cardLast=p; });
-cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
+cardCanvas.addEventListener('mousedown',(e)=>{ cardDrawing=true; cardLast = getCardPos(e); currentCardStroke={ mode: cardMode.value, color: '#000', width: parseInt(cardSize.value,10), points: [{ x: cardLast.x/cardCanvas.width, y: cardLast.y/cardCanvas.height }] }; });
+cardCanvas.addEventListener('mousemove',(e)=>{ if(!cardDrawing) return; const p=getCardPos(e); drawCardSeg(cardLast,p); cardLast=p; currentCardStroke.points.push({ x:p.x/cardCanvas.width, y:p.y/cardCanvas.height }); });
+cardCanvas.addEventListener('mouseup', ()=>{ if(cardDrawing && currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=false; updateTaskStatus(); } cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
+cardCanvas.addEventListener('mouseleave', ()=>{ if(cardDrawing && currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=false; updateTaskStatus(); } cardDrawing=false; cardCtx.globalCompositeOperation='source-over'; });
+cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown',{clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
+cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
+cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); });
 
 function getCardPos(e){
-  const r = cardCanvas.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : null;
-  const cx = t ? t.clientX : e.clientX; const cy = t ? t.clientY : e.clientY;
-  return { x: (cx - r.left) * (cardCanvas.width / r.width), y: (cy - r.top) * (cardCanvas.height / r.height) };
+  const r=cardCanvas.getBoundingClientRect(); const t=e.touches?e.touches[0]:null; const cx=t? t.clientX : e.clientX; const cy=t? t.clientY : e.clientY; return { x: (cx - r.left)*(cardCanvas.width/r.width), y: (cy - r.top)*(cardCanvas.height/r.height) };
 }
-function drawCardStroke(from,to){
+function drawCardSeg(from,to){
   const size = parseInt(cardSize.value,10);
   const mode = cardMode.value;
-  if (mode === 'draw'){
-    cardCtx.globalCompositeOperation = 'source-over';
-    cardCtx.strokeStyle = '#000';
-    cardCtx.lineWidth = size;
-  } else {
-    cardCtx.globalCompositeOperation = 'destination-out';
-    cardCtx.lineWidth = size;
-  }
+  if(mode==='draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle='#000'; cardCtx.lineWidth=size; }
+  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=size; }
   cardCtx.beginPath(); cardCtx.moveTo(from.x,from.y); cardCtx.lineTo(to.x,to.y); cardCtx.stroke();
 }
-clearCard.addEventListener('click', ()=> initCardCanvas());
-saveCard.addEventListener('click', ()=> { saveCard.disabled = true; updateTaskStatus(); alert('カードを保存しました'); });
+clearCard.addEventListener('click', ()=> initCard());
 
-/* compute and display remaining tasks */
-function updateTaskStatus(){
-  const parts = [];
-  if (!espDone || !milkDone) parts.push('注ぎ');
-  // art saved if saveArt was clicked => latteCtx contains composite; we treat saveArt.disabled true as saved
-  if (saveArt.disabled === false) parts.push('アート'); // not saved yet
-  if (saveCard.disabled === false) parts.push('カード');
-  // When none pending, enable completeMake
-  if (parts.length === 0 && currentMakingOrderId) completeMake.disabled = false;
-  else completeMake.disabled = true;
-  taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了';
+saveCard.addEventListener('click', async ()=>{
+  if(!currentMakingOrderId){ alert('対象注文がありません'); return; }
+  try {
+    // draw card strokes to dataURL and write strokes array to firestore
+    const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width; tmp.height = cardCanvas.height; const tctx = tmp.getContext('2d');
+    tctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6'; tctx.fillRect(0,0,tmp.width,tmp.height);
+    replayStrokesOnCtx(cardStrokes, tctx, tmp.width, tmp.height);
+    const cardDataUrl = tmp.toDataURL('image/png');
+    await updateDoc(doc(db,'orders',currentMakingOrderId), { cardStrokes: cardStrokes, cardDataUrl: cardDataUrl });
+    saveCard.disabled = true; updateTaskStatus(); alert('カードを保存しました（数値化）');
+  } catch(e){
+    console.warn('saveCard failed', e);
+    alert('カード保存に失敗しました（ネット） — ローカル保存のみ');
+    saveCard.disabled = true; updateTaskStatus();
+  }
+});
+
+/* replayStrokesOnCtx function (reused) */
+function replayStrokesOnCtx(strokes, ctx, width, height){
+  if(!strokes) return;
+  strokes.forEach(s=>{
+    if(!s.points || s.points.length<2) return;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath();
+    for(let i=0;i<s.points.length-1;i++){
+      const p1 = s.points[i], p2 = s.points[i+1];
+      const x1 = p1.x*width, y1 = p1.y*height, x2 = p2.x*width, y2 = p2.y*height;
+      ctx.lineWidth = s.width;
+      if(s.mode === 'erase'){ ctx.globalCompositeOperation='destination-out'; } else { ctx.globalCompositeOperation='source-over'; ctx.strokeStyle = s.color || '#fff'; }
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+    ctx.globalCompositeOperation='source-over';
+  });
 }
 
-/* fix: expose saving states when art/card saved */
-artLayer.addEventListener('mouseup', ()=> { /* no-op */ });
-saveArt.addEventListener('click', ()=> { /* handled above */ });
-saveCard.addEventListener('click', ()=> { /* handled above */ });
+/* update small task status and enable/disable complete button */
+function updateTaskStatus(){
+  const parts = [];
+  if(!espDone || !milkDone) parts.push('注ぎ');
+  // If art not saved, indicate. Here art is considered saved if we wrote artStrokes to Firestore: we check saveArt.disabled
+  if(!saveArt.disabled) parts.push('アート未保存');
+  if(!saveCard.disabled) parts.push('カード未保存');
+  taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了';
+  completeMake.disabled = parts.length > 0;
+}
 
-/* completeMake: finalize provided item */
+/* --- provide (completeMake) --- */
+let currentMakingOrderId = null;
+async function openMakeModal(order){
+  currentMakingOrderId = order.id;
+  makerName.textContent = order.assignedToName || order.assignedTo || '';
+  initArt(); initCard(); resetLatteCanvas(); resetPouring();
+  // if order already has artStrokes or cardStrokes, preload them to canvases for editing/view
+  if(order.artStrokes){ // replay on artLayer and on latte preview
+    initArt(); replayStrokesOnCtx(order.artStrokes, artLayerCtx, artLayer.width, artLayer.height);
+    // also composite onto latte preview for initial state
+    const tmp = document.createElement('canvas'); tmp.width = latteCanvas.width; tmp.height = latteCanvas.height; const tctx = tmp.getContext('2d');
+    tctx.fillStyle = '#6b3b24'; tctx.beginPath(); tctx.arc(60,60,58,0,Math.PI*2); tctx.fill();
+    replayStrokesOnCtx(order.artStrokes, tctx, tmp.width, tmp.height);
+    latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.drawImage(tmp,0,0);
+    saveArt.disabled = true;
+  }
+  if(order.cardStrokes){
+    initCard(); replayStrokesOnCtx(order.cardStrokes, cardCtx, cardCanvas.width, cardCanvas.height); saveCard.disabled = true;
+  }
+  // reflect stored flags
+  espDone = !!order.espCleared; milkDone = !!order.milkCleared;
+  // start with pour controls disabled if already done
+  startEsp.disabled = order.espCleared ? true : false;
+  startMilk.disabled = order.milkCleared ? true : !order.espCleared;
+  showModal(modalMakeLatte);
+  updateTaskStatus();
+}
+
+/* completeMake event handler performs composition + Firestore update */
 completeMake.addEventListener('click', async ()=>{
-  if (!currentMakingOrderId) { alert('対象注文がありません'); return; }
-  // Compose served image
-  const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600; const tctx = tmp.getContext('2d');
+  if(!currentMakingOrderId) { alert('対象がありません'); return; }
+  // Compose served image: background + latteCanvas + cardCanvas
+  const tmp = document.createElement('canvas'); tmp.width = 600; tmp.height = 600; const tctx = tmp.getContext('2d');
   tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  tctx.drawImage(latteCanvas, 180,120,240,240); // draw cup
+  tctx.drawImage(latteCanvas, 180,120,240,240);
   tctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
-  tctx.fillRect(160,380,280,120);
-  tctx.drawImage(cardCanvas, 170,390,260,100);
+  tctx.fillRect(160,380,280,120); tctx.drawImage(cardCanvas, 170,390,260,100);
   const dataUrl = tmp.toDataURL('image/png');
 
+  // persist strokes arrays as numeric "数字に変換" plus dataUrl CDN
   try {
+    // upload image to storage
     const sRef = storageRef(storage, `served_images/${currentMakingOrderId}.png`);
     await uploadString(sRef, dataUrl, 'data_url');
     const url = await getDownloadURL(sRef);
-    await updateDoc(doc(db,'orders',currentMakingOrderId), { state:'delivered', artDataUrl: latteCanvas.toDataURL(), cardDataUrl: cardCanvas.toDataURL(), servedImageUrl: url, deliveredAt: Date.now() });
+    // update order doc with strokes and urls and delivered state
+    await updateDoc(doc(db,'orders',currentMakingOrderId), {
+      state: 'delivered',
+      artStrokes: artStrokes.length ? artStrokes : null,
+      cardStrokes: cardStrokes.length ? cardStrokes : null,
+      artDataUrl: latteCanvas.toDataURL(),
+      cardDataUrl: cardCanvas.toDataURL(),
+      servedImageUrl: url,
+      deliveredAt: Date.now()
+    });
+    // close modal, stop cook bgm
     hideModal(modalMakeLatte);
-    // stop cook bgm
-    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; } catch(e){}
+    // staff returns to staff full screen and order disappears from list (delivered hidden in render)
     currentMakingOrderId = null;
-    alert('提供しました（クラウド保存）');
+    alert('提供しました（クラウドに保存）');
   } catch(e){
-    console.warn('completeMake upload failed', e);
-    try { await updateDoc(doc(db,'orders',currentMakingOrderId), { state:'delivered', artDataUrl: latteCanvas.toDataURL(), cardDataUrl: cardCanvas.toDataURL(), deliveredAt: Date.now() }); }
-    catch(err){ console.warn('firestore update failed', err); }
+    console.warn('completeMake failed', e);
+    // fallback: update doc fields without uploading image
+    try {
+      await updateDoc(doc(db,'orders',currentMakingOrderId), {
+        state: 'delivered',
+        artStrokes: artStrokes.length ? artStrokes : null,
+        cardStrokes: cardStrokes.length ? cardStrokes : null,
+        artDataUrl: latteCanvas.toDataURL(),
+        cardDataUrl: cardCanvas.toDataURL(),
+        servedImageUrl: dataUrl,
+        deliveredAt: Date.now()
+      });
+    } catch(err){ console.warn('fallback update failed', err); }
     hideModal(modalMakeLatte);
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; } catch(e){}
     currentMakingOrderId = null;
-    alert('提供しました（保存処理で一部失敗）');
+    alert('提供しました（ローカル保存）');
   }
 });
 
-/* cancel make */
-cancelMake.addEventListener('click', ()=> { if (confirm('制作を中止しますか？')){ hideModal(modalMakeLatte); currentMakingOrderId=null; } });
+/* cancelMake */
+cancelMake.addEventListener('click', ()=> { if(confirm('制作を中止しますか？')){ hideModal(modalMakeLatte); currentMakingOrderId = null; } });
 
-/* show served modal for customers */
-function showServed(orderId){
-  const o = state.orders.find(x=>x.id===orderId);
-  if (!o) return;
-  servedImage.src = o.servedImageUrl || o.servedImage || o.artDataUrl || makePlaceholder('Cafe Latte');
-  servedCard.innerHTML = `<div style="font-size:14px;white-space:pre-wrap;">カード</div>`; // if we stored cardDataUrl we could render it; simplified
-  showModal(modalEat);
-  let clicks = 0;
-  eatNext.onclick = ()=>{
-    clicks++;
-    if (clicks === 1){ servedImage.style.filter = 'grayscale(20%)'; try{ audioRate.currentTime=0; audioRate.play(); } catch(e){}; }
-    else if (clicks === 2){ servedImage.style.filter = 'grayscale(50%)'; try{ audioRate.currentTime=0; audioRate.play(); } catch(e){}; }
-    else { servedImage.style.filter = 'grayscale(100%)'; eatNext.disabled = true; }
-  };
-  saveImageBtn.onclick = ()=> { const a=document.createElement('a'); a.href = servedImage.src; a.download = `served_${o.id}.png`; a.click(); };
-  homeFromEat.onclick = ()=> hideModal(modalEat);
+/* --- Client: listen for delivered orders for this client and open served modal --- */
+function updateClientOverlay(){
+  if(!state.currentOrderIdForClient) return;
+  const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
+  if(!o) return;
+  if(o.state === 'waiting'){ showClientOverlay('現在対応待ち中'); }
+  else if(o.state === 'inprogress'){ showClientOverlay('現在調理中…'); try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){} }
+  else if(o.state === 'delivered'){
+    // when delivered, open the served modal and reconstruct art/card from numeric strokes
+    showClientOverlay('只今、運搬中');
+    // reconstruct served view
+    showServedFromOrder(o);
+  } else if(o.state === 'cancelled'){
+    showClientOverlay('スタッフの応答が��いため現在注文を取り消しになります');
+    setTimeout(()=>{ hideClientOverlay(); state.currentOrderIdForClient = null; }, 10000);
+  }
 }
-
-/* client status overlay handling */
-function showClientOverlay(text){
-  orderStatusCard.textContent = text;
-  orderStatusSub.textContent = '①注意：事故として必ずスタッフ（店員）が対応できない場合もございます';
-  orderStatusOverlay.style.display = 'flex';
-}
+function showClientOverlay(text){ orderStatusCard.textContent = text; orderStatusSub.textContent = '①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
 function hideClientOverlay(){ orderStatusOverlay.style.display = 'none'; }
 
-/* update client overlay based on order state for currentOrderIdForClient */
-function updateClientOverlay(){
-  if (!state.currentOrderIdForClient) return;
-  const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
-  if (!o) return;
-  if (o.state === 'waiting') { orderStatusCard.textContent = '現在対応待ち中'; orderStatusSub.textContent='①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
-  else if (o.state === 'inprogress'){ orderStatusCard.textContent = '現在調理中…'; orderStatusSub.textContent='①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){} }
-  else if (o.state === 'done' || o.state === 'delivered'){ orderStatusCard.textContent = '只今、運搬中'; orderStatusSub.textContent='①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; // hide shortly
-    setTimeout(()=>{ orderStatusOverlay.style.display = 'none'; }, 3000);
-  } else if (o.state === 'cancelled'){ orderStatusCard.textContent = 'スタッフの応答がないため現在注文を取り消しになります'; orderStatusSub.textContent='①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; setTimeout(()=>{ orderStatusOverlay.style.display = 'none'; state.currentOrderIdForClient = null; }, 10000); }
+/* showServedFromOrder reconstructs art & card and displays modalEat; keeps client on that screen until they press home */
+async function showServedFromOrder(order){
+  // prepare composite image: base product image (rate1.png etc) on center and overlay art top-right and card bottom-right
+  // load product sequence base images (rate1..n)
+  const baseImages = await preloadRateSequenceForItem(order.item);
+  const firstImg = baseImages.length ? baseImages[0] : null;
+  // build composite canvas
+  const tmp = document.createElement('canvas'); tmp.width=640; tmp.height=480; const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
+  // draw base product image centered
+  if(firstImg){
+    await drawImageOnCanvasFromUrl(firstImg, tctx, tmp.width, tmp.height, 0.6);
+  } else {
+    // fallback simple cup drawing
+    tctx.fillStyle='#6b3b24'; tctx.beginPath(); tctx.arc(tmp.width/2, tmp.height/3, 80, 0, Math.PI*2); tctx.fill();
+  }
+  // if order.artStrokes present, draw small art at top-right
+  if(order.artStrokes && order.artStrokes.length){
+    const artTmp = document.createElement('canvas'); artTmp.width=120; artTmp.height=120; const actx = artTmp.getContext('2d');
+    actx.fillStyle = '#6b3b24'; actx.beginPath(); actx.arc(60,60,58,0,Math.PI*2); actx.fill();
+    replayStrokesOnCtx(order.artStrokes, actx, artTmp.width, artTmp.height);
+    tctx.drawImage(artTmp, tmp.width - 140, 20, 120, 120);
+  } else if(order.artDataUrl){
+    // draw provided artDataUrl
+    await drawImageOnCanvasFromUrl(order.artDataUrl, tctx, tmp.width, tmp.height, 0.18, tmp.width-140, 20, 120, 120);
+  }
+  // draw message card (replay strokes)
+  if(order.cardStrokes && order.cardStrokes.length){
+    const ctmp = document.createElement('canvas'); ctmp.width=260; ctmp.height=100; const cctx = ctmp.getContext('2d');
+    cctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6'; cctx.fillRect(0,0,ctmp.width,ctmp.height);
+    replayStrokesOnCtx(order.cardStrokes, cctx, ctmp.width, ctmp.height);
+    tctx.drawImage(ctmp, tmp.width-280, tmp.height-140, 260, 100);
+  } else if(order.cardDataUrl){
+    await drawImageOnCanvasFromUrl(order.cardDataUrl, tctx, tmp.width, tmp.height, 0.35, tmp.width-280, tmp.height-140, 260, 100);
+  }
+  // set served image src to composite
+  servedImage.src = tmp.toDataURL('image/png');
+  // store sequence and index for clicking to advance
+  servedImage._sequence = baseImages;
+  servedImage._index = 0;
+  // show card text area
+  servedCard.innerHTML = '';
+  if(order.cardStrokes && order.cardStrokes.length){
+    // reconstruct a display for card: draw on small canvas and show
+    const displayCanvas = document.createElement('canvas'); displayCanvas.width=260; displayCanvas.height=100; replayStrokesOnCtx(order.cardStrokes, displayCanvas.getContext('2d'), displayCanvas.width, displayCanvas.height);
+    servedCard.innerHTML = ''; servedCard.appendChild(displayCanvas);
+  } else if(order.cardDataUrl){
+    const img = document.createElement('img'); img.src = order.cardDataUrl; img.style.maxWidth='100%'; servedCard.innerHTML=''; servedCard.appendChild(img);
+  } else {
+    servedCard.textContent = 'カードはありません';
+  }
+  // show modal
+  showModal(modalEat);
+  // client should stay on this modal until home pressed
+  // when delivered, staff list hides the order automatically (render)
+  // prepare eatNext click to cycle base images (rate1->rate2->... play audio)
+  let clickCount = 0;
+  eatNext.onclick = ()=>{
+    clickCount++;
+    const seq = servedImage._sequence || [];
+    if(clickCount <= seq.length){
+      // advance
+      if(seq.length && servedImage._index < seq.length-1){ servedImage._index++; servedImage.src = seq[servedImage._index]; try{ audioRate.currentTime=0; audioRate.play(); } catch(e){} }
+      else { // no next: play sound once if available and then disable
+        if(seq.length && servedImage._index === seq.length-1){ try{ audioRate.currentTime=0; audioRate.play(); } catch(e){}; } else try{ audioRate.currentTime=0; audioRate.play(); } catch(e){}; }
+    } else {
+      // no sound
+    }
+  };
+  saveImageBtn.onclick = ()=> { const a=document.createElement('a'); a.href = servedImage.src; a.download = `served_${order.id}.png`; a.click(); };
+  homeFromEat.onclick = ()=> { hideModal(modalEat); };
 }
 
-/* small tone */
-function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); } catch(e){} }
+/* helper: draw image from url onto canvas context scaled */
+function drawImageOnCanvasFromUrl(url, ctx, canvasW, canvasH, scale=0.6, dx, dy, dw, dh){
+  return new Promise((resolve)=>{
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = ()=>{
+      const w = img.width, h = img.height;
+      const sw = (canvasW * scale), sh = (h/w) * sw;
+      const x = dx === undefined ? (canvasW - sw)/2 : dx;
+      const y = dy === undefined ? (canvasH - sh)/2 : dy;
+      const dw_ = dw || sw, dh_ = dh || sh;
+      ctx.drawImage(img, x, y, dw_, dh_);
+      resolve();
+    };
+    img.onerror = ()=> resolve();
+    img.src = url;
+  });
+}
 
-/* initial build menu */
+/* preload rate sequence for a menu item (rate1.png..rateN.png up to max) */
+async function preloadRateSequenceForItem(itemId){
+  const item = menuItems.find(m=>m.id===itemId); if(!item) return [];
+  const base = item.imageBase || '@zzcafe2800/reiji_cafe/main/rate';
+  const imgs = [];
+  for(let i=1;i<=12;i++){
+    const url = getAssetUrl(base + i + '.png');
+    try{
+      const res = await fetch(url);
+      if(!res.ok) { if(res.status===404) break; else break; }
+      const blob = await res.blob(); imgs.push(URL.createObjectURL(blob));
+    } catch(e){ break; }
+  }
+  return imgs;
+}
+
+/* --- Helper: when order created, schedule auto-cancel after expiresAt --- */
+function scheduleOrderTimeout(order){
+  const remaining = (order.expiresAt || 0) - Date.now();
+  if (remaining <= 0) return;
+  setTimeout(async ()=>{
+    try{
+      const snap = await getDoc(doc(db,'orders',order.id));
+      if(snap.exists()){
+        const o = snap.data();
+        if(o.state === 'waiting'){ await updateDoc(doc(db,'orders',order.id), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' }); }
+      }
+    } catch(e){ console.warn('scheduleOrderTimeout error', e); }
+  }, remaining);
+}
+
+/* --- utilities: show/hide modals on init --- */
+(function hideAllModals(){ const m = document.querySelectorAll('.modal-back'); m.forEach(x=>x.style.display='none'); })();
+
+/* --- small tone --- */
+function playTone(f=440,d=0.12){ try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=f; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, d*1000); } catch(e){} }
+
+/* --- openMakeModal wrapper when staff presses provide or make --- */
+function openMakeModal(order){
+  currentMakingOrderId = order.id;
+  makerName.textContent = order.assignedToName || order.assignedTo || '';
+  initArt(); initCard(); resetLatteCanvas(); resetPouring();
+  // if order contains saved strokes, preload into canvases and set flags
+  if(order.artStrokes){ replayStrokesOnCtx(order.artStrokes, artLayerCtx, artLayer.width, artLayer.height); artStrokes = order.artStrokes.slice(); saveArt.disabled=true; }
+  else artStrokes = [];
+  if(order.cardStrokes){ replayStrokesOnCtx(order.cardStrokes, cardCtx, cardCanvas.width, cardCanvas.height); cardStrokes = order.cardStrokes.slice(); saveCard.disabled=true; }
+  else cardStrokes = [];
+  // if order had esp/milk cleared we set flags so staff can resume
+  espDone = !!order.espCleared; milkDone = !!order.milkCleared;
+  startEsp.disabled = !!order.espCleared; startMilk.disabled = !!order.milkCleared || !order.espCleared;
+  saveArt.disabled = artStrokes.length>0 ? true : saveArt.disabled;
+  saveCard.disabled = cardStrokes.length>0 ? true : saveCard.disabled;
+  updateTaskStatus();
+  showModal(modalMakeLatte);
+}
+
+/* replayStrokesOnCtx reused (defined above) */
+
+/* Save art/card handlers already write strokes and dataUrl to order doc */
+
+/* When orders snapshot shows delivered for current client, show served modal — handled in updateClientOverlay */
+
+function hideModal(el){ el.style.display='none'; }
+function showModal(el){ el.style.display='flex'; }
+
+/* initial menu build */
 buildMenu().catch(()=>{});
 
-/* expose state for debugging */
+/* Expose state for debugging */
 window.__reiji_state = state;
 
-/* responsiveness: remove right panel (already done) & mobile friendly adjustments are in CSS */
-
-/* final notes: some operations (deleting Firestore docs) may fail due to security rules in your project; server-side cleanup may be necessary if permission denied. The code attempts best-effort deletions for deduplication and auto-removal. */
-
+/* Done. Please run and test in browser. If any console errors appear, paste them here. */
 </script>
 </body>
 </html>
