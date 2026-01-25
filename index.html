@@ -1199,7 +1199,7 @@ window.__reiji = { state, openMakeModalFromOrderId };
 buildMenu().catch(()=>{});
 initArtCanvas(); initCardCanvas();
 
-function initCardCanvas(){ cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6'; cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.lineCap='round'; cardCtx.lineJoin='round'; }
+
 
 /* Note:
    - The strokes-based save/replay avoids storing only a base64 image and enables re-render later.
