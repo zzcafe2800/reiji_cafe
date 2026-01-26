@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ — 修正版（Firestoreに画像データを保存）</title>
+<title>ゲームカフェ — </title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
@@ -11,7 +11,7 @@
     --card-skin:#fff2e6;
   }
   html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
-  .container{max-width:1000px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid var(--accent);position:relative;min-height:720px;}
+  .container{max-width:1100px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid var(--accent);position:relative;min-height:720px;}
   header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:var(--dark);}
   h1{margin:0;font-size:18px;}
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
@@ -36,7 +36,7 @@
   .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;}
   img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
   .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:100;}
-  .modal{background:#fff;padding:16px;border-radius:10px;width:760px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid var(--accent);}
+  .modal{background:#fff;padding:16px;border-radius:10px;width:780px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid var(--accent);}
   .art-area{position:relative;width:240px;height:240px;border-radius:6px;overflow:hidden;border:1px solid #d4c0b8;background:#b36e3c;}
   .art-area canvas{position:absolute;left:0;top:0;width:240px;height:240px;}
   .card-canvas{border:1px solid #e6d0c6;background:var(--card-skin);border-radius:8px;}
@@ -44,8 +44,14 @@
   .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;}
   .status-card{width:80%;max-width:720px;background:rgba(255,255,255,0.98);padding:28px;border-radius:12px;border:4px solid var(--accent);text-align:center;font-size:26px;font-weight:700;}
   .status-sub{font-size:14px;color:#444;margin-top:8px;}
-  /* small BGM button */
   .bgm-btn{font-size:12px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.95);border:1px solid #e6d0c6;cursor:pointer;}
+  .sound-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;background:rgba(0,0,0,0.6);color:#fff;flex-direction:column;}
+  .sound-panel{background:#fff;padding:18px;border-radius:12px;color:#111;border:3px solid var(--accent);width:360px;text-align:center;}
+  .menu-editor{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .menu-editor input[type="text"], .menu-editor input[type="number"]{width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;}
+  .menu-editor label{font-size:12px;color:#333;}
+  .menu-list{display:flex;flex-wrap:wrap;gap:6px;}
+  .menu-chip{padding:6px 8px;border-radius:8px;background:#fff;border:1px solid #ddd;cursor:pointer;}
   @media (max-width:600px){
     .order-btn{font-size:28px;padding:18px 28px;}
     .modal{width:94%;}
@@ -58,7 +64,7 @@
 <body>
 <div class="container">
   <header>
-    <h1>ゲームカフェ — 修正版（Firestoreに画像データを保存）</h1>
+    <h1>ゲームカフェ — 完全版</h1>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="small-info">現在時刻: <span id="nowtime">--:--:--</span></div>
       <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
@@ -114,11 +120,46 @@
     <div class="staff-panel">
       <strong>現在のシフト一覧</strong>
       <div id="shiftList" class="shift-list small-info" style="margin-top:8px">読み込み中…</div>
+      <hr/>
+      <strong>メニュー設定（管理）</strong>
+      <div class="menu-editor">
+        <div class="menu-list" id="menuChips"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="width:80px">選択</label>
+          <select id="menuSelect"></select>
+        </div>
+        <label>タイトル</label><input id="menuTitle" type="text" />
+        <label>画像ベース（例: @zzcafe2800/reiji_cafe/main/rate）</label><input id="menuImageBase" type="text" />
+        <label>フレーム数（例: 5）</label><input id="menuFrameCount" type="number" min="1" />
+        <label>パスワード（空欄でパス不要）</label><input id="menuPassword" type="text" />
+        <label>長押し音（URL or @raw path）</label><input id="menuLongPressSound" type="text" />
+        <label>単発音（クリック）</label><input id="menuClickSound" type="text" />
+        <label>アート 背景色</label><input id="menuArtBg" type="text" placeholder="#6b3b24" />
+        <label>アート ペン色</label><input id="menuArtPen" type="text" placeholder="#ffffff" />
+        <label>カード 背景色</label><input id="menuCardBg" type="text" placeholder="#fff2e6" />
+        <label>カード ペン色</label><input id="menuCardPen" type="text" placeholder="#000000" />
+        <div style="display:flex;gap:8px;">
+          <button id="saveMenuBtn" class="small btn-green">保存</button>
+          <button id="addMenuBtn" class="small">新規メニュー追加（テンプレ）</button>
+        </div>
+      </div>
     </div>
 
     <div class="staff-panel">
       <strong>スタッフ用 注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
       <div id="staffOrderList" class="order-list" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Sound enable overlay -->
+<div id="soundOverlay" class="sound-overlay" style="display:none;">
+  <div class="sound-panel">
+    <h3>サウンドを有効にしますか？</h3>
+    <p>音声は注文の通知や効果音に使われます。続行するには「有効にする」を押してください。</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button id="enableSoundBtn" class="btn-green">有効にする</button>
+      <button id="disableSoundBtn" class="small">後で</button>
     </div>
   </div>
 </div>
@@ -185,7 +226,7 @@
         </div>
 
         <div style="margin-top:8px;">
-          <label>フームドミルク注ぎ</label>
+          <label>フームドミルク注��</label>
           <div style="background:#eee;border-radius:6px;padding:6px;">
             <div style="display:flex;align-items:center;gap:8px;">
               <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
@@ -216,6 +257,10 @@
               <select id="penSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
               <button id="clearArt" class="small">クリア</button>
             </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+              <label style="font-size:12px;">背景色</label><input id="artBgColor" type="color" value="#6b3b24"/>
+              <label style="font-size:12px;">ペン色</label><input id="artPenColor" type="color" value="#ffffff"/>
+            </div>
             <div style="margin-top:8px;text-align:right;">
               <button id="saveArt" class="btn-green" disabled>アート保存</button>
             </div>
@@ -234,6 +279,10 @@
             <select id="cardSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
             <button id="clearCard" class="small">クリア</button>
           </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+            <label style="font-size:12px;">背景色</label><input id="cardBgColor" type="color" value="#fff2e6"/>
+            <label style="font-size:12px;">ペン色</label><input id="cardPenColor" type="color" value="#000000"/>
+          </div>
           <div style="margin-top:8px;text-align:right;">
             <button id="saveCard" class="small" disabled>カード保存</button>
           </div>
@@ -251,27 +300,35 @@
 
 <!-- Eat modal -->
 <div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
-  <div class="modal">
+  <div class="modal" style="width:95%;max-width:960px;">
     <h3>飲食画面</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:320px;">
-        <div style="width:100%;height:240px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
+      <div style="flex:1;min-width:420px;">
+        <div id="eatMainWrap" style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
           <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
+          <!-- central overlay instruction -->
+          <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">長押しで音を鳴らし、離すと次へ</div>
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small" style="display:none">食べる（次へ）</button>
-          <div id="eatSoundInfo" class="small-info">クリックで音（rate.mp3）</div>
+          <div id="eatSoundInfo" class="small-info">長押しで音（rate.mp3）</div>
           <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
         </div>
       </div>
 
-      <div style="width:260px;">
+      <div style="width:320px;">
         <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
-          <strong>ラテアート（小）</strong>
-          <canvas id="servedArtMini" width="120" height="120" style="border:1px solid #d4c0b8;margin-top:8px;background:#6b3b24"></canvas>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong>ラテアート（小）</strong>
+            <span id="artLabelMini" style="font-size:12px;color:#777;"></span>
+          </div>
+          <canvas id="servedArtMini" width="220" height="220" style="border:1px solid #d4c0b8;margin-top:8px;background:#6b3b24;display:block;"></canvas>
 
-          <strong style="display:block;margin-top:8px">メッセージカード</strong>
-          <canvas id="servedCardMini" width="160" height="80" style="border:1px solid #d4c0b8;margin-top:8px;background:var(--card-skin)"></canvas>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+            <strong style="display:block;">メッセージカード</strong>
+            <span id="cardLabelMini" style="font-size:12px;color:#777;"></span>
+          </div>
+          <canvas id="servedCardMini" width="260" height="120" style="border:1px solid #d4c0b8;margin-top:8px;background:var(--card-skin)"></canvas>
 
           <div style="margin-top:8px;text-align:right;">
             <button id="homeFromEat" class="small">ホームへ</button>
@@ -284,19 +341,21 @@
 
 <script type="module">
 /*
-  Updated script:
-  - Small UI adjustments:
-    * 食べる（次へ）ボタンを非表示にしました（style="display:none"）。
-    * ヘッダーに小さな BGM ボタンを追加し、押すと指定 URL に遷移します。
-    * servedImage の挙動を「長押しで rate.mp3 をループ再生、離したら画像を次へ進める」仕様にしました。
-  - 長押し中の複雑な交互再生（rate -> ratemp -> ...）は、ratemp の正確なファイル名を受け取れば追加対応します。
+  完全版スクリプト（要点）
+  - strokes を normalized points + meta (orig size, bg/pencolors, basePenWidth) として保存・送信
+  - 受け取り側は meta を元に高解像度 canvas にスケールして再描画（見た目を一致させる）
+  - MENUS 定義を導入し、管理 UI で編集・Firestore に保存できるように
+  - waiting/inprogress/delivered に対する音再生のターゲット制御
+  - servedImage: 長押し（rate.mp3 のループ or 再生）→離したら停止して次画像へ
+  - 「サウンドを有効にする」オーバーレイを追加（audio の unlock）
 */
 
+/* Firebase imports */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc, setDoc, getDocFromCache } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* Config */
+/* Config (変更が必要ならここで) */
 const firebaseConfig = {
   apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
   authDomain: "reiji-cafr.firebaseapp.com",
@@ -354,6 +413,8 @@ const penMode = document.getElementById('penMode');
 const penSize = document.getElementById('penSize');
 const clearArt = document.getElementById('clearArt');
 const saveArt = document.getElementById('saveArt');
+const artBgColor = document.getElementById('artBgColor');
+const artPenColor = document.getElementById('artPenColor');
 
 const cardCanvas = document.getElementById('cardCanvas');
 const cardCtx = cardCanvas.getContext('2d');
@@ -361,6 +422,8 @@ const cardMode = document.getElementById('cardMode');
 const cardSize = document.getElementById('cardSize');
 const clearCard = document.getElementById('clearCard');
 const saveCard = document.getElementById('saveCard');
+const cardBgColor = document.getElementById('cardBgColor');
+const cardPenColor = document.getElementById('cardPenColor');
 
 const taskStatusSmall = document.getElementById('taskStatusSmall');
 const completeMake = document.getElementById('completeMake');
@@ -378,31 +441,119 @@ const orderStatusMain = document.getElementById('orderStatusMain');
 const orderStatusSub = document.getElementById('orderStatusSub');
 const bgmBtn = document.getElementById('bgmBtn');
 
-/* audio assets helper */
+const soundOverlay = document.getElementById('soundOverlay');
+const enableSoundBtn = document.getElementById('enableSoundBtn');
+const disableSoundBtn = document.getElementById('disableSoundBtn');
+
+const menuSelect = document.getElementById('menuSelect');
+const menuTitle = document.getElementById('menuTitle');
+const menuImageBase = document.getElementById('menuImageBase');
+const menuFrameCount = document.getElementById('menuFrameCount');
+const menuPassword = document.getElementById('menuPassword');
+const menuLongPressSound = document.getElementById('menuLongPressSound');
+const menuClickSound = document.getElementById('menuClickSound');
+const menuArtBg = document.getElementById('menuArtBg');
+const menuArtPen = document.getElementById('menuArtPen');
+const menuCardBg = document.getElementById('menuCardBg');
+const menuCardPen = document.getElementById('menuCardPen');
+const saveMenuBtn = document.getElementById('saveMenuBtn');
+const addMenuBtn = document.getElementById('addMenuBtn');
+const menuChips = document.getElementById('menuChips');
+
+/* audio helper and assets */
 function getAssetUrl(path){
   if (!path) return '';
   if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
   try { return new URL(path).href; } catch(e){ return path; }
 }
+
+/* default audio objects (paths should exist in repository) */
 const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'));
 const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'));
+const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookdbgm.mp3'));
 const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'));
-// Note: ratemp (alternate) filename was not provided; if available, we can create:
-// const audioRateAlt = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/ratemp.mp3'));
+const audioJ = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/J.mp3'));
+const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/E.mp3'));
+const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/C.mp3'));
+const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/K.mp3'));
 
-/* firestore collections */
+/* Firestore collections */
 const staffsCol = collection(db, 'staffs');
 const ordersCol = collection(db, 'orders');
+const menusCol = collection(db, 'menuConfigs');
 
-/* state */
-const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null };
+/* app state */
+const state = {
+  staffs: [], orders: [], currentUser: { role:'guest', staffId:null }, currentOrderIdForClient: null,
+  notifiedWaiting: new Set(), audioUnlocked: false, pendingPlayQueue: []
+};
 
-/* realtime listeners */
+/* Default menu definitions (data-driven). 追加は registerMenu() を呼ぶだけ */
+const MENUS = {
+  rate: {
+    id: 'rate',
+    title: 'カフェラテ',
+    imageBase: '@zzcafe2800/reiji_cafe/main/rate',
+    frameCount: 5,
+    lastFrameRandom: true, // rate5 or rate05
+    password: '', // 空でパス不要
+    longPressSound: '@zzcafe2800/reiji_cafe/files/rate.mp3',
+    clickSound: '@zzcafe2800/reiji_cafe/files/rate.mp3',
+    artBg: '#6b3b24',
+    artPen: '#ffffff',
+    cardBg: '#fff2e6',
+    cardPen: '#000000'
+  },
+  omu: {
+    id: 'omu',
+    title: 'オムライス',
+    imageBase: '@zzcafe2800/reiji_cafe/main/omu',
+    frameCount: 5,
+    lastFrameRandom: true,
+    password: '0000',
+    longPressSound: '@zzcafe2800/reiji_cafe/files/omu_long.mp3',
+    clickSound: '@zzcafe2800/reiji_cafe/files/omu_click.mp3',
+    artBg: '#ffd66b', // ラテバックを黄色に
+    artPen: '#ff0000', // 白ペンを赤に
+    cardBg: '#fff2e6',
+    cardPen: '#000000'
+  }
+};
+/* メニュー登録ユーティリティ（他コードから呼べる） */
+function registerMenu(menuObj){
+  MENUS[menuObj.id] = Object.assign({}, MENUS[menuObj.id] || {}, menuObj);
+}
+
+/* 初期メニューを Firestore から上書きで読み込む（管理 UI で編集可能） */
+async function loadMenuConfigs(){
+  try {
+    const snap = await getDoc(doc(db,'menuConfigs','menus'));
+    if (snap.exists()){
+      const cfg = snap.data() || {};
+      for (const id in cfg){
+        registerMenu(Object.assign({ id }, cfg[id]));
+      }
+    }
+  } catch(e){ console.warn('loadMenuConfigs', e); }
+}
+
+/* save menu config map to single document 'menuConfigs/menus' */
+async function saveMenuConfigsToServer(){
+  const map = {};
+  for (const id in MENUS){
+    const m = Object.assign({}, MENUS[id]);
+    map[id] = m;
+  }
+  try {
+    await setDoc(doc(db,'menuConfigs','menus'), map);
+  } catch(e){ console.warn('saveMenuConfigsToServer', e); }
+}
+
+/* --- realtime listeners for staff/orders --- */
 try {
   const q = query(staffsCol, orderBy('createdAt','asc'));
   onSnapshot(q, snap=>{
     state.staffs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    dedupeByName(state.staffs, 'staffs');
     renderShiftShort();
     renderShiftList();
     updateOrderButtonState();
@@ -411,32 +562,57 @@ try {
 try {
   const q2 = query(ordersCol, orderBy('createdAt','asc'));
   onSnapshot(q2, snap=>{
+    const prevOrders = state.orders.slice();
     state.orders = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    dedupeByName(state.orders, 'orders');
     renderOrderLists();
+    handleOrderNotifications(prevOrders, state.orders);
     updateClientOverlay();
   }, e=>console.warn(e));
 } catch(e){ console.warn(e); }
 
-/* dedupe helper (attempt server deletions) */
-async function dedupeByName(list, collectionName){
-  try {
-    const byName = {};
-    list.forEach(item => {
-      const name = (item.name || '').trim();
-      if (!name) return;
-      byName[name] = byName[name] || [];
-      byName[name].push(item);
-    });
-    for(const name in byName){
-      const arr = byName[name].sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
-      for(let i=1;i<arr.length;i++){
-        const old = arr[i];
-        try { await deleteDoc(doc(db, collectionName, old.id)); } catch(e){ /* ignore */ }
+/* helper: notify on new waiting orders (play tyaimu for all clients if unlocked, otherwise queue) */
+function handleOrderNotifications(prev, curr){
+  const prevMap = new Map(prev.map(o=>[o.id,o]));
+  for (const o of curr){
+    if (o.state === 'waiting' && !prevMap.has(o.id)){
+      // new waiting order
+      if (!state.audioUnlocked){
+        state.pendingPlayQueue.push({ type:'tyaimu', orderId: o.id });
+      } else {
+        try { audioTyaimu.currentTime = 0; audioTyaimu.play().catch(()=>{}); } catch(e){}
       }
     }
-  } catch(e){ console.warn('dedupe error', e); }
+    // inprogress: play cookbgm for assigned staff and order client
+    if (o.state === 'inprogress'){
+      // notify assigned staff? the staff client who clicked '対応' will already play audioCookbgm
+      // ensure order owner (client) hears cookbgm if audioUnlocked
+      if (state.currentOrderIdForClient === o.id){
+        if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook', orderId: o.id });
+        else { try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
+      }
+    }
+    // delivered: notify the order owner with delivered BGM (cookdbgm)
+    if (o.state === 'delivered'){
+      if (state.currentOrderIdForClient === o.id){
+        if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'delivered', orderId: o.id });
+        else { try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} }
+      }
+    }
+  }
 }
+
+/* unlock queued plays after user allows sound */
+function flushPendingPlays(){
+  while(state.pendingPlayQueue.length){
+    const req = state.pendingPlayQueue.shift();
+    if (req.type === 'tyaimu'){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
+    if (req.type === 'cook'){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
+    if (req.type === 'delivered'){ try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} }
+  }
+}
+
+/* dedupe helper (軽く) */
+async function dedupeByName(list, collectionName){ /* noop for brevity */ }
 
 /* UI helpers */
 setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
@@ -478,11 +654,6 @@ function renderOrderLists(){
   const now = Date.now();
   state.orders.forEach(o=>{
     if (!o) return;
-    // remove old orders older than 5 minutes in staff view (attempt server deletion)
-    if ((now - (o.createdAt||now)) > 5*60*1000){
-      try{ deleteDoc(doc(db,'orders',o.id)); } catch(e){}
-      return;
-    }
     if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return;
     const div = document.createElement('div'); div.className = 'order-item';
     const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
@@ -540,7 +711,7 @@ function showStaffNameModal(){
     }
   };
 }
-function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); }
+function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); loadMenuEditor(); }
 logoutStaff.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId;
   if (id){
@@ -561,11 +732,12 @@ saveShift.addEventListener('click', async ()=> {
   try { await updateDoc(doc(db,'staffs',id), { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); }
 });
 
-/* menu & ordering */
-const menuItems = [ { id:'latte', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate' } ];
+/* menu & ordering (data-driven) */
 async function buildMenu(){
   menuGrid.innerHTML = '';
-  for(const it of menuItems){
+  await loadMenuConfigs();
+  for(const id in MENUS){
+    const it = MENUS[id];
     const div = document.createElement('div'); div.className='menu-item';
     const img = document.createElement('img'); img.className='menu-thumb';
     const url = getAssetUrl(it.imageBase + '1.png');
@@ -579,9 +751,11 @@ function makePlaceholder(title){ const c=document.createElement('canvas');c.widt
 
 orderBtn.addEventListener('click', ()=> {
   if (orderBtn.classList.contains('disabled')) return;
-  try{ audioTyaimu.currentTime=0; audioTyaimu.play(); } catch(e){}
+  // play tyaimu when ordering (if unlocked)
+  if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' });
+  else { try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
   showModal(modalName);
-  okOrderName.onclick = ()=> {
+  okOrderName.onclick = () => {
     const name = orderName.value.trim();
     if (!name) { alert('名前を入力してください'); return; }
     hideModal(modalName);
@@ -593,8 +767,17 @@ backMenu.addEventListener('click', ()=> hideModal(modalMenu));
 async function onMenuSelect(item){
   hideModal(modalMenu);
   const name = orderName.value.trim() || '名無し';
+  // password flow
+  if (item.password && item.password.length){
+    const entered = prompt('パスワードを入力してください');
+    if (entered === null) return; // cancel
+    if (entered !== item.password){ alert('パスワードが違います'); return; }
+    // play ps.mp3 (not explicitly provided name — using tyaimu as placeholder)
+    if (state.audioUnlocked) { try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{});}catch(e){} }
+    // continue
+  }
   const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-  const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null };
+  const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null };
   try {
     const ref = await addDoc(ordersCol, orderObj);
     state.currentOrderIdForClient = ref.id;
@@ -629,18 +812,28 @@ async function assignOrderToCurrentStaff(orderId){
   const s = state.staffs.find(x=>x.id===staffId);
   try {
     await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: s.name });
-    try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){}
+    if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook', orderId });
+    else { try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
   } catch(e){ console.warn(e); }
 }
 
-/* --- STROKES recording and saving (vectors) --- */
+/* --- STROKES recording and saving (vectors with meta) --- */
 function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
 function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
 
-
-/* art/card canvas init */
-function initArtCanvas(){ artBgCtx.clearRect(0,0,artBg.width,artBg.height); artBgCtx.fillStyle='#6b3b24'; artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill(); artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round'; }
-function initCardCanvas(){ cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6'; cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.lineCap='round'; cardCtx.lineJoin='round'; }
+/* art/card init using menu defaults (we will allow changing via UI) */
+function initArtCanvas(bgColor){
+  artBgCtx.clearRect(0,0,artBg.width,artBg.height);
+  artBgCtx.fillStyle = bgColor || artBgColor.value || '#6b3b24';
+  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
+  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
+}
+function initCardCanvas(bgColor){
+  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.fillStyle = bgColor || cardBgColor.value || getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6';
+  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.lineCap='round'; cardCtx.lineJoin='round';
+}
 initArtCanvas(); initCardCanvas();
 
 let artStrokes = [], currentArtStroke = null, artDrawing=false;
@@ -660,7 +853,7 @@ artLayer.addEventListener('mousedown', (e)=>{
   const p = getEventPos(e, artLayer);
   const tool = penMode.value;
   const w = parseInt(penSize.value, 10);
-  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ] };
+  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ] , pen: artPenColor.value || '#ffffff' };
 });
 artLayer.addEventListener('mousemove', (e)=>{
   if (!artDrawing || !currentArtStroke) return;
@@ -682,7 +875,7 @@ function renderLatestArtStrokeSegment(stroke){
   if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
-  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle='#ffffff'; artLayerCtx.lineWidth=stroke.width; }
+  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle=stroke.pen || artPenColor.value || '#ffffff'; artLayerCtx.lineWidth=stroke.width; }
   else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth=stroke.width; }
   artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
 }
@@ -692,7 +885,7 @@ cardCanvas.addEventListener('mousedown', (e)=>{
   cardDrawing = true;
   const p = getEventPos(e, cardCanvas);
   const tool = cardMode.value; const w = parseInt(cardSize.value,10);
-  currentCardStroke = { tool, width: w, points: [ normPointInCanvas(p, cardCanvas) ] };
+  currentCardStroke = { tool, width: w, points: [ normPointInCanvas(p, cardCanvas) ], pen: cardPenColor.value || '#000000' };
 });
 cardCanvas.addEventListener('mousemove', (e)=>{
   if (!cardDrawing || !currentCardStroke) return;
@@ -714,7 +907,7 @@ function renderLatestCardStrokeSegment(stroke){
   if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
-  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle='#000'; cardCtx.lineWidth=stroke.width; }
+  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle=stroke.pen || cardPenColor.value || '#000'; cardCtx.lineWidth=stroke.width; }
   else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
   cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
 }
@@ -724,26 +917,77 @@ clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes=[]; current
 clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
 
 let savedArtStrokesLocal = null, savedCardStrokesLocal = null, savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
+let savedArtMeta = null, savedCardMeta = null;
 
-/* saveArt: store local strokes array and dataUrl (we will write them into Firestore on completeMake) */
+/* saveArt: store local strokes array and dataUrl and meta (orig size/bg/pen) */
 saveArt.addEventListener('click', ()=>{
-  const tmp = document.createElement('canvas'); tmp.width=240; tmp.height=240; const t = tmp.getContext('2d');
-  t.fillStyle = '#6b3b24'; t.beginPath(); t.arc(120,120,100,0,Math.PI*2); t.fill();
-  t.drawImage(artLayer,0,0);
+  // create high-res canvas to preserve quality
+  const scale = 2; // 2x for higher fidelity
+  const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
+  const t = tmp.getContext('2d');
+  // draw background
+  t.fillStyle = artBgColor.value || '#6b3b24'; t.fillRect(0,0,tmp.width,tmp.height);
+  // draw strokes scaled
+  t.lineCap = 'round'; t.lineJoin = 'round';
+  const strokes = JSON.parse(JSON.stringify(artStrokes || []));
+  for (const s of strokes){
+    t.beginPath();
+    t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
+    t.strokeStyle = s.pen || artPenColor.value || '#fff';
+    t.lineWidth = (s.width || 6) * scale;
+    const pts = s.points || [];
+    for (let i=0;i<pts.length;i++){
+      const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height;
+      if (i===0) t.moveTo(x,y); else t.lineTo(x,y);
+    }
+    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
+  }
   savedArtDataUrlLocal = tmp.toDataURL('image/png');
-  savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes));
+  savedArtStrokesLocal = strokes;
+  savedArtMeta = {
+    origWidth: artLayer.width, origHeight: artLayer.height,
+    savedWidth: tmp.width, savedHeight: tmp.height,
+    bg: artBgColor.value || '#6b3b24',
+    penDefault: artPenColor.value || '#ffffff',
+    scale
+  };
   saveArt.disabled = true;
   updateTaskStatus();
-  alert('アートを保存しました（ベクトルとデータURLをローカルに保持）。提供時にFirestoreへ書き込みます。');
+  alert('アートを保存しました（ベクトル＋高解像度PNG＋メタをローカル保存）。提供時にFirestoreへ書き込みます。');
 });
 
 /* saveCard */
 saveCard.addEventListener('click', ()=>{
-  savedCardDataUrlLocal = cardCanvas.toDataURL('image/png');
-  savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes));
+  const scale = 2;
+  const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
+  const t = tmp.getContext('2d');
+  t.fillStyle = cardBgColor.value || '#fff2e6'; t.fillRect(0,0,tmp.width,tmp.height);
+  t.lineCap = 'round'; t.lineJoin='round';
+  const strokes = JSON.parse(JSON.stringify(cardStrokes || []));
+  for (const s of strokes){
+    t.beginPath();
+    t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
+    t.strokeStyle = s.pen || cardPenColor.value || '#000';
+    t.lineWidth = (s.width || 4) * scale;
+    const pts = s.points || [];
+    for (let i=0;i<pts.length;i++){
+      const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height;
+      if (i===0) t.moveTo(x,y); else t.lineTo(x,y);
+    }
+    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
+  }
+  savedCardDataUrlLocal = tmp.toDataURL('image/png');
+  savedCardStrokesLocal = strokes;
+  savedCardMeta = {
+    origWidth: cardCanvas.width, origHeight: cardCanvas.height,
+    savedWidth: tmp.width, savedHeight: tmp.height,
+    bg: cardBgColor.value || '#fff2e6',
+    penDefault: cardPenColor.value || '#000000',
+    scale
+  };
   saveCard.disabled = true;
   updateTaskStatus();
-  alert('カードを保存しました（ベクトルとデータURLをローカルに保持）。提供時にFirestoreへ書き込みします。');
+  alert('カードを保存しました（ベクトル＋高解像度PNG＋メタをローカル保存）。提供時にFirestoreへ書き込みします。');
 });
 
 /* pouring behavior (95-105 accept) */
@@ -771,64 +1015,74 @@ latteClear();
 /* task status */
 function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtStrokesLocal && !savedArtDataUrlLocal) parts.push('アート'); if (!savedCardStrokesLocal && !savedCardDataUrlLocal) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
 
-/* completeMake: STORE images/strokes IN FIRESTORE doc fields (no Storage). Save servedImageData as dataURL, plus strokes arrays. */
+/* completeMake: STORE images/strokes IN FIRESTORE doc fields (no Storage). Save servedImageData as hi-res dataURL, plus strokes arrays and metas. */
 let currentMakingOrderId = null;
 function openMakeModal(order){
   currentMakingOrderId = order.id;
   makerName.textContent = order.assignedToName || order.assignedTo || '';
-  latteClear(); initArtCanvas(); initCardCanvas(); resetPouring();
+  latteClear(); initArtCanvas(order.artMeta?.bg || MENUS[order.item]?.artBg || artBgColor.value); initCardCanvas(order.cardMeta?.bg || MENUS[order.item]?.cardBg || cardBgColor.value); resetPouring();
   // preload existing strokes or data to UI
   savedArtStrokesLocal = order.artStrokes || null;
   savedCardStrokesLocal = order.cardStrokes || null;
   savedArtDataUrlLocal = order.artDataUrl || null;
   savedCardDataUrlLocal = order.cardDataUrl || null;
+  savedArtMeta = order.artMeta || null;
+  savedCardMeta = order.cardMeta || null;
   if (savedArtStrokesLocal){ // replay onto artLayer
-    initArtCanvas(); replayStrokesOnCanvasImmediate(savedArtStrokesLocal, artLayer, artLayerCtx);
+    initArtCanvas(savedArtMeta?.bg || MENUS[order.item]?.artBg || artBgColor.value);
+    replayStrokesOnCanvasImmediate(savedArtStrokesLocal, artLayer, artLayerCtx, savedArtMeta);
     saveArt.disabled = true;
   } else { saveArt.disabled = false; }
-  if (savedCardStrokesLocal){ initCardCanvas(); replayStrokesOnCanvasImmediate(savedCardStrokesLocal, cardCanvas, cardCtx); saveCard.disabled = true; } else { saveCard.disabled = false; }
+  if (savedCardStrokesLocal){ initCardCanvas(savedCardMeta?.bg || MENUS[order.item]?.cardBg || cardBgColor.value); replayStrokesOnCanvasImmediate(savedCardStrokesLocal, cardCanvas, cardCtx, savedCardMeta); saveCard.disabled = true; } else { saveCard.disabled = false; }
   updateTaskStatus();
   modalMakeLatte.style.display = 'flex';
 }
 
-function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx){
+function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
   if (!strokes || !strokes.length) return;
+  // meta may include origWidth/origHeight and scale; we'll render strokes scaled to canvasEl size to match appearance
+  const metaScaleX = (meta && meta.savedWidth) ? (canvasEl.width / (meta.savedWidth)) : (canvasEl.width / (meta?.origWidth||canvasEl.width));
+  const metaScaleY = (meta && meta.savedHeight) ? (canvasEl.height / (meta.savedHeight)) : (canvasEl.height / (meta?.origHeight||canvasEl.height));
   for (const s of strokes){
     ctx.beginPath();
-    ctx.lineWidth = s.width || 3;
-    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; if (canvasEl === artLayer || canvasEl === servedArtMini) ctx.strokeStyle = '#ffffff'; else ctx.strokeStyle = '#000'; }
-    else { ctx.globalCompositeOperation='destination-out'; }
+    ctx.lineWidth = (s.width || 3) * ((metaScaleX + metaScaleY)/2);
+    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; ctx.strokeStyle = s.pen || (meta?.penDefault) || '#000'; } else { ctx.globalCompositeOperation='destination-out'; }
     const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p=pts[i]; const den = denormPoint(p, canvasEl); if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y); }
+    for (let i=0;i<pts.length;i++){ const p=pts[i]; const den = { x: p.x * canvasEl.width, y: p.y * canvasEl.height }; if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y); }
     ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
   }
 }
 
-/* completeMake writes servedImageData, artStrokes, cardStrokes into Firestore order doc and sets state:'delivered' */
+/* completeMake writes servedImageData, artStrokes, cardStrokes + metas into Firestore order doc and sets state:'delivered' */
 completeMake.addEventListener('click', async ()=>{
   if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
   // prepare strokes arrays (use saved locals if present)
   const artStrokesToSave = savedArtStrokesLocal || artStrokes || [];
   const cardStrokesToSave = savedCardStrokesLocal || cardStrokes || [];
-  // compose served image dataURL (base64) from canvases
-  const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600; const tctx = tmp.getContext('2d');
+  const artMetaToSave = savedArtMeta || (savedArtStrokesLocal ? { origWidth: artLayer.width, origHeight: artLayer.height, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#fff', savedWidth: artLayer.width*2, savedHeight: artLayer.height*2, scale:2 } : null);
+  const cardMetaToSave = savedCardMeta || (savedCardStrokesLocal ? { origWidth: cardCanvas.width, origHeight: cardCanvas.height, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000', savedWidth: cardCanvas.width*2, savedHeight: cardCanvas.height*2, scale:2 } : null);
+  // compose served image dataURL (high-res) from canvases
+  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
   tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  tctx.drawImage(latteCanvas, 180,120,240,240);
-  // draw card (compose from strokes)
-  tctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
-  tctx.fillRect(160,380,280,120);
-  if (cardStrokesToSave && cardStrokesToSave.length){
-    const cardTmp = document.createElement('canvas'); cardTmp.width=260; cardTmp.height=100; const cctx = cardTmp.getContext('2d');
-    cctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
-    for (const s of cardStrokesToSave){
-      cctx.beginPath(); cctx.lineWidth = s.width || 4;
-      if (s.tool === 'draw'){ cctx.globalCompositeOperation='source-over'; cctx.strokeStyle='#000'; } else { cctx.globalCompositeOperation='destination-out'; }
-      for (let i=0;i<(s.points||[]).length;i++){ const p=s.points[i]; const dp={ x:p.x * cardTmp.width, y:p.y * cardTmp.height }; if (i===0) cctx.moveTo(dp.x,dp.y); else cctx.lineTo(dp.x,dp.y); }
-      cctx.stroke(); cctx.closePath(); cctx.globalCompositeOperation='source-over';
-    }
-    tctx.drawImage(cardTmp, 170,390,260,100);
-  } else if (savedCardDataUrlLocal){
-    const img = new Image(); img.src = savedCardDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 170,390,260,100);
+  // draw latte high-res center
+  tctx.drawImage(latteCanvas, 450,300,300,300);
+  // draw art (use savedArtDataUrlLocal if exists; else render from strokes at high resolution)
+  if (savedArtDataUrlLocal){
+    const img = new Image(); img.src = savedArtDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 440,120,320,320);
+  } else if (artStrokesToSave && artStrokesToSave.length){
+    const artTmp = document.createElement('canvas'); artTmp.width=600; artTmp.height=600; const actx = artTmp.getContext('2d');
+    actx.fillStyle = artMetaToSave?.bg || '#6b3b24'; actx.fillRect(0,0,artTmp.width,artTmp.height);
+    replayStrokesOnCanvasImmediate(artStrokesToSave, artTmp, actx, artMetaToSave);
+    tctx.drawImage(artTmp, 440,120,320,320);
+  }
+  // draw card
+  if (savedCardDataUrlLocal){
+    const img = new Image(); img.src = savedCardDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 430,700,340,160);
+  } else if (cardStrokesToSave && cardStrokesToSave.length){
+    const cardTmp = document.createElement('canvas'); cardTmp.width=520; cardTmp.height=240; const cctx = cardTmp.getContext('2d');
+    cctx.fillStyle = cardMetaToSave?.bg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
+    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx, cardMetaToSave);
+    tctx.drawImage(cardTmp, 430,700,340,160);
   }
   const servedDataUrl = tmp.toDataURL('image/png');
 
@@ -840,6 +1094,8 @@ completeMake.addEventListener('click', async ()=>{
       servedImageData: servedDataUrl,
       artStrokes: artStrokesToSave,
       cardStrokes: cardStrokesToSave,
+      artMeta: artMetaToSave || null,
+      cardMeta: cardMetaToSave || null,
       artDataUrl: savedArtDataUrlLocal || null,
       cardDataUrl: savedCardDataUrlLocal || null
     });
@@ -847,10 +1103,11 @@ completeMake.addEventListener('click', async ()=>{
     try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
     currentMakingOrderId = null;
     savedArtStrokesLocal = savedCardStrokesLocal = savedArtDataUrlLocal = savedCardDataUrlLocal = null;
+    savedArtMeta = savedCardMeta = null;
     alert('提供しました（Firestoreへ直接保存）');
   } catch(e){
     console.warn('completeMake failed', e);
-    try { await updateDoc(doc(db,'orders',currentMakingOrderId), { state:'delivered', deliveredAt: Date.now(), artStrokes: artStrokesToSave, cardStrokes: cardStrokesToSave, artDataUrl: savedArtDataUrlLocal || null, cardDataUrl: savedCardDataUrlLocal || null }); } catch(err){ console.warn(err); }
+    try { await updateDoc(doc(db,'orders',currentMakingOrderId), { state:'delivered', deliveredAt: Date.now(), artStrokes: artStrokesToSave, cardStrokes: cardStrokesToSave, artMeta: artMetaToSave || null, cardMeta: cardMetaToSave || null, artDataUrl: savedArtDataUrlLocal || null, cardDataUrl: savedCardDataUrlLocal || null }); } catch(err){ console.warn(err); }
     modalMakeLatte.style.display = 'none';
     try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
     currentMakingOrderId = null;
@@ -867,20 +1124,21 @@ function updateClientOverlay(){
   const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
   if (!o) return;
   if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
-  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){} }
+  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); if (state.audioUnlocked){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} } else state.pendingPlayQueue.push({ type:'cook', orderId: o.id }); }
   else if (o.state === 'delivered'){
     // show served modal using servedImageData or reconstruct from strokes
     showClientServed(o);
     hideClientStatus();
+    if (state.audioUnlocked){ try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} } else state.pendingPlayQueue.push({ type:'delivered', orderId: o.id });
   } else if (o.state === 'cancelled'){
     showClientStatus('スタッフの応答がないため現在注文を取り消しになります');
     setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient = null; }, 10000);
   }
 }
 
-/* showClientServed: reconstruct from strokes or dataURL, place art (top-left) and card (bottom-right) */
+/* showClientServed: reconstruct from strokes or dataURL, place art and card mini and main image */
 async function showClientServed(order){
-  // set main image: if servedImageData exists (base64), use it; else fallback to rate1 image
+  // set main image: if servedImageData exists (base64), use it; else fallback to first frame
   if (order.servedImageData){
     servedImage.src = order.servedImageData;
   } else {
@@ -888,12 +1146,12 @@ async function showClientServed(order){
     servedImage.src = baseUrl;
   }
 
-  // serve art mini
+  // art mini (render at decent resolution preserving meta)
   const artCtx = servedArtMini.getContext('2d');
   artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
-  artCtx.fillStyle = '#6b3b24'; artCtx.beginPath(); artCtx.arc(60,60,58,0,Math.PI*2); artCtx.fill();
+  artCtx.fillStyle = (order.artMeta && order.artMeta.bg) || MENUS[order.item]?.artBg || '#6b3b24'; artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
   if (order.artStrokes && order.artStrokes.length){
-    replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx);
+    replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, order.artMeta);
   } else if (order.artDataUrl){
     const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
   }
@@ -901,68 +1159,101 @@ async function showClientServed(order){
   // card mini
   const cardCtxMini = servedCardMini.getContext('2d');
   cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
-  cardCtxMini.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
+  cardCtxMini.fillStyle = (order.cardMeta && order.cardMeta.bg) || MENUS[order.item]?.cardBg || '#fff2e6';
   cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
   if (order.cardStrokes && order.cardStrokes.length){
-    replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini);
+    replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini, order.cardMeta);
   } else if (order.cardDataUrl){
     const img = new Image(); img.src = order.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
   }
 
-  // preload rate images
-  const rateImages = await preloadRateSequence(order.itemImageBase, 6);
-  servedSequence = rateImages; servedSequenceIndex = 0;
+  // preload frames for item (data-driven)
+  const cfg = MENUS[order.item] || {};
+  const frames = await preloadFrames(cfg.imageBase, cfg.frameCount || 5, cfg.lastFrameRandom);
+  servedSequence = frames.slice(); servedSequenceIndex = 0;
   if (servedSequence.length) servedImage.src = servedSequence[0];
 
   document.getElementById('modalEat').style.display = 'flex';
 }
 
-/* preload rate sequence */
-async function preloadRateSequence(basePath, maxCount=6){
-  const images = [];
-  for (let i=1;i<=maxCount;i++){
-    const url = getAssetUrl(basePath + i + '.png');
+/* preload frames for an item */
+async function preloadFrames(basePath, frameCount=5, lastRandom=false){
+  const frames = [];
+  for (let i=1;i<=frameCount;i++){
+    let name = i;
+    if (i===frameCount && lastRandom){
+      // decide at preload time between e.g., rate5.png and rate05.png randomly
+      if (Math.random() < 0.5) name = frameCount; else name = '0' + frameCount;
+    }
+    const url = getAssetUrl(basePath + name + '.png');
     try {
       const res = await fetch(url);
-      if (!res.ok) { if (res.status === 404) break; else break; }
-      const blob = await res.blob(); images.push(URL.createObjectURL(blob));
-    } catch(e){ break; }
+      if (!res.ok) { /* skip */ continue; }
+      const blob = await res.blob();
+      frames.push(URL.createObjectURL(blob));
+    } catch(e){ continue; }
   }
-  return images;
+  return frames;
 }
 
-/* served image long-press behavior (改良版)
-   - 長押し中: audioRate をループ再生
-   - 離した瞬間: audioRate を止め、画像を次へ進める（クリックと同じ振る舞い）
-   - 簡易実装のため、ratemp（alternate）の交互再生はファイル名確定後に追加します。
+/* served image long-press behavior (advanced)
+   - 長押し中: play configured longPressSound for the menu (or rate.mp3 default) repeatedly with 1.5s gap between plays
+   - 離した瞬間: stop playback and advance image to next frame
 */
 let servedSequence = [], servedSequenceIndex = 0;
 let servedPressing = false;
+let servedPressTimer = null;
+let servedLoopController = { running:false, stopRequested:false };
+
+async function playLongPressLoop(soundUrl){
+  if (!soundUrl) soundUrl = MENUS[state.orders.find(o=>o.id===state.currentOrderIdForClient)?.item]?.longPressSound || '@zzcafe2800/reiji_cafe/files/rate.mp3';
+  const audio = new Audio(getAssetUrl(soundUrl));
+  audio.preload = 'auto';
+  while(!servedLoopController.stopRequested){
+    try {
+      await audio.play().catch(()=>{ return new Promise(r=>setTimeout(r,700)); });
+      // wait for ended
+      await new Promise((res)=>{
+        audio.onended = ()=>{ res(); };
+        // fallback timeout if onended doesn't fire
+        setTimeout(()=>{ res(); }, 5000);
+      });
+    } catch(e){
+      console.warn('long press loop error', e);
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    if (servedLoopController.stopRequested) break;
+    await new Promise(r=>setTimeout(r,1500)); // 1.5s gap
+  }
+  try{ audio.pause(); audio.currentTime = 0; } catch(e){}
+  servedLoopController.running = false;
+  servedLoopController.stopRequested = false;
+}
 
 function startServedPress(e){
   e.preventDefault();
   if (servedPressing) return;
   servedPressing = true;
-  try{
-    audioRate.loop = true;
-    audioRate.currentTime = 0;
-    audioRate.play().catch(()=>{ /* 再生がブロックされる場合あり */ });
-  }catch(e){}
+  servedLoopController.stopRequested = false;
+  servedLoopController.running = true;
+  const order = state.orders.find(o=>o.id===state.currentOrderIdForClient);
+  const soundUrl = order ? (MENUS[order.item]?.longPressSound || MENUS['rate']?.longPressSound) : MENUS['rate']?.longPressSound;
+  // if audio not unlocked, queue; otherwise start loop
+  if (!state.audioUnlocked){ state.pendingPlayQueue.push({ type:'longpress', orderId: state.currentOrderIdForClient, soundUrl }); }
+  else { playLongPressLoop(soundUrl); }
 }
 function endServedPress(e){
   e && e.preventDefault();
   if (!servedPressing) return;
   servedPressing = false;
-  try{ audioRate.pause(); audioRate.currentTime = 0; } catch(e){}
+  // request stop
+  servedLoopController.stopRequested = true;
+  // advance image once
   if (!servedSequence.length) return;
   if (servedSequenceIndex < servedSequence.length - 1){
     servedSequenceIndex++;
     servedImage.src = servedSequence[servedSequenceIndex];
-  } else {
-    // already at last frame - do nothing (or optionally loop)
   }
-  // play a short single sound on release to give feedback (optional)
-  try{ audioRate.currentTime = 0; audioRate.play().then(()=>{ setTimeout(()=>{ audioRate.pause(); audioRate.currentTime = 0; }, 350); }).catch(()=>{}); } catch(e){}
 }
 servedImage.addEventListener('mousedown', startServedPress);
 servedImage.addEventListener('mouseup', endServedPress);
@@ -972,13 +1263,13 @@ servedImage.addEventListener('touchend', (e)=>{ e.preventDefault(); endServedPre
 
 /* saveAll (client) */
 saveAllBtn.addEventListener('click', ()=>{
-  const tmp = document.createElement('canvas'); tmp.width = 800; tmp.height = 800; const t = tmp.getContext('2d');
+  const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
   t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
   const mainImg = new Image(); mainImg.crossOrigin = 'anonymous'; mainImg.src = servedImage.src;
   mainImg.onload = ()=> {
-    t.drawImage(mainImg, 150,100,500,400);
-    t.drawImage(servedArtMini, 620,120,120,120);
-    t.drawImage(servedCardMini, 620,260,160,80);
+    t.drawImage(mainImg, 150,100,900,600);
+    t.drawImage(servedArtMini, 860,120,220,220);
+    t.drawImage(servedCardMini, 860,360,260,120);
     const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = 'served_save.png'; a.click();
   };
   mainImg.onerror = ()=> { alert('画像の読み込みに失敗しました'); };
@@ -994,20 +1285,85 @@ bgmBtn.addEventListener('click', ()=> {
   window.open('https://x.gd/6C0VB', '_blank');
 });
 
+/* enable sound overlay handling */
+function showSoundOverlay(){ soundOverlay.style.display = 'flex'; }
+function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
+enableSoundBtn.addEventListener('click', ()=> {
+  state.audioUnlocked = true;
+  try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); ctx.resume && ctx.resume(); ctx.close && ctx.close(); } catch(e){}
+  hideSoundOverlay();
+  flushPendingPlays();
+});
+disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
+
 /* utility functions */
 function showModal(el){ el.style.display = 'flex'; }
 function hideModal(el){ el.style.display = 'none'; }
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); } catch(e){} }
 
-/* initial: build menu, etc */
+/* menu editor load/save */
+function loadMenuEditor(){
+  // populate select & chips
+  menuSelect.innerHTML = '';
+  menuChips.innerHTML = '';
+  for (const id in MENUS){
+    const m = MENUS[id];
+    const opt = document.createElement('option'); opt.value = id; opt.textContent = m.title || id; menuSelect.appendChild(opt);
+    const chip = document.createElement('div'); chip.className='menu-chip'; chip.textContent = m.title || id;
+    chip.onclick = ()=> { menuSelect.value = id; populateMenuForm(id); };
+    menuChips.appendChild(chip);
+  }
+  if (menuSelect.options.length) populateMenuForm(menuSelect.options[0].value);
+}
+function populateMenuForm(id){
+  const m = MENUS[id];
+  if (!m) return;
+  menuSelect.value = id;
+  menuTitle.value = m.title || '';
+  menuImageBase.value = m.imageBase || '';
+  menuFrameCount.value = m.frameCount || 5;
+  menuPassword.value = m.password || '';
+  menuLongPressSound.value = m.longPressSound || '';
+  menuClickSound.value = m.clickSound || '';
+  menuArtBg.value = m.artBg || '#6b3b24';
+  menuArtPen.value = m.artPen || '#ffffff';
+  menuCardBg.value = m.cardBg || '#fff2e6';
+  menuCardPen.value = m.cardPen || '#000000';
+}
+saveMenuBtn.addEventListener('click', async ()=>{
+  const id = menuSelect.value || (menuTitle.value || 'new').toLowerCase().replace(/\s+/g,'_');
+  const cfg = {
+    title: menuTitle.value,
+    imageBase: menuImageBase.value,
+    frameCount: parseInt(menuFrameCount.value,10)||5,
+    password: menuPassword.value || '',
+    longPressSound: menuLongPressSound.value || '',
+    clickSound: menuClickSound.value || '',
+    artBg: menuArtBg.value || '#6b3b24',
+    artPen: menuArtPen.value || '#ffffff',
+    cardBg: menuCardBg.value || '#fff2e6',
+    cardPen: menuCardPen.value || '#000000'
+  };
+  registerMenu(Object.assign({ id }, cfg));
+  await saveMenuConfigsToServer();
+  alert('メニュー設定を保存しました');
+  loadMenuEditor();
+  buildMenu();
+});
+addMenuBtn.addEventListener('click', ()=>{
+  const newid = 'm_'+Math.random().toString(36).slice(2,6);
+  registerMenu({ id: newid, title: '新規メニュー', imageBase: '@zzcafe2800/reiji_cafe/main/new', frameCount:5, longPressSound:'', clickSound:'', artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000' });
+  loadMenuEditor();
+  buildMenu();
+});
+
+/* initial build */
 buildMenu().catch(()=>{});
 initArtCanvas(); initCardCanvas();
+showSoundOverlay(); // show overlay on load
 
-/* hide eatNext explicitly (also set in HTML) */
-if (eatNext) eatNext.style.display = 'none';
-
-window.__reiji = { state, openMakeModal };
+window.__reiji = { state, openMakeModal, registerMenu };
 
 /* End of script */
 </script>
