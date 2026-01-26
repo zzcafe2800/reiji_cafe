@@ -443,10 +443,10 @@ function getAssetUrl(path){
   return path;
 }
 const audioFiles = {
-  tyaimu: getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'),
-  cookbgm: getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'),
-  rate_base: getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'),
-  ps: getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3') // fallback ps sound reuse tyaimu if missing
+  tyaimu: getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'),
+  cookbgm: getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'),
+  rate_base: getAssetUrl('@zzcafe2800/reiji_cafe/main/rate.mp3'),
+  ps: getAssetUrl('@zzcafe2800/reiji_cafe/main/ps.mp3') // fallback ps sound reuse tyaimu if missing
 };
 const audioTyaimu = new Audio(audioFiles.tyaimu);
 const audioCookbgm = new Audio(audioFiles.cookbgm);
@@ -718,10 +718,10 @@ buildMenu().catch(()=>{});
 
 /* language button audio files (placeholders) */
 const langAudio = {
-  J: getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'),
-  E: getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'),
-  C: getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'),
-  K: getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3')
+  J: getAssetUrl('@zzcafe2800/reiji_cafe/main/J.mp3'),
+  E: getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'),
+  C: getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'),
+  K: getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3')
 };
 function setupLangButtons(){
   [btnJ, btnE, btnC, btnK, btnJ_small, btnE_small, btnC_small, btnK_small].forEach(el=>{
@@ -744,7 +744,7 @@ async function onMenuSelect(item){
   if (item.passcode){
     // show pass modal for just this client and play ps.mp3
     pendingMenuSelection = item;
-    try{ const ps = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3')); ps.play().catch(()=>{}); } catch(e){}
+    try{ const ps = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/ps.mp3')); ps.play().catch(()=>{}); } catch(e){}
     menuPassInput.value = '';
     showModal(modalPass);
     okMenuPass.onclick = async ()=>{
