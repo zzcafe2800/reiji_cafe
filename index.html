@@ -465,13 +465,13 @@ if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localSt
 const MENUS = {
   rate: {
     id: 'rate', title: '０時カフェ・ラテ', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:5, lastFrameRandom:true,
-    password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate.mp3',
+    password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' }
   },
   omu: {
     id: 'omu', title: '０時オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:5, lastFrameRandom:true,
-    password:'0000', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu.mp3',
+    password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' }
   }
@@ -541,8 +541,8 @@ setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 function renderShiftShort(){
   const now = new Date();
   const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!active.length) shiftShort.textContent = '注文”不可”　：　現在対応できる店員がおりません　';
-  else shiftShort.textContent = '注文”可”：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+  if (!active.length) shiftShort.textContent = '注文”できない”　：　現在対応できる店員がおりません　';
+  else shiftShort.textContent = '注文”できる”：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
 function renderShiftList(){
   shiftList.innerHTML = '';
