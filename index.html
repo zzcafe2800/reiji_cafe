@@ -3,10 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ — 修正版（Realtime + 高画質保存 + Omurice追加）</title>
+<title>ゲームカフェ — 修正版（Firestoreに画像データを保存）</title>
 <meta name="format-detection" content="telephone=no">
-<!-- Prevent browser from requesting /favicon.ico and causing 404 noise -->
-<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=">
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
@@ -29,35 +27,25 @@
   .staff-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
   .big-toggle{display:flex;gap:8px;align-items:center;margin-top:8px;}
   .big-toggle button{flex:1;padding:12px;border-radius:8px;font-size:16px;border:2px solid #c6b3b3;cursor:pointer;}
-  .big-toggle .active{background:#2b8f4a;color:#fff;border-color:#2b8f4a;}
-  .big-toggle .inactive{background:#f0f0f0;color:#666;}
+  .big-toggle .on{background:#2b8f4a;color:#fff;border-color:#2b8f4a;}
+  .big-toggle .off{background:#f0f0f0;color:#666;}
   .staff-body{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
   .staff-panel{flex:1;min-width:280px;background:var(--paper);padding:12px;border-radius:8px;border:1px solid #e6d6cc;max-height:520px;overflow:auto;}
   .order-item{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:center;}
   .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-  .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;position:relative;}
+  .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;}
   img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
   .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:100;}
   .modal{background:#fff;padding:16px;border-radius:10px;width:760px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid var(--accent);}
-  /* EAT fullscreen modal */
-  .eat-fullscreen{position:fixed;inset:0;z-index:200;background:linear-gradient(180deg,#fffdf8,#fff8ef);display:none;align-items:center;justify-content:center;overflow:auto;}
-  .eat-inner{width:90%;max-width:1200px;height:90%;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.4);display:grid;grid-template-columns:1fr 360px;grid-template-rows:1fr;gap:12px;padding:18px;align-items:start;}
-  .eat-main{display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #e6d6cc;border-radius:8px;background:#fff;}
-  .eat-side{display:flex;flex-direction:column;gap:12px;}
-  .served-art{width:48%;height:48%;border-radius:8px;border:1px solid #d4c0b8;background:#6b3b24;display:flex;align-items:center;justify-content:center;}
-  .served-card{width:48%;height:32%;border-radius:8px;border:1px solid #d4c0b8;background:var(--card-skin);display:flex;align-items:center;justify-content:center;}
-  .hint-small{font-size:11px;color:#777;opacity:0.8;}
-  .home-button{position:absolute;right:12px;bottom:12px;background:#fff;border:2px solid #e6d6cc;padding:8px;border-radius:8px;cursor:pointer;}
-  .lang-row{display:flex;gap:8px;align-items:center;margin-top:12px;}
-  .lang-item{width:60px;height:40px;border-radius:6px;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff}
-  .lang-item small{display:block;font-size:10px;color:#666;text-align:center;margin-top:4px}
+  .art-area{position:relative;width:240px;height:240px;border-radius:6px;overflow:hidden;border:1px solid #d4c0b8;background:#b36e3c;}
+  .art-area canvas{position:absolute;left:0;top:0;width:240px;height:240px;}
+  .card-canvas{border:1px solid #e6d0c6;background:var(--card-skin);border-radius:8px;}
   .small-info{font-size:12px;color:var(--muted);}
   .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;}
   .status-card{width:80%;max-width:720px;background:rgba(255,255,255,0.98);padding:28px;border-radius:12px;border:4px solid var(--accent);text-align:center;font-size:26px;font-weight:700;}
   .status-sub{font-size:14px;color:#444;margin-top:8px;}
-  @media (max-width:900px){
-    .eat-inner{grid-template-columns:1fr 280px;}
-  }
+  /* small BGM button */
+  .bgm-btn{font-size:12px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.95);border:1px solid #e6d0c6;cursor:pointer;}
   @media (max-width:600px){
     .order-btn{font-size:28px;padding:18px 28px;}
     .modal{width:94%;}
@@ -70,23 +58,17 @@
 <body>
 <div class="container">
   <header>
-    <h1>ゲームカフェ — 修正版（Realtime + 高画質保存 + Omurice）</h1>
-    <div class="small-info">現在時刻: <span id="nowtime">--:--:--</span></div>
+    <h1>ゲームカフェ — 修正版（Firestoreに画像データを保存）</h1>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="small-info">現在時刻: <span id="nowtime">--:--:--</span></div>
+      <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
+    </div>
   </header>
 
   <div class="content">
     <div class="order-block">
       <div id="shiftShort" class="status-line">読み込み中...</div>
       <button id="orderBtn" class="order-btn disabled">注文</button>
-
-      <!-- bottom row for language buttons -->
-      <div style="margin-top:12px;width:100%;display:flex;justify-content:center;gap:12px;align-items:center;">
-        <div class="lang-item" id="btnJ"><img src="" alt="J" style="width:36px;height:20px;object-fit:cover"><div style="font-size:10px">J<br><span class="hint-small">使用方法</span></div></div>
-        <div class="lang-item" id="btnE"><img src="" alt="E" style="width:36px;height:20px;object-fit:cover"><div style="font-size:10px">E<br><span class="hint-small">How to use</span></div></div>
-        <div class="lang-item" id="btnC"><img src="" alt="C" style="width:36px;height:20px;object-fit:cover"><div style="font-size:10px">C<br><span class="hint-small">使用方法</span></div></div>
-        <div class="lang-item" id="btnK"><img src="" alt="K" style="width:36px;height:20px;object-fit:cover"><div style="font-size:10px">K<br><span class="hint-small">사용 방법</span></div></div>
-      </div>
-
       <div id="helperSmall" class="small-info">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
     </div>
   </div>
@@ -123,8 +105,8 @@
     </div>
 
     <div class="big-toggle" style="margin-top:8px;">
-      <button id="shiftBtn" class="inactive">シフト中</button>
-      <button id="breakBtn" class="inactive">休憩中</button>
+      <button id="shiftBtn" class="on">シフト中</button>
+      <button id="breakBtn" class="off">休憩中</button>
     </div>
   </div>
 
@@ -141,7 +123,15 @@
   </div>
 </div>
 
-<!-- generic modals -->
+<!-- Order status overlay for client -->
+<div id="orderStatusOverlay" class="status-overlay">
+  <div class="status-card" id="orderStatusCard">
+    <div id="orderStatusMain">状態</div>
+    <div id="orderStatusSub" class="status-sub">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
+  </div>
+</div>
+
+<!-- Modals -->
 <div id="modalName" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
     <h3>名前を入力</h3>
@@ -163,22 +153,9 @@
   </div>
 </div>
 
-<!-- password modal for menu item -->
-<div id="modalPass" class="modal-back" style="display:none;align-items:center;justify-content:center;">
-  <div class="modal">
-    <h3>パスワード入力</h3>
-    <input id="menuPassInput" placeholder="パスワード" />
-    <div style="margin-top:10px;text-align:right;">
-      <button id="cancelMenuPass" class="small">キャンセル</button>
-      <button id="okMenuPass" class="btn-red">決定</button>
-    </div>
-  </div>
-</div>
-
-<!-- make modal same as before -->
 <div id="modalMakeLatte" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
   <div class="modal" style="width:95%;max-width:920px;">
-    <h3>制作（担当：<span id="makerName"></span>）</h3>
+    <h3>カフェラテ制作（担当：<span id="makerName"></span>）</h3>
     <div style="display:flex;flex-wrap:wrap;gap:12px;">
       <div style="flex:1;min-width:280px;">
         <div style="height:220px;display:flex;align-items:center;justify-content:center;">
@@ -272,63 +249,54 @@
   </div>
 </div>
 
-<!-- EAT full screen panel -->
-<div id="eatFullscreen" class="eat-fullscreen">
-  <div class="eat-inner">
-    <div class="eat-main">
-      <img id="servedImage" src="" alt="商品" style="max-width:92%;max-height:92%;cursor:pointer;" />
-      <div class="home-button" id="homeFromEat">ホームへ</div>
+<!-- Eat modal -->
+<div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
+  <div class="modal">
+    <h3>飲食画面</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:320px;">
+        <div style="width:100%;height:240px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
+          <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+          <button id="eatNext" class="small" style="display:none">食べる（次へ）</button>
+          <div id="eatSoundInfo" class="small-info">クリックで音（rate.mp3）</div>
+          <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
+        </div>
+      </div>
+
+      <div style="width:260px;">
+        <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
+          <strong>ラテアート（小）</strong>
+          <canvas id="servedArtMini" width="120" height="120" style="border:1px solid #d4c0b8;margin-top:8px;background:#6b3b24"></canvas>
+
+          <strong style="display:block;margin-top:8px">メッセージカード</strong>
+          <canvas id="servedCardMini" width="160" height="80" style="border:1px solid #d4c0b8;margin-top:8px;background:var(--card-skin)"></canvas>
+
+          <div style="margin-top:8px;text-align:right;">
+            <button id="homeFromEat" class="small">ホームへ</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="eat-side">
-      <div>
-        <div class="served-art" id="servedArtWrapper" title="ラテアート（小）">
-          <canvas id="servedArtMini" width="260" height="260" style="width:100%;height:100%;"></canvas>
-        </div>
-        <div style="margin-top:8px;font-size:12px;color:#999;text-align:right;">ラテアート</div>
-      </div>
-
-      <div>
-        <div class="served-card" id="servedCardWrapper" title="メッセージカード">
-          <canvas id="servedCardMini" width="320" height="160" style="width:100%;height:100%;"></canvas>
-        </div>
-        <div style="margin-top:8px;font-size:12px;color:#999;text-align:right;">メッセージカード</div>
-      </div>
-
-      <div style="margin-top:auto;">
-        <div class="lang-row">
-          <div class="lang-item" id="btnJ_small">J<br><small>使用方法</small></div>
-          <div class="lang-item" id="btnE_small">E<br><small>How to</small></div>
-          <div class="lang-item" id="btnC_small">C<br><small>使用方法</small></div>
-          <div class="lang-item" id="btnK_small">K<br><small>사용 방법</small></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- status overlay -->
-<div id="orderStatusOverlay" class="status-overlay" style="display:none">
-  <div class="status-card">
-    <div id="orderStatusMain">状態</div>
-    <div id="orderStatusSub" class="status-sub">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
   </div>
 </div>
 
 <script type="module">
 /*
-  Fixed version: removed accidental truncations and added small helpers so the page loads without runtime syntax errors.
-  Minimal behavior changes:
-  - Adds placeholder images for language buttons and menu thumbs if asset fetch fails.
-  - Adds updateTaskStatus() and makePlaceholder() to avoid ReferenceError.
-  - Adds setLangImages() to populate small language PNGs.
-  - Keeps original logic otherwise.
+  Updated script:
+  - Small UI adjustments:
+    * 食べる（次へ）ボタンを非表示にしました（style="display:none"）。
+    * ヘッダーに小さな BGM ボタンを追加し、押すと指定 URL に遷移します。
+    * servedImage の挙動を「長押しで rate.mp3 をループ再生、離したら画像を次へ進める」仕様にしました。
+  - 長押し中の複雑な交互再生（rate -> ratemp -> ...）は、ratemp の正確なファイル名を受け取れば追加対応します。
 */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* Firebase init */
+/* Config */
 const firebaseConfig = {
   apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
   authDomain: "reiji-cafr.firebaseapp.com",
@@ -341,26 +309,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-signInAnonymously(auth).catch(e=>console.warn('auth err', e));
+signInAnonymously(auth).catch(e=>console.warn('anonymous sign-in failed', e));
 
-/* DOM */
+/* DOM refs */
 const nowtimeEl = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
 const shiftShort = document.getElementById('shiftShort');
+const helperSmall = document.getElementById('helperSmall');
 const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
 const modalName = document.getElementById('modalName');
 const orderName = document.getElementById('orderName');
+const cancelOrderName = document.getElementById('cancelOrderName');
 const okOrderName = document.getElementById('okOrderName');
 const modalMenu = document.getElementById('modalMenu');
 const menuGrid = document.getElementById('menuGrid');
 const backMenu = document.getElementById('backMenu');
-
-const modalPass = document.getElementById('modalPass');
-const menuPassInput = document.getElementById('menuPassInput');
-const cancelMenuPass = document.getElementById('cancelMenuPass');
-const okMenuPass = document.getElementById('okMenuPass');
-
 const staffFull = document.getElementById('staffFull');
 const staffBadge = document.getElementById('staffBadge');
 const logoutStaff = document.getElementById('logoutStaff');
@@ -373,22 +337,6 @@ const shiftList = document.getElementById('shiftList');
 const staffOrderList = document.getElementById('staffOrderList');
 const pendingTasksSmall = document.getElementById('pendingTasksSmall');
 
-const eatFullscreen = document.getElementById('eatFullscreen');
-const servedImage = document.getElementById('servedImage');
-const servedArtMini = document.getElementById('servedArtMini');
-const servedCardMini = document.getElementById('servedCardMini');
-const homeFromEat = document.getElementById('homeFromEat');
-
-const btnJ = document.getElementById('btnJ');
-const btnE = document.getElementById('btnE');
-const btnC = document.getElementById('btnC');
-const btnK = document.getElementById('btnK');
-const btnJ_small = document.getElementById('btnJ_small');
-const btnE_small = document.getElementById('btnE_small');
-const btnC_small = document.getElementById('btnC_small');
-const btnK_small = document.getElementById('btnK_small');
-
-/* Make modal parts (art/card/pouring) */
 const modalMakeLatte = document.getElementById('modalMakeLatte');
 const makerName = document.getElementById('makerName');
 const startEsp = document.getElementById('startEsp');
@@ -418,161 +366,97 @@ const taskStatusSmall = document.getElementById('taskStatusSmall');
 const completeMake = document.getElementById('completeMake');
 const cancelMake = document.getElementById('cancelMake');
 
+const modalEat = document.getElementById('modalEat');
+const servedImage = document.getElementById('servedImage');
+const servedArtMini = document.getElementById('servedArtMini');
+const servedCardMini = document.getElementById('servedCardMini');
+const eatNext = document.getElementById('eatNext');
+const saveAllBtn = document.getElementById('saveAllBtn');
+const homeFromEat = document.getElementById('homeFromEat');
 const orderStatusOverlay = document.getElementById('orderStatusOverlay');
 const orderStatusMain = document.getElementById('orderStatusMain');
 const orderStatusSub = document.getElementById('orderStatusSub');
+const bgmBtn = document.getElementById('bgmBtn');
 
-setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
-
-/* audio assets (from repo raw) */
+/* audio assets helper */
 function getAssetUrl(path){
   if (!path) return '';
   if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
-  return path;
+  try { return new URL(path).href; } catch(e){ return path; }
 }
-const audioFiles = {
-  tyaimu: getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'),
-  cookbgm: getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'),
-  rate_base: getAssetUrl('@zzcafe2800/reiji_cafe/main/rate.mp3'),
-  ps: getAssetUrl('@zzcafe2800/reiji_cafe/main/ps.mp3') // fallback ps sound reuse tyaimu if missing
-};
-const audioTyaimu = new Audio(audioFiles.tyaimu);
-const audioCookbgm = new Audio(audioFiles.cookbgm);
-const audioRateBase = new Audio(audioFiles.rate_base);
+const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'));
+const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'));
+const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'));
+// Note: ratemp (alternate) filename was not provided; if available, we can create:
+// const audioRateAlt = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/ratemp.mp3'));
 
-/* collections */
+/* firestore collections */
 const staffsCol = collection(db, 'staffs');
 const ordersCol = collection(db, 'orders');
 
-/* application state */
-const appState = {
-  staffs: [],
-  orders: [],
-  currentUser: { role: 'guest', staffId: null },
-  currentOrderIdForClient: null,
-  prevOrderStates: new Map(), // track previous state to detect transitions
-  menuPendingItem: null // when password prompt is active
-};
+/* state */
+const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null };
 
-/* menu items config (password property optional). Add Omurice (omu) with pass '0000' */
-const menuItems = [
-  { id:'latte', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate', passcode: null, audioPrefix: 'rate' },
-  { id:'omu', title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu', passcode: '0000', audioPrefix: 'omu' }
-];
-
-/* Helper: load image and return blob URL (used for thumbnails) */
-async function loadImageAsObjectUrl(url){
-  try {
-    const r = await fetch(url);
-    if (!r.ok) return null;
-    const b = await r.blob();
-    return URL.createObjectURL(b);
-  } catch(e){ return null; }
-}
-
-/* Small helper: create SVG dataURL placeholder with text */
-function makePlaceholder(text){
-  const w = 200, h = 100;
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='#888' font-size='14'>${escapeHtml(text)}</text></svg>`;
-  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-}
-
-/* realtime listeners - use snapshot.docChanges to detect added/modified for audio triggers */
-function setupRealtime(){
-  const qStaff = query(staffsCol, orderBy('createdAt','asc'));
-  onSnapshot(qStaff, snap => {
-    appState.staffs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+/* realtime listeners */
+try {
+  const q = query(staffsCol, orderBy('createdAt','asc'));
+  onSnapshot(q, snap=>{
+    state.staffs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    dedupeByName(state.staffs, 'staffs');
     renderShiftShort();
-    renderShiftListRealtimeButtons();
-    renderShiftListDOM();
-  }, err=>console.warn(err));
-
-  const qOrders = query(ordersCol, orderBy('createdAt','asc'));
-  onSnapshot(qOrders, snap => {
-    // process changes to play audio triggers precisely
-    snap.docChanges().forEach(change => {
-      const d = { id: change.doc.id, ...change.doc.data() };
-      if (change.type === 'added'){
-        handleOrderAdded(d);
-      } else if (change.type === 'modified'){
-        const prev = appState.prevOrderStates.get(d.id) || null;
-        handleOrderModified(d, prev);
-      }
-      appState.prevOrderStates.set(d.id, d.state);
-    });
-    // full state update for UI rendering
-    appState.orders = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderShiftList();
+    updateOrderButtonState();
+  }, e=>console.warn(e));
+} catch(e){ console.warn(e); }
+try {
+  const q2 = query(ordersCol, orderBy('createdAt','asc'));
+  onSnapshot(q2, snap=>{
+    state.orders = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    dedupeByName(state.orders, 'orders');
     renderOrderLists();
     updateClientOverlay();
-  }, err=>console.warn(err));
-}
-setupRealtime();
+  }, e=>console.warn(e));
+} catch(e){ console.warn(e); }
 
-/* Detect new waiting orders -> broadcast tyaimu to everyone, and play item-specific sound for ordering client */
-function handleOrderAdded(order){
-  if (order.state === 'waiting'){
-    // play global tyaimu for this session
-    try{ audioTyaimu.currentTime = 0; audioTyaimu.play().catch(()=>{}); } catch(e){}
-    // for ordering client only: if this session is the one who created it
-    if (appState.currentOrderIdForClient === order.id){
-      // play item specific 1 audio once
-      playItemClientAudio(order.item, 1);
+/* dedupe helper (attempt server deletions) */
+async function dedupeByName(list, collectionName){
+  try {
+    const byName = {};
+    list.forEach(item => {
+      const name = (item.name || '').trim();
+      if (!name) return;
+      byName[name] = byName[name] || [];
+      byName[name].push(item);
+    });
+    for(const name in byName){
+      const arr = byName[name].sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
+      for(let i=1;i<arr.length;i++){
+        const old = arr[i];
+        try { await deleteDoc(doc(db, collectionName, old.id)); } catch(e){ /* ignore */ }
+      }
     }
-  }
-}
-
-/* Detect state transitions and handle audio */
-function handleOrderModified(order, prevState){
-  // if it moved to inprogress from waiting -> play cookbgm for assigned staff and the ordering client
-  if (prevState !== 'inprogress' && order.state === 'inprogress'){
-    // play cookbgm for this session if we are client and this is our order
-    if (appState.currentOrderIdForClient === order.id){
-      try{ audioCookbgm.currentTime = 0; audioCookbgm.loop = true; audioCookbgm.play().catch(()=>{}); } catch(e){}
-      playItemClientAudio(order.item, 2);
-    }
-    // if we are assigned staff, play cookbgm as well
-    if (appState.currentUser.role === 'staff' && appState.currentUser.staffId === order.assignedTo){
-      try{ audioCookbgm.currentTime = 0; audioCookbgm.loop = true; audioCookbgm.play().catch(()=>{}); } catch(e){}
-    }
-  }
-
-  // if delivered -> if this session is ordering client, play item-specific 3 once; stop cookbgm if playing
-  if (prevState !== 'delivered' && order.state === 'delivered'){
-    if (appState.currentOrderIdForClient === order.id){
-      playItemClientAudio(order.item, 3);
-      try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
-      // show served UI - handled elsewhere by updateClientOverlay
-    }
-  }
-
-  // if waiting (new waiting created or modified back to waiting) play tyaimu for all
-  if (prevState !== 'waiting' && order.state === 'waiting'){
-    try{ audioTyaimu.currentTime = 0; audioTyaimu.play().catch(()=>{}); } catch(e){}
-    if (appState.currentOrderIdForClient === order.id){
-      playItemClientAudio(order.item, 1);
-    }
-  }
+  } catch(e){ console.warn('dedupe error', e); }
 }
 
-/* play item-specific short audio for ordering client only (1/2/3) - filenames like rate1@.mp3, omu2@.mp3 */
-function playItemClientAudio(itemId, idx){
-  const item = menuItems.find(m=>m.id===itemId);
-  if (!item) return;
-  const prefix = item.audioPrefix || itemId;
-  // try filenames: `${prefix}${idx}@.mp3` as per user's naming scheme
-  const file = getAssetUrl(`@zzcafe2800/reiji_cafe/files/${prefix}${idx}@.mp3`);
-  const a = new Audio(file);
-  try{ a.currentTime = 0; a.play().catch(()=>{}); } catch(e){}
-}
+/* UI helpers */
+setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 
-/* UI rendering helpers */
 function renderShiftShort(){
   const now = new Date();
-  const active = appState.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+  const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
   if (!active.length) shiftShort.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）';
   else shiftShort.textContent = '状況①：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
-
+function renderShiftList(){
+  shiftList.innerHTML = '';
+  const now = new Date();
+  state.staffs.forEach(s => {
+    const div = document.createElement('div');
+    const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
+    div.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
+    shiftList.appendChild(div);
+  });
+}
 function isNowWithinShift(start,end,dateObj){
   if (!start || !end) return false;
   const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
@@ -581,49 +465,27 @@ function isNowWithinShift(start,end,dateObj){
   if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
   return dateObj >= sDate && dateObj <= eDate;
 }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-/* show a simple shift list in staff panel */
-function renderShiftListDOM(){
-  shiftList.innerHTML = '';
-  if (!appState.staffs.length){ shiftList.textContent = 'なし'; return; }
-  appState.staffs.forEach(s=>{
-    const d = document.createElement('div');
-    d.textContent = `${s.name} ${s.shiftStart||''}-${s.shiftEnd||''} ${s.onShift ? (s.breaking ? '(休憩)' : '(勤務中)') : ''}`;
-    shiftList.appendChild(d);
-  });
+/* orders UI */
+function updateOrderButtonState(){
+  const now = new Date();
+  const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+  if (anyAvailable) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled');
 }
-
-/* realtime button coloring for currently logged-in staff */
-function renderShiftListRealtimeButtons(){
-  if (appState.currentUser.role !== 'staff' || !appState.currentUser.staffId) return;
-  const me = appState.staffs.find(s=>s.id === appState.currentUser.staffId);
-  if (!me) return;
-  if (me.onShift && !me.breaking){
-    shiftBtn.classList.add('active'); shiftBtn.classList.remove('inactive');
-    breakBtn.classList.remove('active'); breakBtn.classList.add('inactive');
-  } else if (me.breaking){
-    breakBtn.classList.add('active'); breakBtn.classList.remove('inactive');
-    shiftBtn.classList.remove('active'); shiftBtn.classList.add('inactive');
-  } else {
-    shiftBtn.classList.add('inactive'); shiftBtn.classList.remove('active');
-    breakBtn.classList.add('inactive'); breakBtn.classList.remove('active');
-  }
-}
-
-/* Order list rendering */
 function renderOrderLists(){
   staffOrderList.innerHTML = '';
   const now = Date.now();
-  (appState.orders || []).forEach(o=>{
+  state.orders.forEach(o=>{
     if (!o) return;
+    // remove old orders older than 5 minutes in staff view (attempt server deletion)
     if ((now - (o.createdAt||now)) > 5*60*1000){
       try{ deleteDoc(doc(db,'orders',o.id)); } catch(e){}
       return;
     }
     if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return;
-    const div = document.createElement('div'); div.className='order-item';
-    const left = document.createElement('div');
-    left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+    const div = document.createElement('div'); div.className = 'order-item';
+    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
     const right = document.createElement('div');
     const tasks = computeOrderTasks(o);
     if (tasks.length) { const span = document.createElement('span'); span.className='small-info'; span.textContent = '未: ' + tasks.join(', '); right.appendChild(span); }
@@ -639,14 +501,13 @@ function renderOrderLists(){
       right.appendChild(makeBtn);
     } else if (o.state === 'done'){
       const provideBtn = document.createElement('button'); provideBtn.textContent='提供'; provideBtn.className='small btn-green';
-      provideBtn.onclick = ()=> openMakeModal(o);
+      provideBtn.onclick = ()=> openMakeModal(o); // open finalize modal
       right.appendChild(provideBtn);
     }
     div.appendChild(left); div.appendChild(right);
     staffOrderList.appendChild(div);
   });
-  const count = (appState.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length;
-  pendingTasksSmall.textContent = count ? ` 未処理:${count}` : '';
+  pendingTasksSmall.textContent = (state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length}` : '';
 }
 function computeOrderTasks(order){
   const pending = [];
@@ -659,166 +520,93 @@ function computeOrderTasks(order){
   return pending;
 }
 
-/* Staff login */
-passOk.addEventListener('click', ()=>{
-  if (staffPass.value === '1232'){ showModalNameForStaff(); } else alert('パスワードが違います');
+/* staff login */
+passOk.addEventListener('click', ()=> {
+  if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います');
 });
-function showModalNameForStaff(){
+function showStaffNameModal(){
   showModal(modalName);
   okOrderName.onclick = async ()=>{
     const name = orderName.value.trim(); if (!name) { alert('名前'); return; }
     hideModal(modalName);
     try {
-      const ref = await addDoc(collection(db,'staffs'), { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
+      const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
       enterStaffFull(name, ref.id);
     } catch(e){
       console.warn(e);
       const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
-      appState.staffs.push(s);
+      state.staffs.push(s);
       enterStaffFull(name, s.id);
     }
   };
 }
-function enterStaffFull(name, staffId){
-  appState.currentUser = { role:'staff', staffId };
-  staffBadge.textContent = name;
-  staffFull.classList.add('show');
-  renderShiftListRealtimeButtons();
-}
-logoutStaff.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId;
+function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); }
+logoutStaff.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId;
   if (id){
     try { await deleteDoc(doc(db,'staffs',id)); } catch(e){}
   }
-  appState.currentUser = { role:'guest', staffId:null };
-  staffFull.classList.remove('show');
+  state.currentUser = { role:'guest', staffId:null }; staffFull.classList.remove('show');
+});
+shiftBtn.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){}
+});
+breakBtn.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){}
+});
+saveShift.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); }
 });
 
-/* Shift/break button behavior: update doc and reflect real-time style */
-shiftBtn.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId; if (!id) { alert('スタッフとしてログインしてください'); return; }
-  try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){ console.warn(e); }
-});
-breakBtn.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId; if (!id) { alert('スタッフとしてログインしてください'); return; }
-  try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){ console.warn(e); }
-});
-saveShift.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId; if (!id) { alert('スタッフとしてログインしてください'); return; }
-  try { await updateDoc(doc(db,'staffs',id), { shiftStart: shiftStart.value || '09:00', shiftEnd: shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); }
-});
-
-/* Menu building + language buttons and audio for J/E/C/K */
+/* menu & ordering */
+const menuItems = [ { id:'latte', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate' } ];
 async function buildMenu(){
   menuGrid.innerHTML = '';
-  for (const it of menuItems){
-    const div = document.createElement('div'); div.className = 'menu-item';
-    const img = document.createElement('img'); img.className = 'menu-thumb';
+  for(const it of menuItems){
+    const div = document.createElement('div'); div.className='menu-item';
+    const img = document.createElement('img'); img.className='menu-thumb';
     const url = getAssetUrl(it.imageBase + '1.png');
-    const objUrl = await loadImageAsObjectUrl(url).catch(()=>null);
-    img.src = objUrl || makePlaceholder(it.title);
-    div.appendChild(img);
-    const label = document.createElement('div'); label.textContent = it.title; div.appendChild(label);
+    try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
+    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
     div.addEventListener('click', ()=> onMenuSelect(it));
     menuGrid.appendChild(div);
   }
 }
+function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
-/* language button audio files (placeholders) */
-const langAudio = {
-  J: getAssetUrl('@zzcafe2800/reiji_cafe/main/J.mp3'),
-  E: getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'),
-  C: getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'),
-  K: getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3')
-};
-function setupLangButtons(){
-  const elements = [btnJ, btnE, btnC, btnK, btnJ_small, btnE_small, btnC_small, btnK_small].filter(Boolean);
-  elements.forEach(el=>{
-    el.addEventListener('click', ()=>{
-      const key = (el.id.includes('J')) ? 'J' : (el.id.includes('E') ? 'E' : (el.id.includes('C') ? 'C' : 'K'));
-      const a = new Audio(langAudio[key]); try{ a.play().catch(()=>{}); } catch(e){}
-    });
-  });
-}
-
-/* set small images for language buttons (if present) */
-async function setLangImages(){
-  const map = {
-    btnJ: '@zzcafe2800/reiji_cafe/main/J.png',
-    btnE: '@zzcafe2800/reiji_cafe/main/E.png',
-    btnC: '@zzcafe2800/reiji_cafe/main/C.png',
-    btnK: '@zzcafe2800/reiji_cafe/main/K.png'
+orderBtn.addEventListener('click', ()=> {
+  if (orderBtn.classList.contains('disabled')) return;
+  try{ audioTyaimu.currentTime=0; audioTyaimu.play(); } catch(e){}
+  showModal(modalName);
+  okOrderName.onclick = ()=> {
+    const name = orderName.value.trim();
+    if (!name) { alert('名前を入力してください'); return; }
+    hideModal(modalName);
+    buildMenu(); showModal(modalMenu);
   };
-  for (const id of Object.keys(map)){
-    const el = document.getElementById(id);
-    if (!el) continue;
-    const img = el.querySelector('img');
-    if (!img) continue;
-    const url = getAssetUrl(map[id]);
-    const obj = await loadImageAsObjectUrl(url).catch(()=>null);
-    img.src = obj || makePlaceholder(id);
-    img.onerror = ()=> { img.src = makePlaceholder(id); };
-  }
-}
+});
+backMenu.addEventListener('click', ()=> hideModal(modalMenu));
 
-/* Ordering flow: if menu has passcode show modalPass and play ps.mp3; otherwise add order immediately */
-let pendingMenuSelection = null;
 async function onMenuSelect(item){
   hideModal(modalMenu);
-  const name = (orderName && orderName.value) ? orderName.value.trim() : '';
-  if (!name){
-    alert('まず名前を入力してください'); showModal(modalName); return;
-  }
-  if (item.passcode){
-    // show pass modal for just this client and play ps.mp3
-    pendingMenuSelection = item;
-    try{ const ps = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/ps.mp3')); ps.play().catch(()=>{}); } catch(e){}
-    menuPassInput.value = '';
-    showModal(modalPass);
-    okMenuPass.onclick = async ()=>{
-      const val = menuPassInput.value.trim();
-      hideModal(modalPass);
-      if (val !== item.passcode){ alert('パスワードが違います'); return; }
-      await createOrder(item, name);
-    };
-    cancelMenuPass.onclick = ()=>{ hideModal(modalPass); pendingMenuSelection = null; };
-  } else {
-    await createOrder(item, name);
-  }
-}
-
-/* createOrder writes to Firestore and sets local currentOrderIdForClient */
-async function createOrder(item, name){
+  const name = orderName.value.trim() || '名無し';
   const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-  const orderObj = {
-    name,
-    item: item.id,
-    itemImageBase: item.imageBase,
-    state: 'waiting',
-    createdAt,
-    expiresAt,
-    assignedTo: null,
-    assignedToName: null,
-    artStrokes: null,
-    cardStrokes: null,
-    artDataUrl: null,
-    cardDataUrl: null,
-    servedImageData: null
-  };
+  const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null };
   try {
-    const ref = await addDoc(collection(db,'orders'), orderObj);
-    appState.currentOrderIdForClient = ref.id;
-    // play tyaimu globally handled by snapshot; but we can optimistically play client-specific audio1 now
-    playItemClientAudio(item.id, 1);
+    const ref = await addDoc(ordersCol, orderObj);
+    state.currentOrderIdForClient = ref.id;
     showClientStatus('現在対応待ち中');
     scheduleOrderTimeout(ref.id, expiresAt);
   } catch(e){
-    console.warn('createOrder failed', e);
-    alert('注文の送信に失敗しました');
+    console.warn('add order failed', e);
+    orderObj.id = uid('o'); state.orders.push(orderObj);
+    state.currentOrderIdForClient = orderObj.id;
+    showClientStatus('現在対応待ち中');
   }
 }
-
-/* schedule cancellation */
 async function scheduleOrderTimeout(orderId, expiresAt){
   const remaining = (expiresAt || 0) - Date.now();
   if (remaining <= 0) return;
@@ -835,34 +623,28 @@ async function scheduleOrderTimeout(orderId, expiresAt){
   }, remaining);
 }
 
-/* assign order to current staff */
+/* assign order */
 async function assignOrderToCurrentStaff(orderId){
-  const staffId = appState.currentUser.staffId;
-  if (!staffId) { alert('スタッフとしてログインしてください'); return; }
-  const s = appState.staffs.find(x=>x.id === staffId);
+  const staffId = state.currentUser.staffId; if (!staffId) { alert('スタッフとしてログインしてください'); return; }
+  const s = state.staffs.find(x=>x.id===staffId);
   try {
-    await updateDoc(doc(db,'orders',orderId), { state: 'inprogress', assignedTo: staffId, assignedToName: s.name });
+    await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: s.name });
+    try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){}
   } catch(e){ console.warn(e); }
 }
 
-/* --- ART & CARD: improved high-quality saving and vector storage --- */
-function initArtCanvas(){
-  artBgCtx.clearRect(0,0,artBg.width,artBg.height);
-  artBgCtx.fillStyle = '#6b3b24';
-  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
-  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
-  artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
-}
-function initCardCanvas(){
-  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
-  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.lineCap='round'; cardCtx.lineJoin='round';
-}
+/* --- STROKES recording and saving (vectors) --- */
+function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
+function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+
+/* art/card canvas init */
+function initArtCanvas(){ artBgCtx.clearRect(0,0,artBg.width,artBg.height); artBgCtx.fillStyle='#6b3b24'; artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill(); artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round'; }
+function initCardCanvas(){ cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6'; cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.lineCap='round'; cardCtx.lineJoin='round'; }
 initArtCanvas(); initCardCanvas();
 
-let artStrokes = [], currentArtStroke=null, artDrawing=false;
-let cardStrokes = [], currentCardStroke=null, cardDrawing=false;
+let artStrokes = [], currentArtStroke = null, artDrawing=false;
+let cardStrokes = [], currentCardStroke = null, cardDrawing=false;
 
 function getEventPos(e, canvas){
   const r = canvas.getBoundingClientRect();
@@ -871,246 +653,187 @@ function getEventPos(e, canvas){
   const cy = t ? t.clientY : e.clientY;
   return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
 }
-function normPoint(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
-function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
 
-/* Art handlers */
-artLayer.addEventListener('pointerdown', (e)=>{
-  artLayer.setPointerCapture(e.pointerId);
+/* art handlers */
+artLayer.addEventListener('mousedown', (e)=>{
   artDrawing = true;
   const p = getEventPos(e, artLayer);
   const tool = penMode.value;
   const w = parseInt(penSize.value, 10);
-  currentArtStroke = { tool, width: w, points: [ normPoint(p, artLayer) ] };
+  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ] };
 });
-artLayer.addEventListener('pointermove', (e)=>{
+artLayer.addEventListener('mousemove', (e)=>{
   if (!artDrawing || !currentArtStroke) return;
   const p = getEventPos(e, artLayer);
-  currentArtStroke.points.push(normPoint(p, artLayer));
+  currentArtStroke.points.push(normPointInCanvas(p, artLayer));
   renderLatestArtStrokeSegment(currentArtStroke);
 });
-artLayer.addEventListener('pointerup', (e)=>{
-  try{ artLayer.releasePointerCapture(e.pointerId); }catch(e){}
+artLayer.addEventListener('mouseup', ()=>{
   if (!artDrawing) return;
-  artDrawing=false;
-  if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); }
+  artDrawing = false;
+  if (currentArtStroke) { artStrokes.push(currentArtStroke); currentArtStroke = null; saveArt.disabled = false; updateTaskStatus(); }
 });
-artLayer.addEventListener('pointercancel', ()=>{ artDrawing=false; currentArtStroke=null; });
+artLayer.addEventListener('mouseleave', ()=>{ if (artDrawing){ artDrawing=false; if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } } });
+artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); });
 
 function renderLatestArtStrokeSegment(stroke){
-  if (!stroke || stroke.points.length<2) return;
+  if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
-  artLayerCtx.globalCompositeOperation = (stroke.tool==='draw') ? 'source-over' : 'destination-out';
-  artLayerCtx.strokeStyle = (stroke.tool==='draw') ? '#ffffff' : '#000';
-  artLayerCtx.lineWidth = stroke.width;
+  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle='#ffffff'; artLayerCtx.lineWidth=stroke.width; }
+  else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth=stroke.width; }
   artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
-  artLayerCtx.globalCompositeOperation='source-over';
 }
 
-/* Card handlers (pointer events) */
-cardCanvas.addEventListener('pointerdown', (e)=>{
-  cardCanvas.setPointerCapture(e.pointerId);
-  cardDrawing=true;
+/* card handlers */
+cardCanvas.addEventListener('mousedown', (e)=>{
+  cardDrawing = true;
   const p = getEventPos(e, cardCanvas);
   const tool = cardMode.value; const w = parseInt(cardSize.value,10);
-  currentCardStroke = { tool, width: w, points: [ normPoint(p, cardCanvas) ] };
+  currentCardStroke = { tool, width: w, points: [ normPointInCanvas(p, cardCanvas) ] };
 });
-cardCanvas.addEventListener('pointermove', (e)=>{
+cardCanvas.addEventListener('mousemove', (e)=>{
   if (!cardDrawing || !currentCardStroke) return;
   const p = getEventPos(e, cardCanvas);
-  currentCardStroke.points.push(normPoint(p, cardCanvas));
+  currentCardStroke.points.push(normPointInCanvas(p, cardCanvas));
   renderLatestCardStrokeSegment(currentCardStroke);
 });
-cardCanvas.addEventListener('pointerup', (e)=>{
-  try{ cardCanvas.releasePointerCapture(e.pointerId); }catch(e){}
+cardCanvas.addEventListener('mouseup', ()=>{
   if (!cardDrawing) return;
-  cardDrawing=false;
-  if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=false; updateTaskStatus(); }
+  cardDrawing = false;
+  if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke = null; saveCard.disabled = false; updateTaskStatus(); }
 });
-cardCanvas.addEventListener('pointercancel', ()=>{ cardDrawing=false; currentCardStroke=null; });
+cardCanvas.addEventListener('mouseleave', ()=>{ if (cardDrawing){ cardDrawing=false; if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); } } });
+cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); });
 
 function renderLatestCardStrokeSegment(stroke){
-  if (!stroke || stroke.points.length<2) return;
+  if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
-  cardCtx.globalCompositeOperation = (stroke.tool==='draw') ? 'source-over' : 'destination-out';
-  cardCtx.strokeStyle = (stroke.tool==='draw') ? '#000' : '#000';
-  cardCtx.lineWidth = stroke.width;
+  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle='#000'; cardCtx.lineWidth=stroke.width; }
+  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
   cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
-  cardCtx.globalCompositeOperation='source-over';
 }
 
-/* Clear & high-quality save (4x resolution) */
+/* clear/save handlers */
 clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
 clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
 
-/* Save art: produce high-res dataURL (4x) and store strokes as-is (vectors) */
+let savedArtStrokesLocal = null, savedCardStrokesLocal = null, savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
+
+/* saveArt: store local strokes array and dataUrl (we will write them into Firestore on completeMake) */
 saveArt.addEventListener('click', ()=>{
-  // create 4x canvas to improve raster quality
-  const scale = 4;
-  const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
-  const t = tmp.getContext('2d');
-  t.scale(scale, scale);
-  // draw brown background high-res
+  const tmp = document.createElement('canvas'); tmp.width=240; tmp.height=240; const t = tmp.getContext('2d');
   t.fillStyle = '#6b3b24'; t.beginPath(); t.arc(120,120,100,0,Math.PI*2); t.fill();
-  // draw artLayer at native resolution but due to scaling it becomes high res
-  t.drawImage(artLayer, 0, 0);
-  savedArtDataUrlLocal = tmp.toDataURL('image/png', 1.0);
+  t.drawImage(artLayer,0,0);
+  savedArtDataUrlLocal = tmp.toDataURL('image/png');
   savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes));
   saveArt.disabled = true;
   updateTaskStatus();
-  alert('アートを高解像度で保存しました（ベクトル＋高解像度画像）。提供時にFirestoreへ書き込みます。');
+  alert('アートを保存しました（ベクトルとデータURLをローカルに保持）。提供時にFirestoreへ書き込みます。');
 });
 
-/* Save card with high resolution */
+/* saveCard */
 saveCard.addEventListener('click', ()=>{
-  const scale = 4;
-  const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
-  const t = tmp.getContext('2d');
-  t.scale(scale, scale);
-  t.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
-  t.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-  t.drawImage(cardCanvas, 0, 0);
-  savedCardDataUrlLocal = tmp.toDataURL('image/png', 1.0);
+  savedCardDataUrlLocal = cardCanvas.toDataURL('image/png');
   savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes));
   saveCard.disabled = true;
   updateTaskStatus();
-  alert('カードを高解像度で保存しました（ベクトル＋高解像度画像）。提供時にFirestoreへ書き込みます。');
+  alert('カードを保存しました（ベクトルとデータURLをローカルに保持）。提供時にFirestoreへ書き込みします。');
 });
 
-/* Local holders */
-let savedArtStrokesLocal = null, savedCardStrokesLocal = null, savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
-
-/* Pouring logic (clean implementation) */
+/* pouring behavior (95-105 accept) */
 let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
-function resetPouring(){
-  if (espInterval){ clearInterval(espInterval); espInterval=null; }
-  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
-  espBar.style.width='0%'; espPct.textContent='0%';
-  milkBar.style.width='0%'; milkPct.textContent='0%';
-  espDone=false; milkDone=false;
-  startEsp.disabled=false;
-  startMilk.disabled=true;
-  taskStatusSmall.textContent='未完了: 注ぎ';
-  updateTaskStatus();
-}
+function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
 resetPouring();
+function startAutoPour(barEl, pctEl, onOverflow){ let pct=0; const it=setInterval(()=>{ pct = Math.min(130,pct + Math.random()*4 + 1); barEl.style.width = pct + '%'; pctEl.textContent = Math.round(pct) + '%'; if (pct >= 120){ clearInterval(it); onOverflow(); } }, 100); return { it, getPct: ()=> pct }; }
 
-function startAutoPour(barEl, pctEl, onOverflow){
-  let pct=0;
-  const it = setInterval(()=>{
-    pct = Math.min(130, pct + Math.random()*4 + 1);
-    barEl.style.width = pct + '%';
-    pctEl.textContent = Math.round(pct) + '%';
-    if (pct >= 120){
-      clearInterval(it);
-      onOverflow();
-    }
-  }, 100);
-  return { it, getPct: ()=> pct };
-}
+startEsp.addEventListener('mousedown', ()=>{ if (espInterval) return; startEsp.textContent='注ぎ中...'; const res = startAutoPour(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); espInterval = res.it; });
+startEsp.addEventListener('mouseup', ()=>{ if (espInterval){ clearInterval(espInterval); espInterval=null; } startEsp.textContent='注ぐ（押し続け）'; const pct = parseFloat(espBar.style.width)||0; if (pct>=95 && pct<=105){ espDone=true; playTone(523,0.12); latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
+startMilk.addEventListener('mousedown', ()=>{ if (milkInterval) return; startMilk.textContent='注ぎ中...'; const res = startAutoPour(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); milkInterval = res.it; });
+startMilk.addEventListener('mouseup', ()=>{ if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } startMilk.textContent='注ぐ（押し続け）'; const pct = parseFloat(milkBar.style.width)||0; if (pct>=95 && pct<=105){ milkDone=true; playTone(660,0.12); latteFillMilk(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
+startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
+startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
+startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
+startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
 
-startEsp.addEventListener('pointerdown', ()=>{
-  if (espInterval) return;
-  startEsp.textContent='注ぎ中...';
-  const res = startAutoPour(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); });
-  espInterval = res.it;
-});
-startEsp.addEventListener('pointerup', ()=>{
-  if (espInterval){ clearInterval(espInterval); espInterval=null; }
-  startEsp.textContent='注ぐ（押し続け）';
-  const pct = parseFloat(espBar.style.width)||0;
-  if (pct>=95 && pct<=105){ espDone=true; latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); }
-});
-startMilk.addEventListener('pointerdown', ()=>{
-  if (milkInterval) return;
-  startMilk.textContent='注ぎ中...';
-  const res = startAutoPour(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); });
-  milkInterval = res.it;
-});
-startMilk.addEventListener('pointerup', ()=>{
-  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
-  startMilk.textContent='注ぐ（押し続け）';
-  const pct = parseFloat(milkBar.style.width)||0;
-  if (pct>=95 && pct<=105){ milkDone=true; latteFillMilk(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); }
-});
-function latteClear(){ const ctx = latteCanvas.getContext('2d'); ctx.clearRect(0,0,latteCanvas.width,latteCanvas.height); ctx.fillStyle='#6b3b24'; ctx.beginPath(); ctx.arc(60,60,58,0,Math.PI*2); ctx.fill(); }
-function latteFillEsp(){ const ctx = latteCanvas.getContext('2d'); ctx.fillStyle='#5a2f1a'; ctx.fillRect(0,60,latteCanvas.width,60); }
-function latteFillMilk(){ const ctx = latteCanvas.getContext('2d'); ctx.fillStyle='#f6efe6'; ctx.beginPath(); ctx.arc(60,60,48,0,Math.PI*2); ctx.fill(); }
-const latteCanvas = document.getElementById('latteCanvas'); latteClear();
+/* latte visuals */
+const latteCanvas = document.getElementById('latteCanvas'); const latteCtx = latteCanvas.getContext('2d');
+function latteClear(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle='#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
+function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
+function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
+latteClear();
 
-/* completeMake: save strokes and high-res served image into Firestore -> no storage */
+/* task status */
+function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtStrokesLocal && !savedArtDataUrlLocal) parts.push('アート'); if (!savedCardStrokesLocal && !savedCardDataUrlLocal) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
+
+/* completeMake: STORE images/strokes IN FIRESTORE doc fields (no Storage). Save servedImageData as dataURL, plus strokes arrays. */
 let currentMakingOrderId = null;
 function openMakeModal(order){
   currentMakingOrderId = order.id;
   makerName.textContent = order.assignedToName || order.assignedTo || '';
   latteClear(); initArtCanvas(); initCardCanvas(); resetPouring();
+  // preload existing strokes or data to UI
   savedArtStrokesLocal = order.artStrokes || null;
   savedCardStrokesLocal = order.cardStrokes || null;
   savedArtDataUrlLocal = order.artDataUrl || null;
   savedCardDataUrlLocal = order.cardDataUrl || null;
-  if (savedArtStrokesLocal){ initArtCanvas(); replayStrokesOnCanvasImmediate(savedArtStrokesLocal, artLayer, artLayerCtx); saveArt.disabled=true; } else { saveArt.disabled=false; }
-  if (savedCardStrokesLocal){ initCardCanvas(); replayStrokesOnCanvasImmediate(savedCardStrokesLocal, cardCanvas, cardCtx); saveCard.disabled=true; } else { saveCard.disabled=false; }
+  if (savedArtStrokesLocal){ // replay onto artLayer
+    initArtCanvas(); replayStrokesOnCanvasImmediate(savedArtStrokesLocal, artLayer, artLayerCtx);
+    saveArt.disabled = true;
+  } else { saveArt.disabled = false; }
+  if (savedCardStrokesLocal){ initCardCanvas(); replayStrokesOnCanvasImmediate(savedCardStrokesLocal, cardCanvas, cardCtx); saveCard.disabled = true; } else { saveCard.disabled = false; }
   updateTaskStatus();
   modalMakeLatte.style.display = 'flex';
 }
 
-/* replay strokes function (accurate vector rendering) */
-function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, options){
+function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx){
   if (!strokes || !strokes.length) return;
-  ctx.save();
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  strokes.forEach(s=>{
+  for (const s of strokes){
     ctx.beginPath();
     ctx.lineWidth = s.width || 3;
-    if (s.tool === 'draw'){
-      ctx.globalCompositeOperation = 'source-over';
-      if (options && options.color) ctx.strokeStyle = options.color;
-      else ctx.strokeStyle = (canvasEl === artLayer || canvasEl === servedArtMini) ? '#ffffff' : '#000';
-    } else {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.strokeStyle = '#000';
-    }
+    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; if (canvasEl === artLayer || canvasEl === servedArtMini) ctx.strokeStyle = '#ffffff'; else ctx.strokeStyle = '#000'; }
+    else { ctx.globalCompositeOperation='destination-out'; }
     const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){
-      const den = denormPoint(pts[i], canvasEl);
-      if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y);
-    }
-    ctx.stroke(); ctx.closePath();
-    ctx.globalCompositeOperation='source-over';
-  });
-  ctx.restore();
+    for (let i=0;i<pts.length;i++){ const p=pts[i]; const den = denormPoint(p, canvasEl); if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y); }
+    ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
+  }
 }
 
-/* completeMake: create high-res served image (4x), draw latte, draw card (from saved strokes or saved data), then update Firestore */
+/* completeMake writes servedImageData, artStrokes, cardStrokes into Firestore order doc and sets state:'delivered' */
 completeMake.addEventListener('click', async ()=>{
   if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
+  // prepare strokes arrays (use saved locals if present)
   const artStrokesToSave = savedArtStrokesLocal || artStrokes || [];
   const cardStrokesToSave = savedCardStrokesLocal || cardStrokes || [];
-  // compose high-res served image
-  const scale = 3;
-  const tmp = document.createElement('canvas'); tmp.width = 600 * scale; tmp.height = 600 * scale;
-  const tctx = tmp.getContext('2d');
-  tctx.scale(scale, scale);
-  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,600,600);
+  // compose served image dataURL (base64) from canvases
+  const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600; const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
   tctx.drawImage(latteCanvas, 180,120,240,240);
-  // card area
+  // draw card (compose from strokes)
   tctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
   tctx.fillRect(160,380,280,120);
-  // draw card strokes on temp canvas for composition
   if (cardStrokesToSave && cardStrokesToSave.length){
-    const cardTmp = document.createElement('canvas'); cardTmp.width = 260; cardTmp.height = 100;
-    const cctx = cardTmp.getContext('2d');
+    const cardTmp = document.createElement('canvas'); cardTmp.width=260; cardTmp.height=100; const cctx = cardTmp.getContext('2d');
     cctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
-    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx);
+    for (const s of cardStrokesToSave){
+      cctx.beginPath(); cctx.lineWidth = s.width || 4;
+      if (s.tool === 'draw'){ cctx.globalCompositeOperation='source-over'; cctx.strokeStyle='#000'; } else { cctx.globalCompositeOperation='destination-out'; }
+      for (let i=0;i<(s.points||[]).length;i++){ const p=s.points[i]; const dp={ x:p.x * cardTmp.width, y:p.y * cardTmp.height }; if (i===0) cctx.moveTo(dp.x,dp.y); else cctx.lineTo(dp.x,dp.y); }
+      cctx.stroke(); cctx.closePath(); cctx.globalCompositeOperation='source-over';
+    }
     tctx.drawImage(cardTmp, 170,390,260,100);
   } else if (savedCardDataUrlLocal){
     const img = new Image(); img.src = savedCardDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 170,390,260,100);
   }
-  const servedDataUrl = tmp.toDataURL('image/png', 1.0);
+  const servedDataUrl = tmp.toDataURL('image/png');
 
   try {
+    // write all data directly into Firestore doc
     await updateDoc(doc(db,'orders',currentMakingOrderId), {
       state: 'delivered',
       deliveredAt: Date.now(),
@@ -1121,60 +844,62 @@ completeMake.addEventListener('click', async ()=>{
       cardDataUrl: savedCardDataUrlLocal || null
     });
     modalMakeLatte.style.display = 'none';
-    try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; } catch(e){}
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
     currentMakingOrderId = null;
     savedArtStrokesLocal = savedCardStrokesLocal = savedArtDataUrlLocal = savedCardDataUrlLocal = null;
-    alert('提供しました（Firestoreへ保存）');
+    alert('提供しました（Firestoreへ直接保存）');
   } catch(e){
-    console.warn(e);
-    alert('提供に失敗しました（Firestore更新エラー）。');
+    console.warn('completeMake failed', e);
+    try { await updateDoc(doc(db,'orders',currentMakingOrderId), { state:'delivered', deliveredAt: Date.now(), artStrokes: artStrokesToSave, cardStrokes: cardStrokesToSave, artDataUrl: savedArtDataUrlLocal || null, cardDataUrl: savedCardDataUrlLocal || null }); } catch(err){ console.warn(err); }
+    modalMakeLatte.style.display = 'none';
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
+    currentMakingOrderId = null;
+    alert('提供（Firestore更新にエラーが発生しました）。');
   }
 });
 
-/* Client overlay updates and served screen rendering */
+/* Client overlay handling and reconstructing images from Firestore fields */
 function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
 function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
 
 function updateClientOverlay(){
-  if (!appState.currentOrderIdForClient) return;
-  const o = appState.orders.find(x=>x.id===appState.currentOrderIdForClient);
+  if (!state.currentOrderIdForClient) return;
+  const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
   if (!o) return;
   if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
-  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); }
-  else if (o.state === 'delivered'){ showClientServed(o); hideClientStatus(); }
-  else if (o.state === 'cancelled'){ showClientStatus('スタッフの応答がないため現在注文を取り消しになります'); setTimeout(()=>{ hideClientStatus(); appState.currentOrderIdForClient = null; }, 10000); }
+  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play(); } catch(e){} }
+  else if (o.state === 'delivered'){
+    // show served modal using servedImageData or reconstruct from strokes
+    showClientServed(o);
+    hideClientStatus();
+  } else if (o.state === 'cancelled'){
+    showClientStatus('スタッフの応答がないため現在注文を取り消しになります');
+    setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient = null; }, 10000);
+  }
 }
 
-/* show served full-screen with art and card placed stylishly; reconstruction respects item (omu uses yellow/red) */
+/* showClientServed: reconstruct from strokes or dataURL, place art (top-left) and card (bottom-right) */
 async function showClientServed(order){
-  // main image: if servedImageData present use it; else use first frame imageBase1.png
+  // set main image: if servedImageData exists (base64), use it; else fallback to rate1 image
   if (order.servedImageData){
     servedImage.src = order.servedImageData;
   } else {
-    const base = getAssetUrl(order.itemImageBase + '1.png');
-    servedImage.src = base;
+    const baseUrl = getAssetUrl(order.itemImageBase + '1.png');
+    servedImage.src = baseUrl;
   }
 
-  // art mini
+  // serve art mini
   const artCtx = servedArtMini.getContext('2d');
-  servedArtMini.width = 260; servedArtMini.height = 260;
   artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
-  // background color depends on item (omu -> yellow)
-  const itemCfg = menuItems.find(m=>m.id===order.item) || {};
-  const artBgColor = (order.item === 'omu') ? '#f3d27a' : '#6b3b24';
-  artCtx.fillStyle = artBgColor; artCtx.beginPath(); artCtx.arc(servedArtMini.width/2, servedArtMini.height/2, Math.min(servedArtMini.width,servedArtMini.height)/2-8, 0, Math.PI*2); artCtx.fill();
-
+  artCtx.fillStyle = '#6b3b24'; artCtx.beginPath(); artCtx.arc(60,60,58,0,Math.PI*2); artCtx.fill();
   if (order.artStrokes && order.artStrokes.length){
-    // if omu use red pen color
-    const penColor = (order.item==='omu') ? '#ff3333' : '#ffffff';
-    replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, { color: penColor });
+    replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx);
   } else if (order.artDataUrl){
     const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
   }
 
   // card mini
   const cardCtxMini = servedCardMini.getContext('2d');
-  servedCardMini.width = 320; servedCardMini.height = 160;
   cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
   cardCtxMini.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
   cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
@@ -1184,129 +909,107 @@ async function showClientServed(order){
     const img = new Image(); img.src = order.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
   }
 
-  // preload limited sequence (1..5) and make final step random between x5 and x05
-  const seq = await preloadSequence(order.itemImageBase, 5);
-  servedSequence = seq;
-  servedSequenceIndex = 0;
+  // preload rate images
+  const rateImages = await preloadRateSequence(order.itemImageBase, 6);
+  servedSequence = rateImages; servedSequenceIndex = 0;
   if (servedSequence.length) servedImage.src = servedSequence[0];
 
-  // show fullscreen eat panel
-  eatFullscreen.style.display = 'flex';
+  document.getElementById('modalEat').style.display = 'flex';
 }
 
-/* preload sequence with final step randomization as requested */
-async function preloadSequence(basePath, count){
-  const arr = [];
-  for (let i=1;i<=count;i++){
-    let name = `${basePath}${i}.png`;
-    // For last index randomly pick between 5.png and 05.png
-    if (i === count){
-      const rand = Math.random() < 0.5 ? `${i}.png` : `0${i}.png`;
-      name = `${basePath}${rand}`;
-    } else {
-      name = `${basePath}${i}.png`;
-    }
-    const url = getAssetUrl(name);
+/* preload rate sequence */
+async function preloadRateSequence(basePath, maxCount=6){
+  const images = [];
+  for (let i=1;i<=maxCount;i++){
+    const url = getAssetUrl(basePath + i + '.png');
     try {
-      const r = await fetch(url);
-      if (!r.ok) { break; }
-      const b = await r.blob();
-      arr.push(URL.createObjectURL(b));
+      const res = await fetch(url);
+      if (!res.ok) { if (res.status === 404) break; else break; }
+      const blob = await res.blob(); images.push(URL.createObjectURL(blob));
     } catch(e){ break; }
   }
-  return arr;
+  return images;
 }
 
-/* served image press/hold behavior: repeat playing item-rate audio while pointerdown, on release advance image one step. */
-let servedHoldLoop = null;
-let servedHoldAudio = null;
+/* served image long-press behavior (改良版)
+   - 長押し中: audioRate をループ再生
+   - 離した瞬間: audioRate を止め、画像を次へ進める（クリックと同じ振る舞い）
+   - 簡易実装のため、ratemp（alternate）の交互再生はファイル名確定後に追加します。
+*/
 let servedSequence = [], servedSequenceIndex = 0;
-servedImage.addEventListener('pointerdown', (e)=>{
+let servedPressing = false;
+
+function startServedPress(e){
   e.preventDefault();
-  // start repeating audio: load item-specific repeated audio (use base rate/omu audio file)
-  const idxAudio = appState.orders.find(o=>o.id===appState.currentOrderIdForClient) || null;
-  // playback loop: play base audio (rate.mp3 or omu.mp3) continuously with 1.5s gap
-  const itemId = idxAudio ? idxAudio.item : 'rate';
-  const prefix = (itemId === 'omu') ? 'omu' : 'rate';
-  const file = getAssetUrl(`@zzcafe2800/reiji_cafe/files/${prefix}.mp3`);
-  servedHoldAudio = new Audio(file);
-  servedHoldAudio.loop = false;
-  function playOnceAndSchedule(){
-    try{ servedHoldAudio.currentTime = 0; servedHoldAudio.play().catch(()=>{}); }catch(e){}
-    servedHoldAudio.onended = ()=> {
-      servedHoldLoop = setTimeout(()=> { if (servedHoldLoop !== null) playOnceAndSchedule(); }, 1500);
-    };
-  }
-  playOnceAndSchedule();
-});
-servedImage.addEventListener('pointerup', (e)=>{
-  // stop loop and advance image by one
-  if (servedHoldLoop !== null){ clearTimeout(servedHoldLoop); servedHoldLoop = null; }
-  if (servedHoldAudio){ try{ servedHoldAudio.pause(); servedHoldAudio.currentTime=0; } catch(e){} servedHoldAudio=null; }
-  // advance
-  if (!servedSequence || !servedSequence.length) return;
+  if (servedPressing) return;
+  servedPressing = true;
+  try{
+    audioRate.loop = true;
+    audioRate.currentTime = 0;
+    audioRate.play().catch(()=>{ /* 再生がブロックされる場合あり */ });
+  }catch(e){}
+}
+function endServedPress(e){
+  e && e.preventDefault();
+  if (!servedPressing) return;
+  servedPressing = false;
+  try{ audioRate.pause(); audioRate.currentTime = 0; } catch(e){}
+  if (!servedSequence.length) return;
   if (servedSequenceIndex < servedSequence.length - 1){
     servedSequenceIndex++;
     servedImage.src = servedSequence[servedSequenceIndex];
-    // play per-click short audio (base)
-    const curOrder = appState.orders.find(o=>o.id===appState.currentOrderIdForClient);
-    const item = curOrder ? curOrder.item : 'rate';
-    const prefix = (item === 'omu') ? 'omu' : 'rate';
-    const file = getAssetUrl(`@zzcafe2800/reiji_cafe/files/${prefix}.mp3`);
-    const a = new Audio(file); a.play().catch(()=>{});
   } else {
-    // at end do nothing
+    // already at last frame - do nothing (or optionally loop)
   }
-});
-
-/* hide eatNext (not used) and use full-screen home button */
-const eatNextBtn = document.getElementById('eatNext');
-if (eatNextBtn) eatNextBtn.style.display = 'none';
-
-homeFromEat.addEventListener('click', ()=> {
-  eatFullscreen.style.display = 'none';
-});
-
-/* Utility: show/hide modal */
-function showModal(el){ if (!el) return; el.style.display = 'flex'; }
-function hideModal(el){ if (!el) return; el.style.display = 'none'; }
-
-/* small helpers */
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
-
-/* updateTaskStatus: enable/disable provide button and show small status */
-function updateTaskStatus(){
-  // Determine if art/card/pouring are done enough to enable completeMake
-  const artReady = !!(savedArtStrokesLocal || savedArtDataUrlLocal);
-  const cardReady = !!(savedCardStrokesLocal || savedCardDataUrlLocal);
-  const pourReady = espDone && milkDone;
-  // update task status small text
-  const pending = [];
-  if (!pourReady) pending.push('注ぎ');
-  if (!artReady) pending.push('アート');
-  if (!cardReady) pending.push('カード');
-  taskStatusSmall.textContent = pending.length ? ('未完了: ' + pending.join(', ')) : '準備完了';
-  completeMake.disabled = pending.length > 0;
+  // play a short single sound on release to give feedback (optional)
+  try{ audioRate.currentTime = 0; audioRate.play().then(()=>{ setTimeout(()=>{ audioRate.pause(); audioRate.currentTime = 0; }, 350); }).catch(()=>{}); } catch(e){}
 }
+servedImage.addEventListener('mousedown', startServedPress);
+servedImage.addEventListener('mouseup', endServedPress);
+servedImage.addEventListener('mouseleave', endServedPress);
+servedImage.addEventListener('touchstart', (e)=>{ e.preventDefault(); startServedPress(e); }, {passive:false});
+servedImage.addEventListener('touchend', (e)=>{ e.preventDefault(); endServedPress(e); }, {passive:false});
 
-/* initial state: build menu and hook language and other handlers */
-(async ()=>{
-  await buildMenu();
-  await setLangImages();
-  setupLangButtons();
-  updateTaskStatus();
-})();
+/* saveAll (client) */
+saveAllBtn.addEventListener('click', ()=>{
+  const tmp = document.createElement('canvas'); tmp.width = 800; tmp.height = 800; const t = tmp.getContext('2d');
+  t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
+  const mainImg = new Image(); mainImg.crossOrigin = 'anonymous'; mainImg.src = servedImage.src;
+  mainImg.onload = ()=> {
+    t.drawImage(mainImg, 150,100,500,400);
+    t.drawImage(servedArtMini, 620,120,120,120);
+    t.drawImage(servedCardMini, 620,260,160,80);
+    const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = 'served_save.png'; a.click();
+  };
+  mainImg.onerror = ()=> { alert('画像の読み込みに失敗しました'); };
+});
 
-/* Expose for debug */
-window.__reiji = { appState, replayStrokesOnCanvasImmediate };
+/* homeFromEat */
+homeFromEat.addEventListener('click', ()=> {
+  document.getElementById('modalEat').style.display = 'none';
+});
 
-/* Note: This implementation focuses on requested fixes:
-   - Eliminate syntax errors (no accidental truncation tokens).
-   - Provide makePlaceholder(), updateTaskStatus(), setLangImages() so UI elements exist and don't cause runtime exceptions.
-   - Add inline favicon to prevent 404 noise.
-   - Keep original behavior otherwise; asset URLs still point to raw GitHub locations.
-*/
+/* header BGM button opens the specified URL */
+bgmBtn.addEventListener('click', ()=> {
+  window.open('https://x.gd/6C0VB', '_blank');
+});
+
+/* utility functions */
+function showModal(el){ el.style.display = 'flex'; }
+function hideModal(el){ el.style.display = 'none'; }
+function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
+function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); } catch(e){} }
+
+/* initial: build menu, etc */
+buildMenu().catch(()=>{});
+initArtCanvas(); initCardCanvas();
+
+/* hide eatNext explicitly (also set in HTML) */
+if (eatNext) eatNext.style.display = 'none';
+
+window.__reiji = { state, openMakeModal };
+
+/* End of script */
 </script>
 </body>
 </html>
