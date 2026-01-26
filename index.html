@@ -120,7 +120,33 @@
 
 
 
-
+    <div class="staff-panel">
+      <strong>現在のシフト一覧</strong>
+      <div id="shiftList" class="shift-list small-info" style="margin-top:8px">読み込み中…</div>
+      <hr/>
+      <strong>メニュー設定（管理）</strong>
+      <div class="menu-editor">
+        <div class="menu-list" id="menuChips"></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="width:80px">選択</label>
+          <select id="menuSelect"></select>
+        </div>
+        <label>タイトル</label><input id="menuTitle" type="text" />
+        <label>画像ベース（例: @zzcafe2800/reiji_cafe/main/rate）</label><input id="menuImageBase" type="text" />
+        <label>フレーム数（例: 5）</label><input id="menuFrameCount" type="number" min="1" />
+        <label>パスワード（空欄でパス不要）</label><input id="menuPassword" type="text" />
+        <label>長押し音（URL or @raw path）</label><input id="menuLongPressSound" type="text" />
+        <label>単発音（クリック）</label><input id="menuClickSound" type="text" />
+        <label>アート 背景色</label><input id="menuArtBg" type="text" placeholder="#6b3b24" />
+        <label>アート ペン色</label><input id="menuArtPen" type="text" placeholder="#ffffff" />
+        <label>カード 背景色</label><input id="menuCardBg" type="text" placeholder="#fff2e6" />
+        <label>カード ペン色</label><input id="menuCardPen" type="text" placeholder="#000000" />
+        <div style="display:flex;gap:8px;">
+          <button id="saveMenuBtn" class="small btn-green">保存</button>
+          <button id="addMenuBtn" class="small">新規メニュー追加（テンプレ）</button>
+        </div>
+      </div>
+    </div>
 
 
 
