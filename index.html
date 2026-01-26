@@ -5,21 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ゲームカフェ — 修正版（Realtime + 高画質保存 + Omurice追加）</title>
 <meta name="format-detection" content="telephone=no">
-<!-- Prevent 404 for favicon requests (use tiny transparent PNG data URI) -->
-<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=">
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
     --card-skin:#fff2e6;
   }
   html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
-  .container{max-width:1000px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid var(--accent);position:relative;min-height:720px;}
+  .container{max-width:1000px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid var(--accent);position:relative;min-heigh[...]
   header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:var(--dark);}
   h1{margin:0;font-size:18px;}
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
   .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
-  .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:22px 36px;border-radius:12px;font-size:34px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:420px;}
+  .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:22px 36px;border-radius:12px;font-size:34px;cursor:pointer;box-shadow:0 6px 0 #[...]
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
   .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
   .small-pass input{width:100px;padding:4px;}
@@ -41,7 +39,7 @@
   .modal{background:#fff;padding:16px;border-radius:10px;width:760px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid var(--accent);}
   /* EAT fullscreen modal */
   .eat-fullscreen{position:fixed;inset:0;z-index:200;background:linear-gradient(180deg,#fffdf8,#fff8ef);display:none;align-items:center;justify-content:center;overflow:auto;}
-  .eat-inner{width:90%;max-width:1200px;height:90%;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.4);display:grid;grid-template-columns:1fr 360px;grid-template-rows:1fr;gap:12px;padding:18px;align-items:start;}
+  .eat-inner{width:90%;max-width:1200px;height:90%;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.4);display:grid;grid-template-columns:1fr 360px;grid-template-rows:1fr;gap:12p[...]
   .eat-main{display:flex;align-items:center;justify-content:center;position:relative;border:1px solid #e6d6cc;border-radius:8px;background:#fff;}
   .eat-side{display:flex;flex-direction:column;gap:12px;}
   .served-art{width:48%;height:48%;border-radius:8px;border:1px solid #d4c0b8;background:#6b3b24;display:flex;align-items:center;justify-content:center;}
@@ -77,7 +75,7 @@
   <div class="content">
     <div class="order-block">
       <div id="shiftShort" class="status-line">読み込み中...</div>
-      <button id="orderBtn" class="order-btn disabled" type="button">注文</button>
+      <button id="orderBtn" class="order-btn disabled">注文</button>
 
       <!-- bottom row for language buttons -->
       <div style="margin-top:12px;width:100%;display:flex;justify-content:center;gap:12px;align-items:center;">
@@ -99,7 +97,7 @@
   <div class="small-pass">
     <label style="font-size:12px;margin:0">スタッフパス</label>
     <input id="staffPass" placeholder="小さい" />
-    <button id="passOk" class="small" type="button">OK</button>
+    <button id="passOk" class="small">OK</button>
   </div>
 </div>
 
@@ -111,7 +109,7 @@
       <div class="small-info">全画面スタッフモード</div>
     </div>
     <div>
-      <button id="logoutStaff" class="small" type="button">退室</button>
+      <button id="logoutStaff" class="small">退室</button>
     </div>
   </div>
 
@@ -119,12 +117,12 @@
     <div style="display:flex;gap:8px;align-items:center;">
       <label>シフト開始</label><input id="shiftStart" type="time" />
       <label>終了</label><input id="shiftEnd" type="time" />
-      <button id="saveShift" class="small" type="button">保存</button>
+      <button id="saveShift" class="small">保存</button>
     </div>
 
     <div class="big-toggle" style="margin-top:8px;">
-      <button id="shiftBtn" class="inactive" type="button">シフト中</button>
-      <button id="breakBtn" class="inactive" type="button">休憩中</button>
+      <button id="shiftBtn" class="inactive">シフト中</button>
+      <button id="breakBtn" class="inactive">休憩中</button>
     </div>
   </div>
 
@@ -147,8 +145,8 @@
     <h3>名前を入力</h3>
     <input id="orderName" placeholder="名前を入力" />
     <div style="margin-top:10px;text-align:right;">
-      <button id="cancelOrderName" class="small" type="button">キャンセル</button>
-      <button id="okOrderName" class="btn-red" type="button">決定</button>
+      <button id="cancelOrderName" class="small">キャンセル</button>
+      <button id="okOrderName" class="btn-red">決定</button>
     </div>
   </div>
 </div>
@@ -158,7 +156,7 @@
     <h3>メニューを選択</h3>
     <div class="menu-grid" id="menuGrid"></div>
     <div style="margin-top:10px;text-align:right;">
-      <button id="backMenu" class="small" type="button">戻る</button>
+      <button id="backMenu" class="small">戻る</button>
     </div>
   </div>
 </div>
@@ -169,8 +167,8 @@
     <h3>パスワード入力</h3>
     <input id="menuPassInput" placeholder="パスワード" />
     <div style="margin-top:10px;text-align:right;">
-      <button id="cancelMenuPass" class="small" type="button">キャンセル</button>
-      <button id="okMenuPass" class="btn-red" type="button">決定</button>
+      <button id="cancelMenuPass" class="small">キャンセル</button>
+      <button id="okMenuPass" class="btn-red">決定</button>
     </div>
   </div>
 </div>
@@ -195,7 +193,7 @@
           <label>エスプレッソ注ぎ</label>
           <div style="background:#eee;border-radius:6px;padding:6px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startEsp" class="small" type="button">注ぐ（押し続け）</button>
+              <button id="startEsp" class="small">注ぐ（押し続け）</button>
               <div style="flex:1;position:relative;">
                 <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
                   <div id="espBar" style="height:100%;width:0%;background:linear-gradient(90deg,#a7552b,#6b3);"></div>
@@ -211,7 +209,7 @@
           <label>フームドミルク注ぎ</label>
           <div style="background:#eee;border-radius:6px;padding:6px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startMilk" class="small" disabled type="button">注ぐ（押し続け）</button>
+              <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
               <div style="flex:1;position:relative;">
                 <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
                   <div id="milkBar" style="height:100%;width:0%;background:linear-gradient(90deg,#fff,#eee);"></div>
@@ -237,10 +235,10 @@
               <select id="penMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
               <label>太さ</label>
               <select id="penSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
-              <button id="clearArt" class="small" type="button">クリア</button>
+              <button id="clearArt" class="small">クリア</button>
             </div>
             <div style="margin-top:8px;text-align:right;">
-              <button id="saveArt" class="btn-green" disabled type="button">アート保存</button>
+              <button id="saveArt" class="btn-green" disabled>アート保存</button>
             </div>
           </div>
         </div>
@@ -255,17 +253,17 @@
             <select id="cardMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
             <label>太さ</label>
             <select id="cardSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
-            <button id="clearCard" class="small" type="button">クリア</button>
+            <button id="clearCard" class="small">クリア</button>
           </div>
           <div style="margin-top:8px;text-align:right;">
-            <button id="saveCard" class="small" disabled type="button">カード保存</button>
+            <button id="saveCard" class="small" disabled>カード保存</button>
           </div>
         </div>
 
         <div style="margin-top:8px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
           <div id="taskStatusSmall" class="small-info" style="margin-right:auto"></div>
-          <button id="completeMake" class="btn-red" disabled type="button">提供する（完了）</button>
-          <button id="cancelMake" class="small" type="button">中止</button>
+          <button id="completeMake" class="btn-red" disabled>提供する（完了）</button>
+          <button id="cancelMake" class="small">中止</button>
         </div>
       </div>
     </div>
@@ -316,13 +314,26 @@
 
 <script type="module">
 /*
-  Minor fixes applied:
-  - Language button PNGs are now assigned at runtime using getAssetUrl(...) so they display.
-  - Added favicon link (transparent image) to avoid 404 console errors for favicon.ico requests.
-  - saveShift / shiftBtn / breakBtn now have robust fallback behavior: they try to update Firestore,
-    but if update fails they update local appState and update UI so the button visibly responds.
-  - Buttons that could behave like form submit now have type="button" to avoid accidental form submission.
-  These changes are intentionally minimal and keep original behavior otherwise.
+  Major feature updates in this version:
+  - High-quality saving: when saving art/card we create a large (4x) resolution dataURL to reduce raster degradation.
+    Vectors (normalized strokes) are still saved as arrays for exact reconstruction at any size.
+  - Realtime audio triggers:
+      * When any order becomes 'waiting' we play tyaimu.mp3 for everyone (doc change detection),
+        and also play client-specific short audio (item-specific 1) only for the ordering client.
+      * When an order becomes 'inprogress' we play cookbgm for the assigned staff and the ordering client,
+        and play client-specific short audio (item-specific 2) only for the ordering client once.
+      * When an order becomes 'delivered' we play client-specific short audio (item-specific 3) for the ordering client.
+  - The served/eat screen is now full-screen and larger; art and card are placed stylishly (art left/top, card right/top).
+  - The image-eating interaction:
+      * Long-press on the main served image repeatedly plays rate/omu audio while pressed.
+      * On release, the image advances one step and stops the repeating audio.
+  - Menu additions: Omurice (omu) added. Omurice uses yellow background and red pen for art and has password '0000'.
+  - Menu items can have passcodes in menuItems[]. If a passcode exists, selecting the menu asks for password (plays ps.mp3 for that user).
+  - Shift/Break buttons reflect the real-time status for the currently logged-in staff and update when others change.
+  - Language audio buttons (J/E/C/K) are added; clicking plays the corresponding mp3 once and shows small "How to" labels.
+  - Rate/omu sequences limited to 5 steps; final step randomly picks between X5.png and X05.png.
+  - All image/audio assets loaded from the GitHub raw paths (getAssetUrl).
+  - All saved images are written into Firestore document fields (servedImageData) and strokes are stored as arrays.
 */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
@@ -471,27 +482,6 @@ async function loadImageAsObjectUrl(url){
   } catch(e){ return null; }
 }
 
-/* Small helper: set language icon images so <img src=""> isn't empty */
-function setLangIcons(){
-  try {
-    const mapping = {
-      btnJ: '@zzcafe2800/reiji_cafe/main/J.png',
-      btnE: '@zzcafe2800/reiji_cafe/main/E.png',
-      btnC: '@zzcafe2800/reiji_cafe/main/C.png',
-      btnK: '@zzcafe2800/reiji_cafe/main/K.png'
-    };
-    for (const id of Object.keys(mapping)){
-      const el = document.querySelector(`#${id} img`);
-      if (el){
-        el.src = getAssetUrl(mapping[id]);
-        // add a small error handler to fallback to transparent 1x1 if image not found
-        el.onerror = ()=> { el.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII='; };
-      }
-    }
-    // small variants (they don't have <img>, so skip)
-  } catch(e){ console.warn('setLangIcons failed', e); }
-}
-
 /* realtime listeners - use snapshot.docChanges to detect added/modified for audio triggers */
 function setupRealtime(){
   const qStaff = query(staffsCol, orderBy('createdAt','asc'));
@@ -625,7 +615,7 @@ function renderOrderLists(){
     }
     if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return;
     const div = document.createElement('div'); div.className='order-item';
-    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Dat[...]
     const right = document.createElement('div');
     const tasks = computeOrderTasks(o);
     if (tasks.length) { const span = document.createElement('span'); span.className='small-info'; span.textContent = '未: ' + tasks.join(', '); right.appendChild(span); }
@@ -647,7 +637,7 @@ function renderOrderLists(){
     div.appendChild(left); div.appendChild(right);
     staffOrderList.appendChild(div);
   });
-  pendingTasksSmall.textContent = (appState.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(appState.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length}` : '';
+  pendingTasksSmall.textContent = (appState.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(appState.orders||[]).filter(o=>o.state==='waiting' || o.state==[...]
 }
 function computeOrderTasks(order){
   const pending = [];
@@ -695,49 +685,18 @@ logoutStaff.addEventListener('click', async ()=>{
   staffFull.classList.remove('show');
 });
 
-/* Shift/break button behavior: update doc and reflect real-time style
-   Added local fallback so the button visibly responds even if Firestore update fails.
-*/
+/* Shift/break button behavior: update doc and reflect real-time style */
 shiftBtn.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId; if (!id) { alert('スタッフとしてログインしてください'); return; }
-  try {
-    await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false });
-  } catch(e){
-    console.warn('shiftBtn updateDoc failed', e);
-    // fallback: update local state
-    const s = appState.staffs.find(x=>x.id===id);
-    if (s){ s.onShift = true; s.breaking = false; renderShiftListRealtimeButtons(); renderShiftShort(); alert('シフト状態をローカルで変更しました（Firestore 更新失敗）'); }
-  }
+  const id = appState.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){ console.warn(e); }
 });
 breakBtn.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId; if (!id) { alert('スタッフとしてログインしてください'); return; }
-  try {
-    await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true });
-  } catch(e){
-    console.warn('breakBtn updateDoc failed', e);
-    const s = appState.staffs.find(x=>x.id===id);
-    if (s){ s.onShift = false; s.breaking = true; renderShiftListRealtimeButtons(); renderShiftShort(); alert('休憩状態をローカルで変更しました（Firestore 更新失敗）'); }
-  }
+  const id = appState.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){ console.warn(e); }
 });
 saveShift.addEventListener('click', async ()=>{
-  const id = appState.currentUser.staffId; if (!id) { alert('スタッフとしてログインしてください'); return; }
-  const payload = { shiftStart: shiftStart.value || '09:00', shiftEnd: shiftEnd.value || '17:00' };
-  try {
-    await updateDoc(doc(db,'staffs',id), payload);
-    alert('シフトを保存しました');
-  } catch(e){
-    console.warn('saveShift updateDoc failed', e);
-    const s = appState.staffs.find(x=>x.id===id);
-    if (s){
-      s.shiftStart = payload.shiftStart;
-      s.shiftEnd = payload.shiftEnd;
-      renderShiftShort();
-      renderShiftListRealtimeButtons();
-      alert('Firestore に保存できませんでした。ローカルで更新しました。');
-    } else {
-      alert('Firestore にアクセスできませんでした（ローカルでも更新不可）');
-    }
-  }
+  const id = appState.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { shiftStart: shiftStart.value || '09:00', shiftEnd: shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); }
 });
 
 /* Menu building + language buttons and audio for J/E/C/K */
@@ -765,16 +724,10 @@ const langAudio = {
   K: getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3')
 };
 function setupLangButtons(){
-  // ensure icons are set
-  setLangIcons();
   [btnJ, btnE, btnC, btnK, btnJ_small, btnE_small, btnC_small, btnK_small].forEach(el=>{
-    if (!el) return;
-    el.addEventListener('click', (ev)=>{
-      // stop propagation just in case; prevent default behaviour
-      if (ev && ev.stopPropagation) ev.stopPropagation();
+    el.addEventListener('click', ()=>{
       const key = (el.id.includes('J')) ? 'J' : (el.id.includes('E') ? 'E' : (el.id.includes('C') ? 'C' : 'K'));
-      const a = new Audio(langAudio[key]);
-      try{ a.play().catch(()=>{}); } catch(e){}
+      const a = new Audio(langAudio[key]); try{ a.play().catch(()=>{}); } catch(e){}
     });
   });
 }
@@ -865,27 +818,438 @@ async function assignOrderToCurrentStaff(orderId){
 }
 
 /* --- ART & CARD: improved high-quality saving and vector storage --- */
-/* ... rest of script (unchanged) ... */
+function initArtCanvas(){
+  artBgCtx.clearRect(0,0,artBg.width,artBg.height);
+  artBgCtx.fillStyle = '#6b3b24';
+  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
+  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
+  artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
+}
+function initCardCanvas(){
+  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
+  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.lineCap='round'; cardCtx.lineJoin='round';
+}
+initArtCanvas(); initCardCanvas();
 
-/* For brevity in this patch: keep the rest of the original script (art/card, pouring, save, serve, etc.)
-   unchanged. The above changes are focused on:
-   - assigning language icon images so they display,
-   - preventing favicon 404 by including an explicit favicon link,
-   - adding robust fallback behavior for shift/break/save buttons so they visibly respond even when Firestore
-     operations fail, and
-   - adding type="button" to relevant buttons to prevent unintended form submission / default behavior.
-*/
+let artStrokes = [], currentArtStroke=null, artDrawing=false;
+let cardStrokes = [], currentCardStroke=null, cardDrawing=false;
+
+function getEventPos(e, canvas){
+  const r = canvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : null;
+  const cx = t ? t.clientX : e.clientX;
+  const cy = t ? t.clientY : e.clientY;
+  return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
+}
+function normPoint(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
+function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+
+/* Art handlers */
+artLayer.addEventListener('pointerdown', (e)=>{
+  artLayer.setPointerCapture(e.pointerId);
+  artDrawing = true;
+  const p = getEventPos(e, artLayer);
+  const tool = penMode.value;
+  const w = parseInt(penSize.value, 10);
+  currentArtStroke = { tool, width: w, points: [ normPoint(p, artLayer) ] };
+});
+artLayer.addEventListener('pointermove', (e)=>{
+  if (!artDrawing || !currentArtStroke) return;
+  const p = getEventPos(e, artLayer);
+  currentArtStroke.points.push(normPoint(p, artLayer));
+  renderLatestArtStrokeSegment(currentArtStroke);
+});
+artLayer.addEventListener('pointerup', (e)=>{
+  artLayer.releasePointerCapture(e.pointerId);
+  if (!artDrawing) return;
+  artDrawing=false;
+  if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); }
+});
+artLayer.addEventListener('pointercancel', ()=>{ artDrawing=false; currentArtStroke=null; });
+
+function renderLatestArtStrokeSegment(stroke){
+  if (!stroke || stroke.points.length<2) return;
+  const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
+  const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
+  artLayerCtx.globalCompositeOperation = (stroke.tool==='draw') ? 'source-over' : 'destination-out';
+  artLayerCtx.strokeStyle = (stroke.tool==='draw') ? '#ffffff' : '#000';
+  artLayerCtx.lineWidth = stroke.width;
+  artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
+  artLayerCtx.globalCompositeOperation='source-over';
+}
+
+/* Card handlers (pointer events) */
+cardCanvas.addEventListener('pointerdown', (e)=>{
+  cardCanvas.setPointerCapture(e.pointerId);
+  cardDrawing=true;
+  const p = getEventPos(e, cardCanvas);
+  const tool = cardMode.value; const w = parseInt(cardSize.value,10);
+  currentCardStroke = { tool, width: w, points: [ normPoint(p, cardCanvas) ] };
+});
+cardCanvas.addEventListener('pointermove', (e)=>{
+  if (!cardDrawing || !currentCardStroke) return;
+  const p = getEventPos(e, cardCanvas);
+  currentCardStroke.points.push(normPoint(p, cardCanvas));
+  renderLatestCardStrokeSegment(currentCardStroke);
+});
+cardCanvas.addEventListener('pointerup', (e)=>{
+  cardCanvas.releasePointerCapture(e.pointerId);
+  if (!cardDrawing) return;
+  cardDrawing=false;
+  if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=false; updateTaskStatus(); }
+});
+cardCanvas.addEventListener('pointercancel', ()=>{ cardDrawing=false; currentCardStroke=null; });
+
+function renderLatestCardStrokeSegment(stroke){
+  if (!stroke || stroke.points.length<2) return;
+  const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
+  const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
+  cardCtx.globalCompositeOperation = (stroke.tool==='draw') ? 'source-over' : 'destination-out';
+  cardCtx.strokeStyle = (stroke.tool==='draw') ? '#000' : '#000';
+  cardCtx.lineWidth = stroke.width;
+  cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
+  cardCtx.globalCompositeOperation='source-over';
+}
+
+/* Clear & high-quality save (4x resolution) */
+clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
+clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
+
+/* Save art: produce high-res dataURL (4x) and store strokes as-is (vectors) */
+saveArt.addEventListener('click', ()=>{
+  // create 4x canvas to improve raster quality
+  const scale = 4;
+  const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
+  const t = tmp.getContext('2d');
+  t.scale(scale, scale);
+  // draw brown background high-res
+  t.fillStyle = '#6b3b24'; t.beginPath(); t.arc(120,120,100,0,Math.PI*2); t.fill();
+  // draw artLayer at native resolution but due to scaling it becomes high res
+  t.drawImage(artLayer, 0, 0);
+  savedArtDataUrlLocal = tmp.toDataURL('image/png', 1.0);
+  savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes));
+  saveArt.disabled = true;
+  updateTaskStatus();
+  alert('アートを高解像度で保存しました（ベクトル＋高解像度画像）。提供時にFirestoreへ書き込みます。');
+});
+
+/* Save card with high resolution */
+saveCard.addEventListener('click', ()=>{
+  const scale = 4;
+  const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
+  const t = tmp.getContext('2d');
+  t.scale(scale, scale);
+  t.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
+  t.fillRect(0,0,cardCanvas.width,cardCanvas.height);
+  t.drawImage(cardCanvas, 0, 0);
+  savedCardDataUrlLocal = tmp.toDataURL('image/png', 1.0);
+  savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes));
+  saveCard.disabled = true;
+  updateTaskStatus();
+  alert('カードを高解像度で保存しました（ベクトル＋高解像度画像）。提供時にFirestoreへ書き込みます。');
+});
+
+/* Local holders */
+let savedArtStrokesLocal = null, savedCardStrokesLocal = null, savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
+
+/* Pouring logic (unchanged) */
+let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
+function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textCont[...]
+resetPouring();
+function startAutoPour(barEl, pctEl, onOverflow){ let pct=0; const it=setInterval(()=>{ pct = Math.min(130,pct + Math.random()*4 + 1); barEl.style.width = pct + '%'; pctEl.textContent = Math.round(pct)[...]
+startEsp.addEventListener('pointerdown', ()=>{
+  if (espInterval) return;
+  startEsp.textContent='注ぎ中...';
+  const res = startAutoPour(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); });
+  espInterval = res.it;
+});
+startEsp.addEventListener('pointerup', ()=>{
+  if (espInterval){ clearInterval(espInterval); espInterval=null; }
+  startEsp.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(espBar.style.width)||0;
+  if (pct>=95 && pct<=105){ espDone=true; latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); r[...]
+});
+startMilk.addEventListener('pointerdown', ()=>{
+  if (milkInterval) return;
+  startMilk.textContent='注ぎ中...';
+  const res = startAutoPour(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); });
+  milkInterval = res.it;
+});
+startMilk.addEventListener('pointerup', ()=>{
+  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
+  startMilk.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(milkBar.style.width)||0;
+  if (pct>=95 && pct<=105){ milkDone=true; latteFillMilk(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初か���やり直しになります'); resetPouring(); }
+});
+function latteClear(){ const ctx = latteCanvas.getContext('2d'); ctx.clearRect(0,0,latteCanvas.width,latteCanvas.height); ctx.fillStyle='#6b3b24'; ctx.beginPath(); ctx.arc(60,60,58,0,Math.PI*2); ctx.f[...]
+function latteFillEsp(){ const ctx = latteCanvas.getContext('2d'); ctx.fillStyle='#5a2f1a'; ctx.fillRect(0,60,latteCanvas.width,60); }
+function latteFillMilk(){ const ctx = latteCanvas.getContext('2d'); ctx.fillStyle='#f6efe6'; ctx.beginPath(); ctx.arc(60,60,48,0,Math.PI*2); ctx.fill(); }
+const latteCanvas = document.getElementById('latteCanvas'); latteClear();
+
+/* completeMake: save strokes and high-res served image into Firestore -> no storage */
+let currentMakingOrderId = null;
+function openMakeModal(order){
+  currentMakingOrderId = order.id;
+  makerName.textContent = order.assignedToName || order.assignedTo || '';
+  latteClear(); initArtCanvas(); initCardCanvas(); resetPouring();
+  savedArtStrokesLocal = order.artStrokes || null;
+  savedCardStrokesLocal = order.cardStrokes || null;
+  savedArtDataUrlLocal = order.artDataUrl || null;
+  savedCardDataUrlLocal = order.cardDataUrl || null;
+  if (savedArtStrokesLocal){ initArtCanvas(); replayStrokesOnCanvasImmediate(savedArtStrokesLocal, artLayer, artLayerCtx); saveArt.disabled=true; } else { saveArt.disabled=false; }
+  if (savedCardStrokesLocal){ initCardCanvas(); replayStrokesOnCanvasImmediate(savedCardStrokesLocal, cardCanvas, cardCtx); saveCard.disabled=true; } else { saveCard.disabled=false; }
+  updateTaskStatus();
+  modalMakeLatte.style.display = 'flex';
+}
+
+/* replay strokes function (accurate vector rendering) */
+function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, options){
+  if (!strokes || !strokes.length) return;
+  // ensure high-quality rendering
+  ctx.save();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  strokes.forEach(s=>{
+    ctx.beginPath();
+    ctx.lineWidth = s.width || 3;
+    if (s.tool === 'draw'){
+      ctx.globalCompositeOperation = 'source-over';
+      // for art we want white on brown; for omu we'll handle color in reconstruction by passing options
+      if (options && options.color) ctx.strokeStyle = options.color;
+      else ctx.strokeStyle = (canvasEl === artLayer || canvasEl === servedArtMini) ? '#ffffff' : '#000';
+    } else {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = '#000';
+    }
+    const pts = s.points || [];
+    for (let i=0;i<pts.length;i++){
+      const den = denormPoint(pts[i], canvasEl);
+      if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y);
+    }
+    ctx.stroke(); ctx.closePath();
+    ctx.globalCompositeOperation='source-over';
+  });
+  ctx.restore();
+}
+
+/* completeMake: create high-res served image (4x), draw latte, draw card (from saved strokes or saved data), then update Firestore */
+completeMake.addEventListener('click', async ()=>{
+  if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
+  const artStrokesToSave = savedArtStrokesLocal || artStrokes || [];
+  const cardStrokesToSave = savedCardStrokesLocal || cardStrokes || [];
+  // compose high-res served image
+  const scale = 3;
+  const tmp = document.createElement('canvas'); tmp.width = 600 * scale; tmp.height = 600 * scale;
+  const tctx = tmp.getContext('2d');
+  tctx.scale(scale, scale);
+  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,600,600);
+  tctx.drawImage(latteCanvas, 180,120,240,240);
+  // card area
+  tctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
+  tctx.fillRect(160,380,280,120);
+  // draw card strokes on temp canvas for composition
+  if (cardStrokesToSave && cardStrokesToSave.length){
+    const cardTmp = document.createElement('canvas'); cardTmp.width = 260; cardTmp.height = 100;
+    const cctx = cardTmp.getContext('2d');
+    cctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
+    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx);
+    tctx.drawImage(cardTmp, 170,390,260,100);
+  } else if (savedCardDataUrlLocal){
+    const img = new Image(); img.src = savedCardDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 170,390,260,100);
+  }
+  const servedDataUrl = tmp.toDataURL('image/png', 1.0);
+
+  try {
+    await updateDoc(doc(db,'orders',currentMakingOrderId), {
+      state: 'delivered',
+      deliveredAt: Date.now(),
+      servedImageData: servedDataUrl,
+      artStrokes: artStrokesToSave,
+      cardStrokes: cardStrokesToSave,
+      artDataUrl: savedArtDataUrlLocal || null,
+      cardDataUrl: savedCardDataUrlLocal || null
+    });
+    modalMakeLatte.style.display = 'none';
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; } catch(e){}
+    currentMakingOrderId = null;
+    savedArtStrokesLocal = savedCardStrokesLocal = savedArtDataUrlLocal = savedCardDataUrlLocal = null;
+    alert('提供しました（Firestoreへ保存）');
+  } catch(e){
+    console.warn(e);
+    alert('提供に失敗しました（Firestore更新エラー）。');
+  }
+});
+
+/* Client overlay updates and served screen rendering */
+function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
+function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
+
+function updateClientOverlay(){
+  if (!appState.currentOrderIdForClient) return;
+  const o = appState.orders.find(x=>x.id===appState.currentOrderIdForClient);
+  if (!o) return;
+  if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
+  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); }
+  else if (o.state === 'delivered'){ showClientServed(o); hideClientStatus(); }
+  else if (o.state === 'cancelled'){ showClientStatus('スタッフの応答がないため現在注文を取り消しになります'); setTimeout(()=>{ hideClientStatus(); appState.currentOrderIdForClient = null; }, 10000); }
+}
+
+/* show served full-screen with art and card placed stylishly; reconstruction respects item (omu uses yellow/red) */
+async function showClientServed(order){
+  // main image: if servedImageData present use it; else use first frame imageBase1.png
+  if (order.servedImageData){
+    servedImage.src = order.servedImageData;
+  } else {
+    const base = getAssetUrl(order.itemImageBase + '1.png');
+    servedImage.src = base;
+  }
+
+  // art mini
+  const artCtx = servedArtMini.getContext('2d');
+  servedArtMini.width = 260; servedArtMini.height = 260;
+  artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
+  // background color depends on item (omu -> yellow)
+  const itemCfg = menuItems.find(m=>m.id===order.item) || {};
+  const artBgColor = (order.item === 'omu') ? '#f3d27a' : '#6b3b24';
+  artCtx.fillStyle = artBgColor; artCtx.beginPath(); artCtx.arc(servedArtMini.width/2, servedArtMini.height/2, Math.min(servedArtMini.width,servedArtMini.height)/2-8, 0, Math.PI*2); artCtx.fill();
+
+  if (order.artStrokes && order.artStrokes.length){
+    // if omu use red pen color
+    const penColor = (order.item==='omu') ? '#ff3333' : '#ffffff';
+    replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, { color: penColor });
+  } else if (order.artDataUrl){
+    const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
+  }
+
+  // card mini
+  const cardCtxMini = servedCardMini.getContext('2d');
+  servedCardMini.width = 320; servedCardMini.height = 160;
+  cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
+  cardCtxMini.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card-skin') || '#fff2e6';
+  cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
+  if (order.cardStrokes && order.cardStrokes.length){
+    replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini);
+  } else if (order.cardDataUrl){
+    const img = new Image(); img.src = order.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
+  }
+
+  // preload limited sequence (1..5) and make final step random between x5 and x05
+  const seq = await preloadSequence(order.itemImageBase, 5);
+  servedSequence = seq;
+  servedSequenceIndex = 0;
+  if (servedSequence.length) servedImage.src = servedSequence[0];
+
+  // show fullscreen eat panel
+  eatFullscreen.style.display = 'flex';
+}
+
+/* preload sequence with final step randomization as requested */
+async function preloadSequence(basePath, count){
+  const arr = [];
+  for (let i=1;i<=count;i++){
+    let name = `${basePath}${i}.png`;
+    // For last index randomly pick between 5.png and 05.png
+    if (i === count){
+      const rand = Math.random() < 0.5 ? `${i}.png` : `0${i}.png`;
+      name = `${basePath}${rand}`;
+    } else {
+      name = `${basePath}${i}.png`;
+    }
+    const url = getAssetUrl(name);
+    try {
+      const r = await fetch(url);
+      if (!r.ok) { break; }
+      const b = await r.blob();
+      arr.push(URL.createObjectURL(b));
+    } catch(e){ break; }
+  }
+  return arr;
+}
+
+/* served image press/hold behavior: repeat playing item-rate audio while pointerdown, on release advance image one step. */
+let servedHoldLoop = null;
+let servedHoldAudio = null;
+let servedSequence = [], servedSequenceIndex = 0;
+servedImage.addEventListener('pointerdown', (e)=>{
+  e.preventDefault();
+  // start repeating audio: load item-specific repeated audio (use base rate/omu audio file)
+  const idxAudio = appState.orders.find(o=>o.id===appState.currentOrderIdForClient) || null;
+  // playback loop: play base audio (rate.mp3 or omu.mp3) continuously with 1.5s gap
+  const itemId = idxAudio ? idxAudio.item : 'rate';
+  const prefix = (itemId === 'omu') ? 'omu' : 'rate';
+  const file = getAssetUrl(`@zzcafe2800/reiji_cafe/files/${prefix}.mp3`);
+  servedHoldAudio = new Audio(file);
+  servedHoldAudio.loop = false;
+  let playing = false;
+  function playOnceAndSchedule(){
+    servedHoldAudio.currentTime = 0;
+    servedHoldAudio.play().catch(()=>{});
+    servedHoldAudio.onended = ()=> {
+      servedHoldLoop = setTimeout(()=> { if (servedHoldLoop !== null) playOnceAndSchedule(); }, 1500);
+    };
+  }
+  playOnceAndSchedule();
+});
+servedImage.addEventListener('pointerup', (e)=>{
+  // stop loop and advance image by one
+  if (servedHoldLoop !== null){ clearTimeout(servedHoldLoop); servedHoldLoop = null; }
+  if (servedHoldAudio){ try{ servedHoldAudio.pause(); servedHoldAudio.currentTime=0; } catch(e){} servedHoldAudio=null; }
+  // advance
+  if (!servedSequence || !servedSequence.length) return;
+  if (servedSequenceIndex < servedSequence.length - 1){
+    servedSequenceIndex++;
+    servedImage.src = servedSequence[servedSequenceIndex];
+    // play per-click short audio (base)
+    const curOrder = appState.orders.find(o=>o.id===appState.currentOrderIdForClient);
+    const item = curOrder ? curOrder.item : 'rate';
+    const prefix = (item === 'omu') ? 'omu' : 'rate';
+    const file = getAssetUrl(`@zzcafe2800/reiji_cafe/files/${prefix}.mp3`);
+    const a = new Audio(file); a.play().catch(()=>{});
+  } else {
+    // at end do nothing
+  }
+});
+
+/* hide eatNext (not used) and use full-screen home button */
+const eatNextBtn = document.getElementById('eatNext');
+if (eatNextBtn) eatNextBtn.style.display = 'none';
+
+homeFromEat.addEventListener('click', ()=> {
+  eatFullscreen.style.display = 'none';
+});
+
+/* language buttons small also play single audio already bound above */
+
+/* helpers: play item client audio already implemented earlier (playItemClientAudio) */
+
+/* Utility: show/hide modal */
+function showModal(el){ el.style.display = 'flex'; }
+function hideModal(el){ el.style.display = 'none'; }
+
+/* small helpers */
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 
 /* initial state: build menu and hook language and other handlers */
 (async ()=>{
   await buildMenu();
-  // Set icons again after menu build in case elements rendered later
-  setLangIcons();
 })();
 
 /* Expose for debug */
-window.__reiji = { appState, replayStrokesOnCanvasImmediate: window.__reiji ? window.__reiji.replayStrokesOnCanvasImmediate : undefined };
+window.__reiji = { appState, replayStrokesOnCanvasImmediate };
 
+/* Note: This implementation focuses on requested changes:
+   - High-res dataURL saving (scale factor) plus vector strokes saved to Firestore.
+   - Realtime audio triggers via processing snapshot.docChanges.
+   - Fullscreen eat screen layout and hold-to-play behavior for item audio.
+   - Omurice added with passcode '0000', yellow background and red pen when reconstructing art.
+   - Menu items can have passcodes in menuItems[]. If a passcode exists, selecting the menu asks for password (plays ps.mp3 for that user).
+   - Shift/Break buttons updated in real-time for the logged-in staff user.
+   - Language audio buttons added
+   - Rate/omu sequences limited to 5 with random final variant.
+   - All image/audio assets expected at the specified GitHub paths.
+*/
 </script>
 </body>
 </html>
