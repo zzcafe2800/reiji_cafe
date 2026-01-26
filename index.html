@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ — 完全版（修正版：注文ごとの描画分離対応）</title>
+<title>０時過ぎの飲食</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
@@ -63,9 +63,9 @@
 <body>
 <div class="container">
   <header>
-    <h1>ゲームカフェ</h1>
+    <h1>０時過ぎの飲食サービス</h1>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div class="small-info">現在時刻: <span id="nowtime">--:--:--</span></div>
+      <div class="small-info">時刻: <span id="nowtime">--:--:--</span></div>
       <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
     </div>
   </header>
@@ -79,18 +79,18 @@
       <!-- J/E/C/K ボタン -->
       <div id="jukeboxArea" style="display:flex;gap:8px;margin-top:8px;align-items:center;"></div>
 
-      <div id="helperSmall" class="small-info">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
+      <div id="helperSmall" class="small-info">※金銭に関わることは一切ありません</div>
     </div>
   </div>
 
   <div class="guest-mini" id="guestMini">
-    <div id="guestRole"><strong>あなたは現在：客</strong></div>
-    <div class="small-info" style="margin-top:6px">スタッフは「1232」で入室</div>
+    <div id="guestRole"><strong>あなた：客</strong></div>
+    <div class="small-info" style="margin-top:6px">目的：注文してみよう！！</div>
   </div>
 
   <div class="small-pass">
-    <label style="font-size:12px;margin:0">スタッフパス</label>
-    <input id="staffPass" placeholder="小さい" />
+    <label style="font-size:12px;margin:0">店員用</label>
+    <input id="staffPass" placeholder="　" />
     <button id="passOk" class="small">OK</button>
   </div>
 </div>
@@ -99,8 +99,8 @@
 <div id="staffFull" class="staff-full" aria-hidden="true">
   <div class="staff-top">
     <div>
-      <strong id="staffBadge">スタッフ</strong>
-      <div class="small-info">全画面スタッフモード</div>
+      <strong id="staffBadge">店員</strong>
+      <div class="small-info">店員控室</div>
     </div>
     <div>
       <button id="logoutStaff" class="small">退室</button>
@@ -109,8 +109,8 @@
 
   <div style="margin-top:8px;">
     <div style="display:flex;gap:8px;align-items:center;">
-      <label>シフト開始</label><input id="shiftStart" type="time" />
-      <label>終了</label><input id="shiftEnd" type="time" />
+      <label>シフト開始時間</label><input id="shiftStart" type="time" />
+      <label>終了時間</label><input id="shiftEnd" type="time" />
       <button id="saveShift" class="small">保存</button>
     </div>
 
@@ -122,12 +122,12 @@
 
   <div class="staff-body">
     <div class="staff-panel">
-      <strong>現在のシフト一覧</strong>
+      <strong>全員のシフト一覧</strong>
       <div id="shiftList" class="shift-list small-info" style="margin-top:8px">読み込み中…</div>
     </div>
 
     <div class="staff-panel">
-      <strong>スタッフ用 注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
+      <strong> 注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
       <div id="staffOrderList" class="order-list" style="margin-top:8px"></div>
     </div>
   </div>
@@ -136,11 +136,11 @@
 <!-- Sound enable overlay -->
 <div id="soundOverlay" class="sound-overlay" style="display:none;">
   <div class="sound-panel">
-    <h3>サウンドを有効にしますか？</h3>
-    <p>音声は通知や効果音に使われます。続行するには「有効にする」を押してください。</p>
+    <h3>音を出しますか？</h3>
+    <p>音声、通知、効果音が流れます</p>
     <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-      <button id="enableSoundBtn" class="btn-green">有効にする</button>
-      <button id="disableSoundBtn" class="small">後で</button>
+      <button id="enableSoundBtn" class="btn-green">OK</button>
+      <button id="disableSoundBtn" class="small">NO</button>
     </div>
   </div>
 </div>
@@ -149,14 +149,14 @@
 <div id="orderStatusOverlay" class="status-overlay">
   <div class="status-card" id="orderStatusCard">
     <div id="orderStatusMain">状態</div>
-    <div id="orderStatusSub" class="status-sub">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
+    <div id="orderStatusSub" class="status-sub">対応されない場合再度注文</div>
   </div>
 </div>
 
 <!-- Modals -->
 <div id="modalName" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
-    <h3>名前を入力</h3>
+    <h3>gogh内の名前</h3>
     <input id="orderName" placeholder="名前を入力" />
     <div style="margin-top:10px;text-align:right;">
       <button id="cancelOrderName" class="small">キャンセル</button>
@@ -202,7 +202,7 @@
               </div>
               <div id="espPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
             </div>
-            <div class="small-info">合格ゾーン: 95%〜105%。120% 到達は注ぎ過ぎ（失敗）。</div>
+            <div class="small-info">合格ゾーン: 95%〜105%</div>
           </div>
         </div>
 
@@ -218,14 +218,14 @@
               </div>
               <div id="milkPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
             </div>
-            <div class="small-info">合格ゾーン: 95%〜105%。120% 到達は注ぎ過ぎ（失敗）。</div>
+            <div class="small-info">合格ゾーン: 95%〜105%</div>
           </div>
         </div>
       </div>
 
       <div style="flex:1;min-width:300px;">
         <div style="background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
-          <strong id="latteArtLabel">ラテアート（白ペン）</strong>
+          <strong id="latteArtLabel">ラテアート（似顔絵など）</strong>
           <div style="margin-top:8px;">
             <div class="art-area" id="artArea">
               <canvas id="artBg" width="240" height="240"></canvas>
@@ -249,7 +249,7 @@
         </div>
 
         <div style="margin-top:10px;background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
-          <strong>メッセージカード（手書き）</strong>
+          <strong>メッセージカード（応援等々…）</strong>
           <div style="margin-top:6px;">
             <canvas id="cardCanvas" class="card-canvas" width="320" height="120"></canvas>
           </div>
@@ -265,13 +265,13 @@
             <label style="font-size:12px;">ペン色</label><input id="cardPenColor" type="color" value="#000000"/>
           </div>
           <div style="margin-top:8px;text-align:right;">
-            <button id="saveCard" class="small" disabled>カード保存</button>
+            <button id="saveCard" class="small" disabled>保存</button>
           </div>
         </div>
 
         <div style="margin-top:8px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
           <div id="taskStatusSmall" class="small-info" style="margin-right:auto"></div>
-          <button id="completeMake" class="btn-red" disabled>提供する（完了）</button>
+          <button id="completeMake" class="btn-red" disabled>提供する</button>
           <button id="cancelMake" class="small">中止</button>
         </div>
       </div>
@@ -282,7 +282,7 @@
 <!-- Eat modal -->
 <div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal" style="width:95%;max-width:960px;">
-    <h3>飲食画面</h3>
+    <h3>飲食</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <div style="flex:1;min-width:420px;">
         <div id="eatMainWrap" style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
@@ -290,8 +290,8 @@
           <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">長押しで音を鳴らし、離すと次へ</div>
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-          <button id="eatNext" class="small" style="display:none">食べる（次へ）</button>
-          <div id="eatSoundInfo" class="small-info">長押しで音（rate.mp3）</div>
+          <button id="eatNext" class="small" style="display:none"></button>
+          <div id="eatSoundInfo" class="small-info">長押し・クリック</div>
           <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
         </div>
       </div>
@@ -299,7 +299,7 @@
       <div style="width:320px;">
         <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong>ラテアート（小）</strong>
+            <strong>ラテアート</strong>
             <span id="artLabelMini" style="font-size:12px;color:#777;"></span>
           </div>
           <canvas id="servedArtMini" width="220" height="220" style="border:1px solid #d4c0b8;margin-top:8px;background:#6b3b24;display:block;"></canvas>
@@ -541,8 +541,8 @@ setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 function renderShiftShort(){
   const now = new Date();
   const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!active.length) shiftShort.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）';
-  else shiftShort.textContent = '状況①：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+  if (!active.length) shiftShort.textContent = '注文✖　：　現在対応できる店員がおりません　';
+  else shiftShort.textContent = '注文〇：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
 function renderShiftList(){
   shiftList.innerHTML = '';
@@ -884,7 +884,7 @@ saveArt.addEventListener('click', ()=>{
   savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes || []));
   saveArt.disabled = true;
   updateTaskStatus();
-  alert('アートを保存しました（この注文用）。提供時にFirestoreへ書き込みます。');
+  alert('アートを保存しました。');
 });
 
 saveCard.addEventListener('click', ()=>{
@@ -906,7 +906,7 @@ saveCard.addEventListener('click', ()=>{
   savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes || []));
   saveCard.disabled = true;
   updateTaskStatus();
-  alert('カードを保存しました（この注文用）。提供時にFirestoreへ書き込みします。');
+  alert('カードを保存しました。。');
 });
 
 /* pouring logic (unchanged) */
@@ -1211,7 +1211,7 @@ function buildJukebox(){
     img.addEventListener('click', ()=>{
       try { it.audio.currentTime = 0; it.audio.play().catch(()=>{}); } catch(e){}
     });
-    const hint = document.createElement('div'); hint.className='hint'; hint.textContent = '使い方 / How to use / 使用方法 / 사용 방법';
+    const hint = document.createElement('div'); hint.className='hint'; hint.textContent = 'How to use';
     wrap.appendChild(img); wrap.appendChild(hint);
     jukeboxArea.appendChild(wrap);
   }
