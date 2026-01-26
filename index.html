@@ -782,7 +782,8 @@ let cardStrokes = []; let currentCardStroke = null; let cardDrawing = false;
 /* saved local copies that are written to Firestore on completeMake */
 let savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
 let savedArtMeta = null, savedCardMeta = null;
-
+let savedArtStrokesLocal = null;
+let savedCardStrokesLocal = null;
 /* event position */
 function getEventPos(e, canvas){
   const r = canvas.getBoundingClientRect();
