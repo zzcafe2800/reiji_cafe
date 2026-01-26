@@ -390,14 +390,14 @@ function getAssetUrl(path){
   if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
   try { return new URL(path).href; } catch(e){ return path; }
 }
-const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'));
-const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'));
-const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookdbgm.mp3'));
-const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'));
-const audioJ = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/J.mp3'));
-const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/E.mp3'));
-const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/C.mp3'));
-const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/K.mp3'));
+const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'));
+const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'));
+const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookdbgm.mp3'));
+const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/rate.mp3'));
+const audioJ = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/J.mp3'));
+const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'));
+const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'));
+const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3'));
 
 /* Firestore cols */
 const staffsCol = collection(db, 'staffs');
@@ -410,13 +410,13 @@ const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, 
 const MENUS = {
   rate: {
     id:'rate', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate', frameCount:5, lastFrameRandom:true,
-    password:'', longPressSound:'@zzcafe2800/reiji_cafe/files/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/files/rate.mp3',
+    password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     uiLabels: { makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', artLabel:'ラテアート' }
   },
   omu: {
     id:'omu', title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu', frameCount:5, lastFrameRandom:true,
-    password:'0000', longPressSound:'@zzcafe2800/reiji_cafe/files/omu_long.mp3', clickSound:'@zzcafe2800/reiji_cafe/files/omu_click.mp3',
+    password:'0000', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     uiLabels: { makeTitle:'オムライス制作', espressoLabel:'調理行程①', milkLabel:'調理行程②', artLabel:'盛り付け' }
   }
@@ -461,10 +461,10 @@ async function buildMenuGrid(){
     // action buttons row (J/E/C/K)
     const actions = document.createElement('div'); actions.className='menu-actions';
     const flags = [
-      { key:'J', img:'@zzcafe2800/reiji_cafe/files/J.png', audio: audioJ },
-      { key:'E', img:'@zzcafe2800/reiji_cafe/files/E.png', audio: audioE },
-      { key:'C', img:'@zzcafe2800/reiji_cafe/files/C.png', audio: audioC },
-      { key:'K', img:'@zzcafe2800/reiji_cafe/files/K.png', audio: audioK }
+      { key:'J', img:'@zzcafe2800/reiji_cafe/main/J.png', audio: audioJ },
+      { key:'E', img:'@zzcafe2800/reiji_cafe/main/E.png', audio: audioE },
+      { key:'C', img:'@zzcafe2800/reiji_cafe/main/C.png', audio: audioC },
+      { key:'K', img:'@zzcafe2800/reiji_cafe/main/K.png', audio: audioK }
     ];
     for (const f of flags){
       const b = document.createElement('div'); b.className='flag-btn';
