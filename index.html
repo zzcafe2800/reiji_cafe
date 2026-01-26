@@ -3,13 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ゲームカフェ — 完全版（イラスト重複バグ修正版 + renderShiftShort 追加）</title>
+<title>ゲームカフェ — バグ修正版（セッション分離）</title>
 <meta name="format-detection" content="telephone=no">
 <style>
-  :root{
-    --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
-    --card-skin:#fff2e6;
-  }
+  :root{ --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c; --card-skin:#fff2e6; }
   html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
   .container{max-width:1100px;margin:18px auto;padding:18px;background:var(--paper);box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;border:6px solid var(--accent);position:relative;min-height:720px;}
   header{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;color:var(--dark);}
@@ -20,11 +17,9 @@
   .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:22px 36px;border-radius:12px;font-size:34px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:420px;}
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
   .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
-  .small-pass input{width:100px;padding:4px;}
   .guest-mini{position:fixed;right:12px;bottom:12px;background:var(--paper);padding:8px;border-radius:8px;border:1px solid #e6d6cc;font-size:13px;box-shadow:0 6px 12px rgba(0,0,0,0.08);}
   .staff-full{position:fixed;inset:0;background:linear-gradient(180deg,#fff8f2,#fff3ec);padding:18px;z-index:90;display:none;flex-direction:column;overflow:auto;}
   .staff-full.show{display:flex;}
-  .staff-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
   .big-toggle{display:flex;gap:8px;align-items:center;margin-top:8px;}
   .big-toggle button{flex:1;padding:12px;border-radius:8px;font-size:16px;border:2px solid #c6b3b3;cursor:pointer;}
   .big-toggle .on{background:#2b8f4a;color:#fff;border-color:#2b8f4a;}
@@ -49,20 +44,13 @@
   .jukebox{display:flex;gap:8px;align-items:center}
   .jukebox img{width:56px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;position:relative;}
   .jukebox .hint{position:absolute;right:2px;bottom:2px;font-size:9px;background:rgba(255,255,255,0.9);padding:2px;border-radius:3px;}
-  .jukebox .wrapper{position:relative;display:inline-block;}
-  @media (max-width:600px){
-    .order-btn{font-size:28px;padding:18px 28px;}
-    .modal{width:94%;}
-    .staff-body{flex-direction:column;}
-    .staff-panel{max-height:none;}
-    .guest-mini{right:8px;bottom:8px;font-size:12px;padding:6px;}
-  }
+  @media (max-width:600px){ .order-btn{font-size:28px;padding:18px 28px;} .modal{width:94%;} .staff-body{flex-direction:column;} .staff-panel{max-height:none;} .guest-mini{right:8px;bottom:8px;font-size:12px;padding:6px;} }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>ゲームカフェ — 修正版（イラスト重複バグ対応 + renderShiftShort）</h1>
+    <h1>ゲームカフェ — 修正版（セッション分離）</h1>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="small-info">現在時刻: <span id="nowtime">--:--:--</span></div>
       <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
@@ -75,7 +63,7 @@
 
       <button id="orderBtn" class="order-btn disabled">注文</button>
 
-      <!-- J/E/C/K のボタンエリア -->
+      <!-- J/E/C/K ボタン -->
       <div id="jukeboxArea" style="display:flex;gap:8px;margin-top:8px;align-items:center;"></div>
 
       <div id="helperSmall" class="small-info">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
@@ -94,16 +82,11 @@
   </div>
 </div>
 
-<!-- Staff full -->
+<!-- Staff screen -->
 <div id="staffFull" class="staff-full" aria-hidden="true">
-  <div class="staff-top">
-    <div>
-      <strong id="staffBadge">スタッフ</strong>
-      <div class="small-info">全画面スタッフモード</div>
-    </div>
-    <div>
-      <button id="logoutStaff" class="small">退室</button>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div><strong id="staffBadge">スタッフ</strong><div class="small-info">全画面スタッフモード</div></div>
+    <div><button id="logoutStaff" class="small">退室</button></div>
   </div>
 
   <div style="margin-top:8px;">
@@ -112,19 +95,17 @@
       <label>終了</label><input id="shiftEnd" type="time" />
       <button id="saveShift" class="small">保存</button>
     </div>
-
     <div class="big-toggle" style="margin-top:8px;">
       <button id="shiftBtn" class="off">シフト中</button>
       <button id="breakBtn" class="off">休憩中</button>
     </div>
   </div>
 
-  <div class="staff-body">
+  <div class="staff-body" style="margin-top:12px;">
     <div class="staff-panel">
       <strong>現在のシフト一覧</strong>
       <div id="shiftList" class="shift-list small-info" style="margin-top:8px">読み込み中…</div>
     </div>
-
     <div class="staff-panel">
       <strong>スタッフ用 注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
       <div id="staffOrderList" class="order-list" style="margin-top:8px"></div>
@@ -136,7 +117,7 @@
 <div id="soundOverlay" class="sound-overlay" style="display:none;">
   <div class="sound-panel">
     <h3>サウンドを有効にしますか？</h3>
-    <p>音声は通知や効果音に使われます。続行するには「有効にする」を押してください。</p>
+    <p>音は通知や効果音に使われます。続行するには「有効にする」を押してください。</p>
     <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
       <button id="enableSoundBtn" class="btn-green">有効にする</button>
       <button id="disableSoundBtn" class="small">後で</button>
@@ -144,15 +125,9 @@
   </div>
 </div>
 
-<!-- Order status overlay -->
-<div id="orderStatusOverlay" class="status-overlay">
-  <div class="status-card" id="orderStatusCard">
-    <div id="orderStatusMain">状態</div>
-    <div id="orderStatusSub" class="status-sub">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div>
-  </div>
-</div>
+<!-- Overlays / Modals -->
+<div id="orderStatusOverlay" class="status-overlay"><div class="status-card"><div id="orderStatusMain">状態</div><div id="orderStatusSub" class="status-sub">①注意：事故として必ずスタッフ（店員）が対応できない場合もございます</div></div></div>
 
-<!-- Modals -->
 <div id="modalName" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
     <h3>名前を入力</h3>
@@ -165,13 +140,7 @@
 </div>
 
 <div id="modalMenu" class="modal-back" style="display:none;align-items:center;justify-content:center;">
-  <div class="modal">
-    <h3>メニューを選択</h3>
-    <div class="menu-grid" id="menuGrid"></div>
-    <div style="margin-top:10px;text-align:right;">
-      <button id="backMenu" class="small">戻る</button>
-    </div>
-  </div>
+  <div class="modal"><h3>メニューを選択</h3><div class="menu-grid" id="menuGrid"></div><div style="margin-top:10px;text-align:right;"><button id="backMenu" class="small">戻る</button></div></div>
 </div>
 
 <div id="modalMakeLatte" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
@@ -217,7 +186,7 @@
               </div>
               <div id="milkPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
             </div>
-            <div class="small-info">合格ゾーン: 95%〜105%。120% 到達は注ぎ過ぎ（失敗）。</div>
+            <div class="small-info">合格ゾーン: 95%〜105%。120% 到達は注��過ぎ（失敗）。</div>
           </div>
         </div>
       </div>
@@ -286,6 +255,7 @@
       <div style="flex:1;min-width:420px;">
         <div id="eatMainWrap" style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
           <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
+          <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">長押しで音を鳴らし、離すと次へ</div>
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <div id="eatSoundInfo" class="small-info">長押しで音（rate.mp3）</div>
@@ -317,14 +287,20 @@
 </div>
 
 <script type="module">
-/* Full script with renderShiftShort added and the art-duplication fixes applied */
+/*
+ 修正版（セッション分離）フルスクリプト
+ - currentSession を導入して注文ごとの制作データを隔離
+ - session の破棄を厳密に行い、グローバルな描画配列を使い回さない
+ - クライアント（注文者）だけが自分のアートを受け取る
+ - 長押し音の停止、cookbgm停止等の既定機能を保持
+*/
 
 /* Firebase imports */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* Firebase config (existing) */
+/* Firebase config (既存のまま) */
 const firebaseConfig = {
   apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
   authDomain: "reiji-cafr.firebaseapp.com",
@@ -339,401 +315,333 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 signInAnonymously(auth).catch(e=>console.warn('anonymous sign-in failed', e));
 
-/* DOM refs already set above via getElementById earlier in the file scope */
+/* DOM refs */
+const nowtimeEl = document.getElementById('nowtime');
+const orderBtn = document.getElementById('orderBtn');
+const shiftShort = document.getElementById('shiftShort');
+const helperSmall = document.getElementById('helperSmall');
+const staffPass = document.getElementById('staffPass');
+const passOk = document.getElementById('passOk');
+const modalName = document.getElementById('modalName');
+const orderName = document.getElementById('orderName');
+const okOrderName = document.getElementById('okOrderName');
+const modalMenu = document.getElementById('modalMenu');
+const menuGrid = document.getElementById('menuGrid');
+const backMenu = document.getElementById('backMenu');
+const staffFull = document.getElementById('staffFull');
+const staffBadge = document.getElementById('staffBadge');
+const logoutStaff = document.getElementById('logoutStaff');
+const shiftBtn = document.getElementById('shiftBtn');
+const breakBtn = document.getElementById('breakBtn');
+const shiftStart = document.getElementById('shiftStart');
+const shiftEnd = document.getElementById('shiftEnd');
+const saveShift = document.getElementById('saveShift');
+const shiftList = document.getElementById('shiftList');
+const staffOrderList = document.getElementById('staffOrderList');
+const pendingTasksSmall = document.getElementById('pendingTasksSmall');
 
-/* getAssetUrl helper */
+const modalMakeLatte = document.getElementById('modalMakeLatte');
+const makerName = document.getElementById('makerName');
+const startEsp = document.getElementById('startEsp');
+const espBar = document.getElementById('espBar');
+const espPct = document.getElementById('espPct');
+const startMilk = document.getElementById('startMilk');
+const milkBar = document.getElementById('milkBar');
+const milkPct = document.getElementById('milkPct');
+
+const artBg = document.getElementById('artBg');
+const artLayer = document.getElementById('artLayer');
+const artBgCtx = artBg.getContext('2d');
+const artLayerCtx = artLayer.getContext('2d');
+const penMode = document.getElementById('penMode');
+const penSize = document.getElementById('penSize');
+const clearArt = document.getElementById('clearArt');
+const saveArt = document.getElementById('saveArt');
+const artBgColor = document.getElementById('artBgColor');
+const artPenColor = document.getElementById('artPenColor');
+
+const cardCanvas = document.getElementById('cardCanvas');
+const cardCtx = cardCanvas.getContext('2d');
+const cardMode = document.getElementById('cardMode');
+const cardSize = document.getElementById('cardSize');
+const clearCard = document.getElementById('clearCard');
+const saveCard = document.getElementById('saveCard');
+const cardBgColor = document.getElementById('cardBgColor');
+const cardPenColor = document.getElementById('cardPenColor');
+
+const taskStatusSmall = document.getElementById('taskStatusSmall');
+const completeMake = document.getElementById('completeMake');
+const cancelMake = document.getElementById('cancelMake');
+
+const modalEat = document.getElementById('modalEat');
+const servedImage = document.getElementById('servedImage');
+const servedArtMini = document.getElementById('servedArtMini');
+const servedCardMini = document.getElementById('servedCardMini');
+const saveAllBtn = document.getElementById('saveAllBtn');
+const homeFromEat = document.getElementById('homeFromEat');
+const orderStatusOverlay = document.getElementById('orderStatusOverlay');
+const orderStatusMain = document.getElementById('orderStatusMain');
+const orderStatusSub = document.getElementById('orderStatusSub');
+const bgmBtn = document.getElementById('bgmBtn');
+const jukeboxArea = document.getElementById('jukeboxArea');
+
+const soundOverlay = document.getElementById('soundOverlay');
+const enableSoundBtn = document.getElementById('enableSoundBtn');
+const disableSoundBtn = document.getElementById('disableSoundBtn');
+
+const makeTitle = document.getElementById('makeTitle');
+const espressoLabelEl = document.getElementById('espressoLabel');
+const milkLabelEl = document.getElementById('milkLabel');
+const latteArtLabelEl = document.getElementById('latteArtLabel');
+
+/* helper: asset url */
 function getAssetUrl(path){
   if (!path) return '';
   if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
   try { return new URL(path).href; } catch(e){ return path; }
 }
 
-/* default audio */
-const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'));
-const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'));
-const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookdbgm.mp3'));
-const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/rate.mp3'));
-const audioJ = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/J.mp3'));
-const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'));
-const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'));
-const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3'));
+/* audio assets */
+const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/tyaimu.mp3'));
+const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookbgm.mp3'));
+const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/cookdbgm.mp3'));
+const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/rate.mp3'));
+const audioJ = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/J.mp3'));
+const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/E.mp3'));
+const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/C.mp3'));
+const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/files/K.mp3'));
 
 /* Firestore collections */
 const staffsCol = collection(db, 'staffs');
 const ordersCol = collection(db, 'orders');
 
-/* clientId */
+/* client id persistent */
 let clientId = localStorage.getItem('reiji_clientId');
 if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
 
-/* MENUS */
+/* app state */
+const state = { staffs:[], orders:[], currentUser:{ role:'guest', staffId:null }, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
+
+/* currentSession: 当該スタッフが制作モーダルを開いている間だけ存在するオブジェクト
+  Structure:
+    currentSession = {
+      orderId,
+      artStrokes: [],
+      cardStrokes: [],
+      savedArtDataUrl: null,
+      savedCardDataUrl: null,
+      artMeta: null,
+      cardMeta: null,
+      menuCfg: {...} // menu config used for labels/colors
+    }
+  重要: これを使って全ての描画/保存を行い、モーダルを閉じたら必ず null にする。
+*/
+let currentSession = null;
+
+/* MENUS data-driven (簡易) */
 const MENUS = {
-  rate: { id:'rate', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate', frameCount:5, lastFrameRandom:true, password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' } },
-  omu:  { id:'omu',  title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu',  frameCount:5, lastFrameRandom:true, password:'0000', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'オムライス制作', espressoLabel:'調理ステップ1', milkLabel:'調理ステップ2', latteArtLabel:'飾り' } }
+  rate: {
+    id:'rate', title:'カフェラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate', frameCount:5, lastFrameRandom:true,
+    longPressSound:'@zzcafe2800/reiji_cafe/files/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/files/rate.mp3',
+    artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
+    ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' }
+  },
+  omu: {
+    id:'omu', title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu', frameCount:5, lastFrameRandom:true,
+    longPressSound:'@zzcafe2800/reiji_cafe/files/omu_long.mp3', clickSound:'@zzcafe2800/reiji_cafe/files/omu_click.mp3',
+    artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
+    ui:{ makeTitle:'オムライス制作', espressoLabel:'注ぎ', milkLabel:'仕上げ', latteArtLabel:'オムライスの飾り' }
+  }
 };
 
-/* app state */
-const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
-
-/* Working arrays for the current make-session (isolated per openMakeModal) */
-let artStrokes = [];           // current session only
-let currentArtStroke = null;
-let artDrawing = false;
-
-let cardStrokes = [];
-let currentCardStroke = null;
-let cardDrawing = false;
-
-let savedArtDataUrlLocal = null;
-let savedCardDataUrlLocal = null;
-let savedArtMeta = null;
-let savedCardMeta = null;
-
-let currentMakingOrderId = null;
-let servedSequence = [], servedSequenceIndex = 0;
-
-/* --- Utility functions --- */
-function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
-function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+/* utility */
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function showModal(el){ el.style.display = 'flex'; }
-function hideModal(el){ el.style.display = 'none'; }
-function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); } catch(e){} }
 
-/* --- Canvas init --- */
-function initArtCanvas(bgColor){
-  artBgCtx.clearRect(0,0,artBg.width,artBg.height);
-  artBgCtx.fillStyle = bgColor || artBgColor.value || '#6b3b24';
-  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
-  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
-  artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
-}
-function initCardCanvas(bgColor){
-  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.fillStyle = bgColor || cardBgColor.value || '#fff2e6';
-  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.lineCap='round'; cardCtx.lineJoin='round';
-}
-initArtCanvas(); initCardCanvas();
+/* init UI time */
+setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 
-/* --- Drawing event handlers (operate on current session arrays only) --- */
-function getEventPos(e, canvas){
-  const r = canvas.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : null;
-  const cx = t ? t.clientX : e.clientX;
-  const cy = t ? t.clientY : e.clientY;
-  return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
-}
-
-/* Art */
-artLayer.addEventListener('mousedown', (e)=>{
-  artDrawing = true;
-  const p = getEventPos(e, artLayer);
-  const tool = penMode.value;
-  const w = parseInt(penSize.value, 10);
-  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ], pen: artPenColor.value || '#ffffff' };
-});
-artLayer.addEventListener('mousemove', (e)=>{
-  if (!artDrawing || !currentArtStroke) return;
-  const p = getEventPos(e, artLayer);
-  currentArtStroke.points.push(normPointInCanvas(p, artLayer));
-  renderLatestArtStrokeSegment(currentArtStroke);
-});
-artLayer.addEventListener('mouseup', ()=>{
-  if (!artDrawing) return;
-  artDrawing = false;
-  if (currentArtStroke){
-    artStrokes.push(currentArtStroke);
-    currentArtStroke = null;
-    saveArt.disabled = false;
-    updateTaskStatus();
+/* Build jukebox J/E/C/K buttons under order button */
+function buildJukebox(){
+  const list = [
+    { id:'J', img:'@zzcafe2800/reiji_cafe/files/J.png', audio: audioJ },
+    { id:'E', img:'@zzcafe2800/reiji_cafe/files/E.png', audio: audioE },
+    { id:'C', img:'@zzcafe2800/reiji_cafe/files/C.png', audio: audioC },
+    { id:'K', img:'@zzcafe2800/reiji_cafe/files/K.png', audio: audioK },
+  ];
+  jukeboxArea.innerHTML = '';
+  for (const it of list){
+    const wrap = document.createElement('div'); wrap.style.position='relative';
+    const img = document.createElement('img'); img.src = getAssetUrl(it.img); img.alt=it.id; img.style.width='56px'; img.style.height='56px'; img.style.objectFit='cover'; img.style.borderRadius='6px'; img.style.cursor='pointer';
+    img.addEventListener('click', ()=> { try{ it.audio.currentTime=0; it.audio.play().catch(()=>{}); } catch(e){} });
+    const hint = document.createElement('div'); hint.textContent='使い方 / How to use / 使用方法 / 사용 방법'; hint.style.position='absolute'; hint.style.fontSize='9px'; hint.style.right='2px'; hint.style.bottom='2px'; hint.style.background='rgba(255,255,255,0.9)'; hint.style.padding='2px'; hint.style.borderRadius='3px';
+    wrap.appendChild(img); wrap.appendChild(hint); jukeboxArea.appendChild(wrap);
   }
-});
-artLayer.addEventListener('mouseleave', ()=>{ if (artDrawing){ artDrawing=false; if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } } });
-artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); });
-
-function renderLatestArtStrokeSegment(stroke){
-  if (!stroke || stroke.points.length < 2) return;
-  const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
-  const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
-  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle=stroke.pen || artPenColor.value || '#ffffff'; artLayerCtx.lineWidth=stroke.width; }
-  else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth=stroke.width; }
-  artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
 }
 
-/* Card */
-cardCanvas.addEventListener('mousedown', (e)=>{
-  cardDrawing = true;
-  const p = getEventPos(e, cardCanvas);
-  const tool = cardMode.value; const w = parseInt(cardSize.value,10);
-  currentCardStroke = { tool, width: w, points: [ normPointInCanvas(p, cardCanvas) ], pen: cardPenColor.value || '#000000' };
-});
-cardCanvas.addEventListener('mousemove', (e)=>{
-  if (!cardDrawing || !currentCardStroke) return;
-  const p = getEventPos(e, cardCanvas);
-  currentCardStroke.points.push(normPointInCanvas(p, cardCanvas));
-  renderLatestCardStrokeSegment(currentCardStroke);
-});
-cardCanvas.addEventListener('mouseup', ()=>{
-  if (!cardDrawing) return;
-  cardDrawing = false;
-  if (currentCardStroke){
-    cardStrokes.push(currentCardStroke);
-    currentCardStroke = null;
-    saveCard.disabled = false;
-    updateTaskStatus();
-  }
-});
-cardCanvas.addEventListener('mouseleave', ()=>{ if (cardDrawing){ cardDrawing=false; if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); } } });
-cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); });
+/* Firestore realtime listeners */
+const staffsColRef = collection(db,'staffs');
+const ordersColRef = collection(db,'orders');
 
-function renderLatestCardStrokeSegment(stroke){
-  if (!stroke || stroke.points.length < 2) return;
-  const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
-  const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
-  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle=stroke.pen || cardPenColor.value || '#000'; cardCtx.lineWidth=stroke.width; }
-  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
-  cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
-}
+try {
+  const q = query(staffsColRef, orderBy('createdAt','asc'));
+  onSnapshot(q, snap=>{
+    state.staffs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderShiftShort();
+    renderShiftList();
+    updateOrderButtonState();
+    updateStaffToggleUI();
+  }, e=>console.warn(e));
+} catch(e){ console.warn(e); }
 
-/* clear */
-clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes = []; currentArtStroke = null; saveArt.disabled = true; updateTaskStatus(); });
-clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes = []; currentCardStroke = null; saveCard.disabled = true; updateTaskStatus(); });
+try {
+  const q2 = query(ordersColRef, orderBy('createdAt','asc'));
+  onSnapshot(q2, snap=>{
+    const prevOrders = state.orders.slice();
+    state.orders = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderOrderLists();
+    handleOrderNotifications(prevOrders, state.orders);
+    updateClientOverlay();
+  }, e=>console.warn(e));
+} catch(e){ console.warn(e); }
 
-/* saveArt/saveCard create hi-res PNG and meta for this session (no merging) */
-saveArt.addEventListener('click', ()=>{
-  const scale = 2;
-  const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
-  const t = tmp.getContext('2d');
-  t.fillStyle = artBgColor.value || '#6b3b24'; t.fillRect(0,0,tmp.width,tmp.height);
-  t.lineCap = 'round'; t.lineJoin = 'round';
-  const strokes = JSON.parse(JSON.stringify(artStrokes || []));
-  for (const s of strokes){
-    t.beginPath();
-    t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    t.strokeStyle = s.pen || artPenColor.value || '#fff';
-    t.lineWidth = (s.width || 6) * scale;
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
-    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
-  }
-  savedArtDataUrlLocal = tmp.toDataURL('image/png');
-  savedArtMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#ffffff', scale };
-  saveArt.disabled = true;
-  updateTaskStatus();
-  alert('アートを保存しました（この注文セッションのデータ）。');
-});
-
-saveCard.addEventListener('click', ()=>{
-  const scale = 2;
-  const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
-  const t = tmp.getContext('2d');
-  t.fillStyle = cardBgColor.value || '#fff2e6'; t.fillRect(0,0,tmp.width,tmp.height);
-  t.lineCap = 'round'; t.lineJoin = 'round';
-  const strokes = JSON.parse(JSON.stringify(cardStrokes || []));
-  for (const s of strokes){
-    t.beginPath();
-    t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    t.strokeStyle = s.pen || cardPenColor.value || '#000';
-    t.lineWidth = (s.width || 4) * scale;
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
-    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
-  }
-  savedCardDataUrlLocal = tmp.toDataURL('image/png');
-  savedCardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000000', scale };
-  saveCard.disabled = true;
-  updateTaskStatus();
-  alert('カードを保存しました（この注文セッションのデータ）。');
-});
-
-/* pouring and latte visuals (kept) */
-let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
-function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
-resetPouring();
-function startAutoPour(barEl, pctEl, onOverflow){ let pct=0; const it=setInterval(()=>{ pct = Math.min(130,pct + Math.random()*4 + 1); barEl.style.width = pct + '%'; pctEl.textContent = Math.round(pct) + '%'; if (pct >= 120){ clearInterval(it); onOverflow(); } }, 100); return { it, getPct: ()=> pct }; }
-startEsp.addEventListener('mousedown', ()=>{ if (espInterval) return; startEsp.textContent='注ぎ中...'; const res = startAutoPour(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); espInterval = res.it; });
-startEsp.addEventListener('mouseup', ()=>{ if (espInterval){ clearInterval(espInterval); espInterval=null; } startEsp.textContent='注ぐ（押し続け）'; const pct = parseFloat(espBar.style.width)||0; if (pct>=95 && pct<=105){ espDone=true; playTone(523,0.12); latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
-startMilk.addEventListener('mousedown', ()=>{ if (milkInterval) return; startMilk.textContent='注ぎ中...'; const res = startAutoPour(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); milkInterval = res.it; });
-startMilk.addEventListener('mouseup', ()=>{ if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } startMilk.textContent='注ぐ（押し続け）'; const pct = parseFloat(milkBar.style.width)||0; if (pct>=95 && pct<=105){ milkDone=true; playTone(660,0.12); latteFillMilk(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
-startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
-startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
-startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
-startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
-
-const latteCanvas = document.getElementById('latteCanvas'); const latteCtx = latteCanvas.getContext('2d');
-function latteClear(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle='#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
-function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
-function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
-latteClear();
-
-/* updateTaskStatus */
-function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtDataUrlLocal && artStrokes.length===0) parts.push('アート'); if (!savedCardDataUrlLocal && cardStrokes.length===0) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
-
-/* replay strokes on canvas (display only, does NOT mutate working arrays) */
-function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
-  ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
-  if (meta && meta.bg){ ctx.fillStyle = meta.bg; ctx.fillRect(0,0,canvasEl.width,canvasEl.height); }
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  if (!strokes || !strokes.length) return;
-  for (const s of strokes){
-    ctx.beginPath();
-    ctx.lineWidth = (s.width || 3) * (canvasEl.width / (meta?.origWidth || canvasEl.width));
-    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; ctx.strokeStyle = s.pen || meta?.penDefault || '#000'; }
-    else { ctx.globalCompositeOperation='destination-out'; }
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){
-      const p = pts[i]; const den = { x: p.x * canvasEl.width, y: p.y * canvasEl.height };
-      if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y);
+/* notification handling */
+function handleOrderNotifications(prev, curr){
+  const prevMap = new Map(prev.map(o=>[o.id,o]));
+  for (const o of curr){
+    if (o.state === 'waiting' && !prevMap.has(o.id)){
+      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' });
+      else try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
     }
-    ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
+    if (o.state === 'inprogress' && state.currentOrderIdForClient === o.id){
+      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' });
+      else try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){}
+    }
+    if (o.state === 'delivered' && state.currentOrderIdForClient === o.id){
+      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'delivered' });
+      else try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){}
+    }
+  }
+}
+function flushPendingPlays(){
+  while(state.pendingPlayQueue.length){
+    const req = state.pendingPlayQueue.shift();
+    if (req.type === 'tyaimu'){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
+    if (req.type === 'cook'){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
+    if (req.type === 'delivered'){ try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} }
   }
 }
 
-/* openMakeModal: initialize working arrays for this order and render them (isolation prevents cross-order mixing) */
-async function openMakeModal(order){
-  currentMakingOrderId = order.id;
-  makerName.textContent = order.assignedToName || order.assignedTo || '';
-  // Initialize working arrays for this session only (deep copy from order if exist)
-  artStrokes = order.artStrokes ? JSON.parse(JSON.stringify(order.artStrokes)) : [];
-  cardStrokes = order.cardStrokes ? JSON.parse(JSON.stringify(order.cardStrokes)) : [];
-  savedArtDataUrlLocal = order.artDataUrl || null;
-  savedCardDataUrlLocal = order.cardDataUrl || null;
-  savedArtMeta = order.artMeta || null;
-  savedCardMeta = order.cardMeta || null;
-  // Render
-  initArtCanvas(savedArtMeta?.bg || MENUS[order.item]?.artBg || artBgColor.value);
-  if (savedArtDataUrlLocal){ const img = new Image(); img.src = savedArtDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.drawImage(img,0,0,artLayer.width,artLayer.height); }
-  else { replayStrokesOnCanvasImmediate(artStrokes, artLayer, artLayerCtx, savedArtMeta); }
-  initCardCanvas(savedCardMeta?.bg || MENUS[order.item]?.cardBg || cardBgColor.value);
-  if (savedCardDataUrlLocal){ const img2 = new Image(); img2.src = savedCardDataUrlLocal; await new Promise(r=>{ img2.onload=r; img2.onerror=r; }); cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height); cardCtx.drawImage(img2,0,0,cardCanvas.width,cardCanvas.height); }
-  else { replayStrokesOnCanvasImmediate(cardStrokes, cardCanvas, cardCtx, savedCardMeta); }
-  currentArtStroke = null; artDrawing = false; currentCardStroke = null; cardDrawing = false;
-  saveArt.disabled = artStrokes.length === 0 && !savedArtDataUrlLocal;
-  saveCard.disabled = cardStrokes.length === 0 && !savedCardDataUrlLocal;
-  resetPouring(); updateTaskStatus();
-  const cfg = MENUS[order.item] || MENUS['rate'];
-  makeTitle.textContent = (cfg.ui && cfg.ui.makeTitle) ? cfg.ui.makeTitle + '（担当：' + (order.assignedToName || order.assignedTo || '') + '）' : '制作（担当）';
-  espressoLabelEl.textContent = cfg.ui?.espressoLabel || 'エスプレッソ注ぎ';
-  milkLabelEl.textContent = cfg.ui?.milkLabel || 'フームドミルク注ぎ';
-  latteArtLabelEl.textContent = cfg.ui?.latteArtLabel || 'ラテアート';
-  modalMakeLatte.style.display = 'flex';
+/* Renderers */
+function renderShiftShort(){
+  const now = new Date();
+  const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+  shiftShort.textContent = active.length ? '状況①：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ') : '状況①：現在、スタッフ対応不可（シフト外／休憩中）';
+}
+function renderShiftList(){
+  shiftList.innerHTML = '';
+  const now = new Date();
+  state.staffs.forEach(s => {
+    const div = document.createElement('div');
+    const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
+    div.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
+    shiftList.appendChild(div);
+  });
+}
+function isNowWithinShift(start,end,dateObj){
+  if (!start || !end) return false;
+  const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
+  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
+  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
+  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
+  return dateObj >= sDate && dateObj <= eDate;
 }
 
-/* completeMake: save only current session's arrays into the order document and clear session arrays to avoid carryover */
-completeMake.addEventListener('click', async ()=>{
-  if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
-  const artStrokesToSave = JSON.parse(JSON.stringify(artStrokes || []));
-  const cardStrokesToSave = JSON.parse(JSON.stringify(cardStrokes || []));
-  const artMetaToSave = savedArtMeta || (artStrokesToSave.length ? { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: artLayer.width*2, savedHeight: artLayer.height*2, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#fff', scale:2 } : null);
-  const cardMetaToSave = savedCardMeta || (cardStrokesToSave.length ? { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: cardCanvas.width*2, savedHeight: cardCanvas.height*2, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000', scale:2 } : null);
-  // compose served image
-  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
-  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  tctx.drawImage(latteCanvas, 450,300,300,300);
-  if (savedArtDataUrlLocal){ const img = new Image(); img.src = savedArtDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 440,120,320,320); }
-  else if (artStrokesToSave.length){ const artTmp = document.createElement('canvas'); artTmp.width=600; artTmp.height=600; const actx = artTmp.getContext('2d'); actx.fillStyle = artMetaToSave?.bg || '#6b3b24'; actx.fillRect(0,0,artTmp.width,artTmp.height); replayStrokesOnCanvasImmediate(artStrokesToSave, artTmp, actx, artMetaToSave); tctx.drawImage(artTmp, 440,120,320,320); }
-  if (savedCardDataUrlLocal){ const img2 = new Image(); img2.src = savedCardDataUrlLocal; await new Promise(r=>{ img2.onload=r; img2.onerror=r; }); tctx.drawImage(img2, 430,700,340,160); }
-  else if (cardStrokesToSave.length){ const cardTmp = document.createElement('canvas'); cardTmp.width=520; cardTmp.height=240; const cctx = cardTmp.getContext('2d'); cctx.fillStyle = cardMetaToSave?.bg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height); replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx, cardMetaToSave); tctx.drawImage(cardTmp, 430,700,340,160); }
-  const servedDataUrl = tmp.toDataURL('image/png');
+/* Staff toggle UI update (pressed staff sees green) */
+function updateStaffToggleUI(){
+  if (state.currentUser && state.currentUser.role === 'staff' && state.currentUser.staffId){
+    const my = state.staffs.find(s=>s.id === state.currentUser.staffId);
+    if (my){
+      if (my.onShift && !my.breaking){ shiftBtn.classList.add('on'); shiftBtn.classList.remove('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
+      else if (my.breaking){ breakBtn.classList.add('on'); breakBtn.classList.remove('off'); shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); }
+      else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
+    }
+  } else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
+}
 
-  try {
-    await updateDoc(doc(db,'orders',currentMakingOrderId), {
-      state: 'delivered',
-      deliveredAt: Date.now(),
-      servedImageData: servedDataUrl,
-      artStrokes: artStrokesToSave,
-      cardStrokes: cardStrokesToSave,
-      artMeta: artMetaToSave || null,
-      cardMeta: cardMetaToSave || null,
-      artDataUrl: savedArtDataUrlLocal || null,
-      cardDataUrl: savedCardDataUrlLocal || null
-    });
-    // CLEAR current session arrays to prevent cross-order mixing
-    artStrokes = []; cardStrokes = [];
-    savedArtDataUrlLocal = null; savedCardDataUrlLocal = null; savedArtMeta = null; savedCardMeta = null;
-    currentMakingOrderId = null;
-    modalMakeLatte.style.display = 'none';
-    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
-    alert('提供しました（Firestoreへ保存）');
-  } catch(e){
-    console.warn('completeMake failed', e);
-    alert('提供に失敗しました（Firestore更新エラー）');
-  }
+/* Orders rendering (staff view) */
+function renderOrderLists(){
+  staffOrderList.innerHTML = '';
+  state.orders.forEach(o=>{
+    if (!o) return;
+    if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return;
+    const div = document.createElement('div'); div.className = 'order-item';
+    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+    const right = document.createElement('div');
+    const tasks = computeOrderTasks(o);
+    if (tasks.length) { const span = document.createElement('span'); span.className='small-info'; span.textContent = '未: ' + tasks.join(', '); right.appendChild(span); }
+    if (o.state === 'waiting'){
+      const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green'; btn.onclick = ()=> assignOrderToCurrentStaff(o.id);
+      right.appendChild(btn);
+    } else if (o.state === 'inprogress'){
+      const info = document.createElement('div'); info.className='small-info'; info.textContent = `担当:${escapeHtml(o.assignedToName||o.assignedTo||'')}`;
+      right.appendChild(info);
+      const makeBtn = document.createElement('button'); makeBtn.textContent='制作開始'; makeBtn.className='small'; makeBtn.onclick = ()=> openMakeModal(o);
+      right.appendChild(makeBtn);
+    } else if (o.state === 'done'){
+      const provideBtn = document.createElement('button'); provideBtn.textContent='提供'; provideBtn.className='small btn-green'; provideBtn.onclick = ()=> openMakeModal(o);
+      right.appendChild(provideBtn);
+    }
+    div.appendChild(left); div.appendChild(right); staffOrderList.appendChild(div);
+  });
+  pendingTasksSmall.textContent = (state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length}` : '';
+}
+function computeOrderTasks(order){
+  const pending=[]; if (!order) return pending;
+  if (order.state==='waiting') pending.push('対応待ち');
+  if (order.state==='inprogress' || order.state==='done'){ if (!order.artStrokes && !order.artDataUrl) pending.push('アート'); if (!order.cardStrokes && !order.cardDataUrl) pending.push('カード'); }
+  return pending;
+}
+
+/* Staff login */
+passOk.addEventListener('click', ()=> { if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います'); });
+function showStaffNameModal(){
+  showModal(modalName);
+  okOrderName.onclick = async ()=>{
+    const name = orderName.value.trim(); if (!name){ alert('名前'); return; }
+    hideModal(modalName);
+    try {
+      const ref = await addDoc(staffsColRef, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
+      enterStaffFull(name, ref.id);
+    } catch(e){
+      console.warn(e);
+      const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
+      state.staffs.push(s);
+      enterStaffFull(name, s.id);
+    }
+  };
+}
+function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); updateStaffToggleUI(); }
+logoutStaff.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId;
+  if (id){ try{ await deleteDoc(doc(db,'staffs',id)); } catch(e){} }
+  state.currentUser = { role:'guest', staffId:null }; staffFull.classList.remove('show');
 });
 
-/* Client overlay handling and served display (client-only rendering of art) */
-function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
-function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
-
-function updateClientOverlay(){
-  if (!state.currentOrderIdForClient) return;
-  const o = state.orders.find(x=>x.id === state.currentOrderIdForClient);
-  if (!o) return;
-  if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
-  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); if (state.audioUnlocked){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} } }
-  else if (o.state === 'delivered'){ showClientServed(o); hideClientStatus(); try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){} }
-  else if (o.state === 'cancelled'){ showClientStatus('スタッフの応答がないため現在注文を取り消しになります'); setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient = null; }, 10000); }
-}
-
-async function showClientServed(order){
-  if (order.servedImageData){ servedImage.src = order.servedImageData; } else { const baseUrl = getAssetUrl(order.itemImageBase + '1.png'); servedImage.src = baseUrl; }
-  const artCtx = servedArtMini.getContext('2d'); artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height); artCtx.fillStyle = (order.artMeta && order.artMeta.bg) || '#6b3b24'; artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
-  if (order.clientId === clientId){
-    if (order.artStrokes && order.artStrokes.length) replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, order.artMeta);
-    else if (order.artDataUrl){ const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height); }
-  }
-  const cardCtxMini = servedCardMini.getContext('2d'); cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height); cardCtxMini.fillStyle = (order.cardMeta && order.cardMeta.bg) || '#fff2e6'; cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
-  if (order.clientId === clientId){
-    if (order.cardStrokes && order.cardStrokes.length) replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini, order.cardMeta);
-    else if (order.cardDataUrl){ const img2 = new Image(); img2.src = order.cardDataUrl; await new Promise(r=>{ img2.onload=r; img2.onerror=r; }); cardCtxMini.drawImage(img2,0,0,servedCardMini.width,servedCardMini.height); }
-  }
-  // preload frames
-  const cfg = MENUS[order.item] || MENUS['rate'];
-  const frames = await preloadFrames(cfg.imageBase, cfg.frameCount || 5, cfg.lastFrameRandom);
-  servedSequence = frames.slice(); servedSequenceIndex = 0;
-  if (servedSequence.length) servedImage.src = servedSequence[0];
-  document.getElementById('modalEat').style.display = 'flex';
-}
-
-/* preload frames */
-async function preloadFrames(basePath, frameCount=5, lastRandom=false){
-  const frames = [];
-  for (let i=1;i<=frameCount;i++){
-    let name = i;
-    if (i===frameCount && lastRandom){ if (Math.random() < 0.5) name = frameCount; else name = '0' + frameCount; }
-    const url = getAssetUrl(basePath + name + '.png');
-    try { const res = await fetch(url); if (!res.ok) continue; const blob = await res.blob(); frames.push(URL.createObjectURL(blob)); } catch(e){ continue; }
-  }
-  return frames;
-}
-
-/* served long-press audio */
-let servedPressing = false;
-servedImage.addEventListener('mousedown', ()=> startServedPress());
-servedImage.addEventListener('mouseup', ()=> endServedPress());
-servedImage.addEventListener('mouseleave', ()=> endServedPress());
-servedImage.addEventListener('touchstart', (e)=>{ e.preventDefault(); startServedPress(); }, {passive:false});
-servedImage.addEventListener('touchend', (e)=>{ e.preventDefault(); endServedPress(); }, {passive:false});
-function startServedPress(){ if (servedPressing) return; servedPressing = true; try{ audioRate.loop = true; audioRate.currentTime = 0; if (state.audioUnlocked) audioRate.play().catch(()=>{}); else state.pendingPlayQueue.push({ type:'typerate' }); } catch(e){} }
-function endServedPress(){ if (!servedPressing) return; servedPressing = false; try{ audioRate.pause(); audioRate.currentTime = 0; } catch(e){} if (!servedSequence || !servedSequence.length) return; if (servedSequenceIndex < servedSequence.length - 1){ servedSequenceIndex++; servedImage.src = servedSequence[servedSequenceIndex]; } }
-
-/* homeFromEat: delete art data on order when client returns home */
-homeFromEat.addEventListener('click', async ()=>{
-  const o = state.orders.find(x=>x.id === state.currentOrderIdForClient);
-  if (o && o.clientId === clientId){
-    try { await updateDoc(doc(db,'orders',o.id), { artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null }); } catch(e){ console.warn('clear art data failed', e); }
-  }
-  document.getElementById('modalEat').style.display = 'none';
-  state.currentOrderIdForClient = null;
+/* Shift/Break toggles */
+shiftBtn.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){}
+  updateStaffToggleUI();
 });
+breakBtn.addEventListener('click', async ()=> {
+  const id = state.currentUser.staffId; if (!id) return;
+  try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){}
+  updateStaffToggleUI();
+});
+saveShift.addEventListener('click', async ()=> { const id = state.currentUser.staffId; if (!id) return; try { await updateDoc(doc(db,'staffs',id), { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); } });
 
-/* menu and ordering */
+/* Menu / ordering (simple) */
 async function buildMenu(){
   menuGrid.innerHTML = '';
   for (const id in MENUS){
@@ -753,7 +661,7 @@ orderBtn.addEventListener('click', ()=> {
   if (orderBtn.classList.contains('disabled')) return;
   if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' }); else try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
   showModal(modalName);
-  okOrderName.onclick = () => {
+  okOrderName.onclick = ()=> {
     const name = orderName.value.trim();
     if (!name) { alert('名前を入力してください'); return; }
     hideModal(modalName);
@@ -766,19 +674,28 @@ async function onMenuSelect(item){
   hideModal(modalMenu);
   const name = orderName.value.trim() || '名無し';
   if (item.password && item.password.length){
-    const entered = prompt('パスワードを入力してください'); if (entered === null) return; if (entered !== item.password){ alert('パスワードが違います'); return; }
+    const entered = prompt('パスワードを入力してください');
+    if (entered === null) return;
+    if (entered !== item.password){ alert('パスワードが違います'); return; }
     if (state.audioUnlocked) try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
   }
   const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-  const orderObj = { name, item:item.id, itemImageBase:item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
+  const orderObj = { name, item:item.id, itemImageBase:item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, artMeta:null, cardMeta:null, servedImageData:null, clientId };
   try {
-    const ref = await addDoc(ordersCol, orderObj);
+    const ref = await addDoc(ordersColRef, orderObj);
     state.currentOrderIdForClient = ref.id;
     showClientStatus('現在対応待ち中');
     scheduleOrderTimeout(ref.id, expiresAt);
-  } catch(e){ console.warn('add order failed', e); orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; showClientStatus('現在対応待ち中'); }
+  } catch(e){
+    console.warn('add order failed', e);
+    orderObj.id = uid('o'); state.orders.push(orderObj);
+    state.currentOrderIdForClient = orderObj.id;
+    showClientStatus('現在対応待ち中');
+  }
 }
-async function scheduleOrderTimeout(orderId, expiresAt){
+
+/* schedule timeout */
+function scheduleOrderTimeout(orderId, expiresAt){
   const remaining = (expiresAt || 0) - Date.now();
   if (remaining <= 0) return;
   setTimeout(async ()=>{
@@ -786,120 +703,502 @@ async function scheduleOrderTimeout(orderId, expiresAt){
       const snap = await getDoc(doc(db,'orders',orderId));
       if (snap.exists()){
         const o = snap.data();
-        if (o.state === 'waiting') await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
+        if (o.state === 'waiting'){
+          await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
+        }
       }
     } catch(e){ console.warn(e); }
   }, remaining);
 }
 
-/* assign order */
+/* assign to staff */
 async function assignOrderToCurrentStaff(orderId){
-  const staffId = state.currentUser.staffId; if (!staffId) { alert('スタッフとしてログインしてください'); return; }
+  const staffId = state.currentUser.staffId; if (!staffId){ alert('スタッフとしてログインしてください'); return; }
   const s = state.staffs.find(x=>x.id===staffId);
   try {
     await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: s.name });
-    if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' }); else try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){}
+    if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' });
+    else try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){}
   } catch(e){ console.warn(e); }
 }
 
-/* --- renderShiftShort (ADDED to fix the reported error) --- */
-function renderShiftShort(){
-  const now = new Date();
-  const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!active.length) shiftShort.textContent = '状況①：現在、スタッフ対応不可（シフト外／休憩中）';
-  else shiftShort.textContent = '状況①：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+/* --------------------
+   CRITICAL FIX: session isolation
+   --------------------
+*/
+
+/* Initialize canvas visuals */
+function initArtCanvas(bgColor){
+  artBgCtx.clearRect(0,0,artBg.width,artBg.height);
+  artBgCtx.fillStyle = bgColor || artBgColor.value || '#6b3b24';
+  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
+  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
+}
+function initCardCanvas(bgColor){
+  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.fillStyle = bgColor || cardBgColor.value || getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6';
+  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
+  cardCtx.lineCap='round'; cardCtx.lineJoin='round';
+}
+initArtCanvas(); initCardCanvas();
+
+/* helpers for normalized points */
+function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
+function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+
+/* When opening make modal for a specific order, create new session object that contains all drawing arrays.
+   All drawing handlers will reference currentSession; if null, drawing is disabled.
+*/
+function openMakeModal(order){
+  // Close other session if any (defensive)
+  if (currentSession){ destroyCurrentSession(); }
+
+  // create session
+  currentSession = {
+    orderId: order.id,
+    artStrokes: order.artStrokes ? JSON.parse(JSON.stringify(order.artStrokes)) : [], // copy if exists
+    cardStrokes: order.cardStrokes ? JSON.parse(JSON.stringify(order.cardStrokes)) : [],
+    savedArtDataUrl: order.artDataUrl || null,
+    savedCardDataUrl: order.cardDataUrl || null,
+    artMeta: order.artMeta || null,
+    cardMeta: order.cardMeta || null,
+    menuCfg: MENUS[order.item] || MENUS['rate']
+  };
+
+  // UI labels from menuCfg
+  const cfg = currentSession.menuCfg;
+  makeTitle.textContent = (cfg.ui && cfg.ui.makeTitle ? cfg.ui.makeTitle : '制作') + '（担当：' + (order.assignedToName || order.assignedTo || '') + '）';
+  espressoLabelEl.textContent = cfg.ui?.espressoLabel || 'エスプレッソ注ぎ';
+  milkLabelEl.textContent = cfg.ui?.milkLabel || 'フームドミルク注ぎ';
+  latteArtLabelEl.textContent = cfg.ui?.latteArtLabel || 'ラテアート';
+
+  // initialize canvases to reflect either saved meta or menu default
+  initArtCanvas(currentSession.artMeta?.bg || cfg.artBg);
+  initCardCanvas(currentSession.cardMeta?.bg || cfg.cardBg);
+
+  // replay strokes onto canvases if present in session
+  if (currentSession.artStrokes && currentSession.artStrokes.length){
+    replayStrokesOnCanvasImmediate(currentSession.artStrokes, artLayer, artLayerCtx, currentSession.artMeta);
+    saveArt.disabled = true;
+  } else { saveArt.disabled = false; }
+  if (currentSession.cardStrokes && currentSession.cardStrokes.length){
+    replayStrokesOnCanvasImmediate(currentSession.cardStrokes, cardCanvas, cardCtx, currentSession.cardMeta);
+    saveCard.disabled = true;
+  } else { saveCard.disabled = false; }
+
+  // reset pouring UI etc
+  resetPouring(); updateTaskStatus();
+
+  modalMakeLatte.style.display = 'flex';
 }
 
-/* Helper functions used earlier */
-function renderShiftList(){ shiftList.innerHTML = ''; const now = new Date(); state.staffs.forEach(s => { const div = document.createElement('div'); const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now); div.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`; shiftList.appendChild(div); }); }
-function isNowWithinShift(start,end,dateObj){ if (!start || !end) return false; const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number); const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0); const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0); if (eDate <= sDate) eDate.setDate(eDate.getDate()+1); return dateObj >= sDate && dateObj <= eDate; }
-function updateStaffToggleUI(){ if (state.currentUser && state.currentUser.role === 'staff' && state.currentUser.staffId){ const my = state.staffs.find(s=>s.id === state.currentUser.staffId); if (my){ if (my.onShift && !my.breaking){ shiftBtn.classList.add('on'); shiftBtn.classList.remove('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); } else if (my.breaking){ breakBtn.classList.add('on'); breakBtn.classList.remove('off'); shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); } else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); } } } else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); } }
-
-/* render orders for staff */
-function renderOrderLists(){ staffOrderList.innerHTML = ''; state.orders.forEach(o=>{ if (!o) return; if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return; const div = document.createElement('div'); div.className = 'order-item'; const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`; const right = document.createElement('div'); const tasks = computeOrderTasks(o); if (tasks.length) { const span = document.createElement('span'); span.className='small-info'; span.textContent = '未: ' + tasks.join(', '); right.appendChild(span); } if (o.state === 'waiting'){ const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green'; btn.onclick = ()=> assignOrderToCurrentStaff(o.id); right.appendChild(btn); } else if (o.state === 'inprogress'){ const info = document.createElement('div'); info.className='small-info'; info.textContent = `担当:${escapeHtml(o.assignedToName||o.assignedTo||'')}`; right.appendChild(info); const makeBtn = document.createElement('button'); makeBtn.textContent='制作開始'; makeBtn.className='small'; makeBtn.onclick = ()=> openMakeModal(o); right.appendChild(makeBtn); } else if (o.state === 'done'){ const provideBtn = document.createElement('button'); provideBtn.textContent='提供'; provideBtn.className='small btn-green'; provideBtn.onclick = ()=> openMakeModal(o); right.appendChild(provideBtn); } div.appendChild(left); div.appendChild(right); staffOrderList.appendChild(div); }); pendingTasksSmall.textContent = (state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length}` : ''; }
-function computeOrderTasks(order){ const pending = []; if (!order) return pending; if (order.state === 'waiting') pending.push('対応待ち'); if (order.state === 'inprogress' || order.state === 'done'){ if (!order.artStrokes && !order.artDataUrl) pending.push('アート'); if (!order.cardStrokes && !order.cardDataUrl) pending.push('カード'); } return pending; }
-
-/* realtime listeners */
-function startRealtime(){
-  try {
-    const q = query(staffsCol, orderBy('createdAt','asc'));
-    onSnapshot(q, snap=>{
-      state.staffs = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-      renderShiftShort();
-      renderShiftList();
-      updateOrderButtonState();
-      updateStaffToggleUI();
-    }, e=>console.warn(e));
-  } catch(e){ console.warn(e); }
-  try {
-    const q2 = query(ordersCol, orderBy('createdAt','asc'));
-    onSnapshot(q2, snap=>{
-      const prev = state.orders.slice();
-      state.orders = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-      renderOrderLists();
-      handleOrderNotifications(prev, state.orders);
-      updateClientOverlay();
-    }, e=>console.warn(e));
-  } catch(e){ console.warn(e); }
-}
-startRealtime();
-
-/* handle notifications */
-function handleOrderNotifications(prevOrders, currOrders){
-  const prevMap = new Map(prevOrders.map(o=>[o.id,o]));
-  for (const o of currOrders){
-    if (o.state === 'waiting' && !prevMap.has(o.id)){
-      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' }); else try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
+/* replay strokes helper (scales to target canvas) */
+function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
+  if (!strokes || !strokes.length) return;
+  for (const s of strokes){
+    ctx.beginPath();
+    ctx.lineWidth = s.width || 3;
+    if (s.tool === 'draw'){ ctx.globalCompositeOperation = 'source-over'; ctx.strokeStyle = s.pen || (meta?.penDefault) || '#000'; }
+    else { ctx.globalCompositeOperation = 'destination-out'; }
+    const pts = s.points || [];
+    for (let i=0;i<pts.length;i++){
+      const p = pts[i]; const den = denormPoint(p, canvasEl);
+      if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y);
     }
-    if (o.state === 'inprogress' && state.currentOrderIdForClient === o.id){
-      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' }); else try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){}
-    }
-    if (o.state === 'delivered' && state.currentOrderIdForClient === o.id){
-      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'delivered' }); else try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){}
-    }
+    ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
   }
 }
-function flushPendingPlays(){ while(state.pendingPlayQueue.length){ const req = state.pendingPlayQueue.shift(); if (req.type === 'tyaimu') try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} if (req.type === 'cook') try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} if (req.type === 'delivered') try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} } }
 
-/* jukebox */
-function buildJukebox(){
-  const list = [
-    { id:'J', img:'@zzcafe2800/reiji_cafe/main/J.png', audio: audioJ },
-    { id:'E', img:'@zzcafe2800/reiji_cafe/main/E.png', audio: audioE },
-    { id:'C', img:'@zzcafe2800/reiji_cafe/main/C.png', audio: audioC },
-    { id:'K', img:'@zzcafe2800/reiji_cafe/main/K.png', audio: audioK },
-  ];
-  jukeboxArea.innerHTML = '';
-  for (const it of list){
-    const wrap = document.createElement('div'); wrap.className='wrapper';
-    const img = document.createElement('img'); img.src = getAssetUrl(it.img); img.alt = it.id;
-    img.title = it.id; img.style.width = '56px';
-    img.addEventListener('click', ()=>{ try { it.audio.currentTime = 0; it.audio.play().catch(()=>{}); } catch(e){} });
-    const hint = document.createElement('div'); hint.className='hint'; hint.textContent = '使い方 / How to use / 使用方法 / 사용 방법';
-    wrap.appendChild(img); wrap.appendChild(hint); jukeboxArea.appendChild(wrap);
-  }
+/* destroy session: clear canvases and null currentSession to ensure no reuse */
+function destroyCurrentSession(){
+  try {
+    // clear canvases
+    initArtCanvas();
+    initCardCanvas();
+    // clear session object
+    currentSession = null;
+    saveArt.disabled = true; saveCard.disabled = true; completeMake.disabled = true;
+    artStrokesLocal = []; cardStrokesLocal = [];
+  } catch(e){ console.warn('destroyCurrentSession err', e); currentSession = null; }
 }
+
+/* Drawing handlers now operate on currentSession only (guard) */
+let drawingState = { artDrawing:false, cardDrawing:false, currentArtStroke:null, currentCardStroke:null };
+
+function getEventPos(e, canvas){
+  const r = canvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : null;
+  const cx = t ? t.clientX : e.clientX;
+  const cy = t ? t.clientY : e.clientY;
+  return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
+}
+
+/* art event handlers */
+artLayer.addEventListener('mousedown', (e)=>{
+  if (!currentSession) return;
+  drawingState.artDrawing = true;
+  const p = getEventPos(e, artLayer);
+  const tool = penMode.value;
+  const w = parseInt(penSize.value, 10);
+  drawingState.currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ], pen: artPenColor.value || currentSession.menuCfg.artPen || '#ffffff' };
+});
+artLayer.addEventListener('mousemove', (e)=>{
+  if (!currentSession || !drawingState.artDrawing || !drawingState.currentArtStroke) return;
+  const p = getEventPos(e, artLayer);
+  drawingState.currentArtStroke.points.push(normPointInCanvas(p, artLayer));
+  renderLatestArtStrokeSegment(drawingState.currentArtStroke);
+});
+artLayer.addEventListener('mouseup', ()=>{
+  if (!currentSession || !drawingState.artDrawing) return;
+  drawingState.artDrawing = false;
+  if (drawingState.currentArtStroke){
+    currentSession.artStrokes.push(drawingState.currentArtStroke);
+    drawingState.currentArtStroke = null;
+    saveArt.disabled = false;
+    updateTaskStatus();
+  }
+});
+artLayer.addEventListener('mouseleave', ()=>{ if (drawingState.artDrawing && drawingState.currentArtStroke && currentSession){ drawingState.artDrawing=false; currentSession.artStrokes.push(drawingState.currentArtStroke); drawingState.currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } });
+artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
+artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
+artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
+
+/* rendering stroke segment on artLayer (temporary) */
+function renderLatestArtStrokeSegment(stroke){
+  if (!stroke || stroke.points.length < 2) return;
+  const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
+  const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
+  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle=stroke.pen || '#ffffff'; artLayerCtx.lineWidth=stroke.width; }
+  else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth=stroke.width; }
+  artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
+}
+
+/* card event handlers analogously */
+cardCanvas.addEventListener('mousedown', (e)=>{
+  if (!currentSession) return;
+  drawingState.cardDrawing = true;
+  const p = getEventPos(e, cardCanvas);
+  const tool = cardMode.value; const w = parseInt(cardSize.value,10);
+  drawingState.currentCardStroke = { tool, width: w, points: [ normPointInCanvas(p, cardCanvas) ], pen: cardPenColor.value || currentSession.menuCfg.cardPen || '#000' };
+});
+cardCanvas.addEventListener('mousemove', (e)=>{
+  if (!currentSession || !drawingState.cardDrawing || !drawingState.currentCardStroke) return;
+  const p = getEventPos(e, cardCanvas);
+  drawingState.currentCardStroke.points.push(normPointInCanvas(p, cardCanvas));
+  renderLatestCardStrokeSegment(drawingState.currentCardStroke);
+});
+cardCanvas.addEventListener('mouseup', ()=>{
+  if (!currentSession || !drawingState.cardDrawing) return;
+  drawingState.cardDrawing = false;
+  if (drawingState.currentCardStroke){
+    currentSession.cardStrokes.push(drawingState.currentCardStroke);
+    drawingState.currentCardStroke = null;
+    saveCard.disabled = false;
+    updateTaskStatus();
+  }
+});
+cardCanvas.addEventListener('mouseleave', ()=>{ if (drawingState.cardDrawing && drawingState.currentCardStroke && currentSession){ drawingState.cardDrawing=false; currentSession.cardStrokes.push(drawingState.currentCardStroke); drawingState.currentCardStroke=null; saveCard.disabled=false; updateTaskStatus(); } });
+cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
+cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
+cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
+
+function renderLatestCardStrokeSegment(stroke){
+  if (!stroke || stroke.points.length < 2) return;
+  const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
+  const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
+  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle=stroke.pen || '#000'; cardCtx.lineWidth=stroke.width; }
+  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
+  cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
+}
+
+/* clear/save handlers operate on currentSession */
+clearArt.addEventListener('click', ()=>{ if (!currentSession){ initArtCanvas(); } else { initArtCanvas(currentSession.menuCfg.artBg); currentSession.artStrokes = []; currentSession.savedArtDataUrl = null; currentSession.artMeta = null; saveArt.disabled = true; } updateTaskStatus(); });
+clearCard.addEventListener('click', ()=>{ if (!currentSession){ initCardCanvas(); } else { initCardCanvas(currentSession.menuCfg.cardBg); currentSession.cardStrokes = []; currentSession.savedCardDataUrl = null; currentSession.cardMeta = null; saveCard.disabled = true; } updateTaskStatus(); });
+
+/* Save Art: create hi-res PNG and store strokes + meta in currentSession (NOT global) */
+saveArt.addEventListener('click', ()=>{
+  if (!currentSession) { alert('制作セッションがありません'); return; }
+  const scale = 2;
+  const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
+  const t = tmp.getContext('2d');
+  t.fillStyle = (artBgColor.value || currentSession.menuCfg.artBg); t.fillRect(0,0,tmp.width,tmp.height);
+  t.lineCap='round'; t.lineJoin='round';
+  const strokes = JSON.parse(JSON.stringify(currentSession.artStrokes || []));
+  for (const s of strokes){
+    t.beginPath(); t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
+    t.strokeStyle = s.pen || (currentSession.menuCfg.artPen); t.lineWidth = (s.width || 4) * scale;
+    const pts = s.points || [];
+    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
+    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
+  }
+  currentSession.savedArtDataUrl = tmp.toDataURL('image/png');
+  currentSession.artMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || currentSession.menuCfg.artBg, penDefault: artPenColor.value || currentSession.menuCfg.artPen, scale };
+  saveArt.disabled = true; updateTaskStatus();
+  alert('アートをセッションに保存しました（この注文専用）。');
+});
+
+/* Save Card similarly */
+saveCard.addEventListener('click', ()=>{
+  if (!currentSession) { alert('制作セッションがありません'); return; }
+  const scale = 2;
+  const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
+  const t = tmp.getContext('2d');
+  t.fillStyle = (cardBgColor.value || currentSession.menuCfg.cardBg); t.fillRect(0,0,tmp.width,tmp.height);
+  t.lineCap='round'; t.lineJoin='round';
+  const strokes = JSON.parse(JSON.stringify(currentSession.cardStrokes || []));
+  for (const s of strokes){
+    t.beginPath(); t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
+    t.strokeStyle = s.pen || currentSession.menuCfg.cardPen; t.lineWidth = (s.width || 4) * scale;
+    const pts = s.points || [];
+    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
+    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
+  }
+  currentSession.savedCardDataUrl = tmp.toDataURL('image/png');
+  currentSession.cardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || currentSession.menuCfg.cardBg, penDefault: cardPenColor.value || currentSession.menuCfg.cardPen, scale };
+  saveCard.disabled = true; updateTaskStatus();
+  alert('カードをセッションに保存しました（この注文専用）。');
+});
+
+/* updateTaskStatus based on currentSession */
+function updateTaskStatus(){
+  if (!currentSession){ taskStatusSmall.textContent = ''; completeMake.disabled = true; return; }
+  const parts=[];
+  if (!espDone || !milkDone) parts.push('注ぎ');
+  if ((!currentSession.savedArtDataUrl) && (!currentSession.artStrokes || !currentSession.artStrokes.length)) parts.push('アート');
+  if ((!currentSession.savedCardDataUrl) && (!currentSession.cardStrokes || !currentSession.cardStrokes.length)) parts.push('カード');
+  taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了';
+  completeMake.disabled = parts.length !== 0;
+}
+
+/* Pouring logic (unchanged) */
+let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
+function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
+resetPouring();
+function startAutoPour(barEl, pctEl, onOverflow){ let pct=0; const it=setInterval(()=>{ pct = Math.min(130,pct + Math.random()*4 + 1); barEl.style.width = pct + '%'; pctEl.textContent = Math.round(pct) + '%'; if (pct >= 120){ clearInterval(it); onOverflow(); } }, 100); return { it, getPct: ()=> pct }; }
+
+startEsp.addEventListener('mousedown', ()=>{ if (espInterval) return; startEsp.textContent='注ぎ中...'; const res = startAutoPour(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); espInterval = res.it; });
+startEsp.addEventListener('mouseup', ()=>{ if (espInterval){ clearInterval(espInterval); espInterval=null; } startEsp.textContent='注ぐ（押し続け）'; const pct = parseFloat(espBar.style.width)||0; if (pct>=95 && pct<=105){ espDone=true; playTone(523,0.12); latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
+startMilk.addEventListener('mousedown', ()=>{ if (milkInterval) return; startMilk.textContent='注ぎ中...'; const res = startAutoPour(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); milkInterval = res.it; });
+startMilk.addEventListener('mouseup', ()=>{ if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } startMilk.textContent='注ぐ（押し続け）'; const pct = parseFloat(milkBar.style.width)||0; if (pct>=95 && pct<=105){ milkDone=true; playTone(660,0.12); latteFillMilk(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
+startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
+startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
+startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
+startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
+
+/* latte visuals */
+const latteCanvas = document.getElementById('latteCanvas'); const latteCtx = latteCanvas.getContext('2d');
+function latteClear(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle='#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
+function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
+function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
+latteClear();
+
+/* completeMake: write currentSession data into Firestore for that order and set state:'delivered' */
+completeMake.addEventListener('click', async ()=>{
+  if (!currentSession){ alert('制作セッションがありません'); return; }
+  const orderId = currentSession.orderId;
+  const artStrokesToSave = currentSession.artStrokes || [];
+  const cardStrokesToSave = currentSession.cardStrokes || [];
+  const artMeta = currentSession.artMeta || (artStrokesToSave.length ? { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: artLayer.width*2, savedHeight: artLayer.height*2, bg: artBgColor.value, penDefault: artPenColor.value, scale:2 } : null);
+  const cardMeta = currentSession.cardMeta || (cardStrokesToSave.length ? { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: cardCanvas.width*2, savedHeight: cardCanvas.height*2, bg: cardBgColor.value, penDefault: cardPenColor.value, scale:2 } : null);
+
+  // compose served image (hi-res)
+  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
+  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
+  tctx.drawImage(latteCanvas, 450,300,300,300);
+
+  if (currentSession.savedArtDataUrl){
+    const img = new Image(); img.src = currentSession.savedArtDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 440,120,320,320);
+  } else if (artStrokesToSave.length){
+    const artTmp = document.createElement('canvas'); artTmp.width=600; artTmp.height=600; const actx = artTmp.getContext('2d');
+    actx.fillStyle = artMeta?.bg || '#6b3b24'; actx.fillRect(0,0,artTmp.width,artTmp.height);
+    replayStrokesOnCanvasImmediate(artStrokesToSave, artTmp, actx, artMeta);
+    tctx.drawImage(artTmp, 440,120,320,320);
+  }
+  if (currentSession.savedCardDataUrl){
+    const img = new Image(); img.src = currentSession.savedCardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 430,700,340,160);
+  } else if (cardStrokesToSave.length){
+    const cardTmp = document.createElement('canvas'); cardTmp.width=520; cardTmp.height=240; const cctx = cardTmp.getContext('2d');
+    cctx.fillStyle = cardMeta?.bg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
+    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx, cardMeta);
+    tctx.drawImage(cardTmp, 430,700,340,160);
+  }
+  const servedDataUrl = tmp.toDataURL('image/png');
+
+  try {
+    await updateDoc(doc(db,'orders',orderId), {
+      state:'delivered', deliveredAt: Date.now(), servedImageData: servedDataUrl,
+      artStrokes: artStrokesToSave, cardStrokes: cardStrokesToSave, artMeta: artMeta || null, cardMeta: cardMeta || null,
+      artDataUrl: currentSession.savedArtDataUrl || null, cardDataUrl: currentSession.savedCardDataUrl || null
+    });
+    // stop cookbgm for staff client
+    try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; } catch(e){}
+    // destroy session -- crucial to avoid reuse
+    destroyCurrentSession();
+    modalMakeLatte.style.display = 'none';
+    alert('提供しました（Firestoreへ保存）');
+  } catch(e){
+    console.warn('completeMake failed', e);
+    destroyCurrentSession();
+    modalMakeLatte.style.display = 'none';
+    alert('提供に失敗しました（Firestore更新エラー）。');
+  }
+});
+
+/* cancelMake: just destroy session locally (no writes) */
+cancelMake.addEventListener('click', ()=>{
+  if (currentSession){
+    if (!confirm('中止しますか？保存していない作業は失われます。')) return;
+    destroyCurrentSession();
+    modalMakeLatte.style.display = 'none';
+  }
+});
+
+/* Client overlay handling / reconstruct only if order.clientId === local clientId */
+function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '①注意：事故として必ずスタッフ（店員）が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
+function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
+
+function updateClientOverlay(){
+  if (!state.currentOrderIdForClient) return;
+  const o = state.orders.find(x=>x.id === state.currentOrderIdForClient);
+  if (!o) return;
+  if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
+  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); if (state.audioUnlocked) try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} else state.pendingPlayQueue.push({ type:'cook' }); }
+  else if (o.state === 'delivered'){ showClientServed(o); hideClientStatus(); try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; } catch(e){} }
+  else if (o.state === 'cancelled'){ showClientStatus('スタッフの応答がないため現在注文を取り消しになります'); setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient = null; },10000); }
+}
+
+/* showClientServed: reconstruct art only if order.clientId === clientId */
+async function showClientServed(order){
+  if (order.servedImageData) servedImage.src = order.servedImageData; else servedImage.src = getAssetUrl(order.itemImageBase + '1.png');
+
+  // art mini
+  const artCtx = servedArtMini.getContext('2d');
+  artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
+  artCtx.fillStyle = order.artMeta?.bg || MENUS[order.item]?.artBg || '#6b3b24'; artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
+  if (order.clientId === clientId){
+    if (order.artStrokes && order.artStrokes.length) replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, order.artMeta);
+    else if (order.artDataUrl){ const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height); }
+  }
+
+  // card mini
+  const cardCtxMini = servedCardMini.getContext('2d');
+  cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
+  cardCtxMini.fillStyle = order.cardMeta?.bg || MENUS[order.item]?.cardBg || '#fff2e6'; cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
+  if (order.clientId === clientId){
+    if (order.cardStrokes && order.cardStrokes.length) replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini, order.cardMeta);
+    else if (order.cardDataUrl){ const img = new Image(); img.src = order.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height); }
+  }
+
+  // preload frames for item
+  const cfg = MENUS[order.item] || MENUS['rate'];
+  const frames = await preloadFrames(cfg.imageBase, cfg.frameCount || 5, cfg.lastFrameRandom);
+  servedSequence = frames.slice(); servedSequenceIndex = 0;
+  if (servedSequence.length) servedImage.src = servedSequence[0];
+
+  modalEat.style.display = 'flex';
+}
+
+/* preload frames */
+async function preloadFrames(basePath, frameCount=5, lastRandom=false){
+  const frames=[];
+  for (let i=1;i<=frameCount;i++){
+    let name = i;
+    if (i===frameCount && lastRandom){ if (Math.random()<0.5) name = frameCount; else name = '0' + frameCount; }
+    const url = getAssetUrl(basePath + name + '.png');
+    try { const res = await fetch(url); if (!res.ok) continue; const blob = await res.blob(); frames.push(URL.createObjectURL(blob)); } catch(e){ continue; }
+  }
+  return frames;
+}
+
+/* served image long-press: loop rate.mp3 while pressing; stop on release and advance frame */
+let servedPressing=false;
+servedImage.addEventListener('mousedown', (e)=>{ startServedPress(e); });
+servedImage.addEventListener('mouseup', (e)=>{ endServedPress(e); });
+servedImage.addEventListener('mouseleave', (e)=>{ endServedPress(e); });
+servedImage.addEventListener('touchstart', (e)=>{ e.preventDefault(); startServedPress(e); }, {passive:false});
+servedImage.addEventListener('touchend', (e)=>{ e.preventDefault(); endServedPress(e); }, {passive:false});
+
+function startServedPress(e){
+  e && e.preventDefault();
+  if (servedPressing) return;
+  servedPressing = true;
+  try{
+    audioRate.loop = true;
+    audioRate.currentTime = 0;
+    if (state.audioUnlocked) audioRate.play().catch(()=>{});
+    else state.pendingPlayQueue.push({ type:'typerate' });
+  } catch(e){}
+}
+function endServedPress(e){
+  e && e.preventDefault();
+  if (!servedPressing) return;
+  servedPressing = false;
+  try{ audioRate.pause(); audioRate.currentTime = 0; } catch(e){}
+  if (!servedSequence.length) return;
+  if (servedSequenceIndex < servedSequence.length - 1){ servedSequenceIndex++; servedImage.src = servedSequence[servedSequenceIndex]; }
+}
+
+/* homeFromEat: when client leaves, delete art/card numeric data from Firestore for that order to prevent reuse */
+homeFromEat.addEventListener('click', async ()=>{
+  const o = state.orders.find(x=>x.id === state.currentOrderIdForClient);
+  if (o && o.clientId === clientId){
+    try {
+      await updateDoc(doc(db,'orders',o.id), { artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, artMeta:null, cardMeta:null });
+    } catch(e){ console.warn('clear art data failed', e); }
+  }
+  modalEat.style.display = 'none';
+  state.currentOrderIdForClient = null;
+});
+
+/* SaveAll image */
+saveAllBtn.addEventListener('click', ()=>{
+  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const t = tmp.getContext('2d');
+  t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
+  const mainImg = new Image(); mainImg.crossOrigin='anonymous'; mainImg.src = servedImage.src;
+  mainImg.onload = ()=> { t.drawImage(mainImg,150,100,900,600); t.drawImage(servedArtMini,860,120,220,220); t.drawImage(servedCardMini,860,360,260,120); const a=document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download='served_save.png'; a.click(); };
+  mainImg.onerror = ()=> alert('画像の読み込みに失敗しました');
+});
+
+/* utility modals/overlays */
+function showModal(el){ el.style.display = 'flex'; }
+function hideModal(el){ el.style.display = 'none'; }
+
+/* jukebox build and sound overlay */
 buildJukebox();
+function showSoundOverlay(){ soundOverlay.style.display = 'flex'; } function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
+enableSoundBtn.addEventListener('click', ()=>{ state.audioUnlocked = true; try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); ctx.resume && ctx.resume(); ctx.close && ctx.close(); } catch(e){} hideSoundOverlay(); flushPendingPlays(); });
+disableSoundBtn.addEventListener('click', ()=>{ state.audioUnlocked = false; hideSoundOverlay(); });
 
-/* sound overlay */
-function showSoundOverlay(){ soundOverlay.style.display = 'flex'; }
-function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
-enableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = true; try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); ctx.resume && ctx.resume(); ctx.close && ctx.close(); } catch(e){} hideSoundOverlay(); flushPendingPlays(); });
-disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
+/* order button availability */
+function updateOrderButtonState(){ const now = new Date(); const anyAvailable = state.staffs.some(s=>s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now)); if (anyAvailable) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled'); }
+
+/* start realtime etc */
+buildMenu().catch(()=>{});
+initArtCanvas(); initCardCanvas();
 showSoundOverlay();
 
-/* basic UI wiring (staff login etc) */
-passOk.addEventListener('click', ()=> { if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います'); });
-function showStaffNameModal(){ showModal(modalName); okOrderName.onclick = async ()=>{ const name = orderName.value.trim(); if (!name) { alert('名前'); return; } hideModal(modalName); try { const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() }); enterStaffFull(name, ref.id); } catch(e){ console.warn(e); const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() }; state.staffs.push(s); enterStaffFull(name, s.id); } }; }
-function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); updateStaffToggleUI(); }
-logoutStaff.addEventListener('click', async ()=> { const id = state.currentUser.staffId; if (id){ try { await deleteDoc(doc(db,'staffs',id)); } catch(e){} } state.currentUser = { role:'guest', staffId:null }; staffFull.classList.remove('show'); });
+/* BGM button */
+bgmBtn.addEventListener('click', ()=> window.open('https://x.gd/6C0VB','_blank'));
 
-/* update order button availability */
-function updateOrderButtonState(){ const now = new Date(); const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now)); if (anyAvailable) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled'); }
+/* Helper: buildMenu used earlier */
+async function buildMenu(){
+  menuGrid.innerHTML = '';
+  for (const id in MENUS){
+    const it = MENUS[id];
+    const div = document.createElement('div'); div.className='menu-item';
+    const img = document.createElement('img'); img.className='menu-thumb';
+    const url = getAssetUrl(it.imageBase + '1.png');
+    try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
+    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
+    div.addEventListener('click', ()=> onMenuSelect(it));
+    menuGrid.appendChild(div);
+  }
+}
 
-/* initial build */
-buildMenu().catch(()=>{});
+/* placeholder */
+function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
+/* render helper for order list updated earlier (kept) */
 
 /* End of script */
 </script>
