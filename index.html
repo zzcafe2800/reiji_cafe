@@ -63,7 +63,7 @@
 <body>
 <div class="container">
   <header>
-    <h1>０時過ぎの飲食サービス</h1>
+    <h1>０時過ぎの飲食</h1>
     <div style="display:flex;align-items:center;gap:8px;">
       <div class="small-info">時刻: <span id="nowtime">--:--:--</span></div>
       <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
@@ -85,7 +85,7 @@
 
   <div class="guest-mini" id="guestMini">
     <div id="guestRole"><strong>あなた：客</strong></div>
-    <div class="small-info" style="margin-top:6px">目的：注文してみよう！！</div>
+    <div class="small-info" style="margin-top:6px">目的：注文する</div>
   </div>
 
   <div class="small-pass">
@@ -136,8 +136,8 @@
 <!-- Sound enable overlay -->
 <div id="soundOverlay" class="sound-overlay" style="display:none;">
   <div class="sound-panel">
-    <h3>音を出しますか？</h3>
-    <p>音声、通知、効果音が流れます</p>
+    <h3>効果音など流しますか？</h3>
+    <p>音声、効果音が流れます</p>
     <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
       <button id="enableSoundBtn" class="btn-green">OK</button>
       <button id="disableSoundBtn" class="small">NO</button>
@@ -291,7 +291,7 @@
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small" style="display:none"></button>
-          <div id="eatSoundInfo" class="small-info">長押し・クリック</div>
+          <div id="eatSoundInfo" class="small-info">長押し・クリック（５クリック目：完食）</div>
           <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
         </div>
       </div>
@@ -464,16 +464,16 @@ if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localSt
 /* menu config data-driven */
 const MENUS = {
   rate: {
-    id: 'rate', title: 'カフェラテ', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:5, lastFrameRandom:true,
+    id: 'rate', title: '０時カフェ・ラテ', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:5, lastFrameRandom:true,
     password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' }
   },
   omu: {
-    id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:5, lastFrameRandom:true,
+    id: 'omu', title: '０時オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:5, lastFrameRandom:true,
     password:'0000', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'オムライス制作', espressoLabel:'—', milkLabel:'—', latteArtLabel:'—' }
+    ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' }
   }
 };
 
@@ -541,8 +541,8 @@ setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 function renderShiftShort(){
   const now = new Date();
   const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!active.length) shiftShort.textContent = '注文✖　：　現在対応できる店員がおりません　';
-  else shiftShort.textContent = '注文〇：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+  if (!active.length) shiftShort.textContent = '注文”不可”　：　現在対応できる店員がおりません　';
+  else shiftShort.textContent = '注文”可”：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
 function renderShiftList(){
   shiftList.innerHTML = '';
