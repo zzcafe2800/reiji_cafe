@@ -864,10 +864,10 @@ function flushPendingPlays(){ while(state.pendingPlayQueue.length){ const req = 
 /* jukebox */
 function buildJukebox(){
   const list = [
-    { id:'J', img:'@zzcafe2800/reiji_cafe/files/J.png', audio: audioJ },
-    { id:'E', img:'@zzcafe2800/reiji_cafe/files/E.png', audio: audioE },
-    { id:'C', img:'@zzcafe2800/reiji_cafe/files/C.png', audio: audioC },
-    { id:'K', img:'@zzcafe2800/reiji_cafe/files/K.png', audio: audioK },
+    { id:'J', img:'@zzcafe2800/reiji_cafe/main/J.png', audio: audioJ },
+    { id:'E', img:'@zzcafe2800/reiji_cafe/main/E.png', audio: audioE },
+    { id:'C', img:'@zzcafe2800/reiji_cafe/main/C.png', audio: audioC },
+    { id:'K', img:'@zzcafe2800/reiji_cafe/main/K.png', audio: audioK },
   ];
   jukeboxArea.innerHTML = '';
   for (const it of list){
