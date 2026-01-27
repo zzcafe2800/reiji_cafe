@@ -136,22 +136,22 @@ header{
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
   .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
-  .order-btn{
+.order-btn{
   background:linear-gradient(180deg,#ffd4c4,#ffb38a);
   border:4px solid var(--accent);
   color:var(--dark);
   padding:22px 36px;
   border-radius:12px;
-  font-size:34px;
   cursor:pointer;
   box-shadow:0 6px 0 #913;
   user-select:none;
 
   width:100%;
   max-width:120px;
+  aspect-ratio:5 / 3;
 
-  /* 追加：横 5：縦 3 */
-  aspect-ratio: 6 / 3; 
+  /* ここが重要 */
+  font-size:clamp(16px, 4vw, 34px);
 }
 
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
