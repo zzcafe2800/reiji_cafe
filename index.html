@@ -477,6 +477,27 @@ const MENUS = {
   }
 };
 
+  
+  
+  // --- 追加: ランダム商品定義（MENUS の中に入れても良いし、ここで separate にしてもOK） ---
+// 既に MENUS があるので、その中に 'random' を追加する場合は MENUS['random']=... としてください。
+// 例: MENUS 定義直後に追加する場合:
+MENUS.random = {
+  id: 'random',
+  title: 'ランダム商品',
+  // random.png をリポジトリに配置してください（例: files/random.png）
+  imageBase: '@zzcafe2800/reiji_cafe/main/random', // ← getAssetUrl(imageBase + '.png') で参照します
+  frameCount: 1,
+  lastFrameRandom: false,
+  password: '',
+  longPressSound: '', clickSound: '',
+  artBg: '#cccccc', artPen: '#000000', cardBg: '#fff2e6', cardPen: '#000000',
+  ui: { makeTitle:'ランダム商品', espressoLabel:'', milkLabel:'', latteArtLabel:'' }
+};
+
+
+
+  
 /* --- helper functions --- */
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -665,12 +686,45 @@ saveShift.addEventListener('click', async ()=> {
 });
 
 /* menu & ordering */
+//async function buildMenu(){
+ // menuGrid.innerHTML = '';
+  //for(const id in MENUS){
+    //const it = MENUS[id];
+    //const div = document.createElement('div'); div.className='menu-item';
+    //const img = document.createElement('img'); img.className='menu-thumb';
+    //const url = getAssetUrl(it.imageBase + '1.png');
+    //try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
+//div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
+//div.addEventListener('click', ()=> onMenuSelect(it));
+//menuGrid.appendChild(div);
+ // }
+//}
+
 async function buildMenu(){
   menuGrid.innerHTML = '';
+
+  // If 'random' exists in MENUS, render it first as the left-most item
+  if (MENUS.random){
+    const it = MENUS.random;
+    const div = document.createElement('div'); div.className='menu-item';
+    const img = document.createElement('img'); img.className='menu-thumb';
+    // random uses single png: imageBase + '.png'
+    const url = getAssetUrl(it.imageBase + '.png');
+    try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
+    div.appendChild(img);
+    div.appendChild(document.createElement('div')).textContent = it.title;
+    // override click: call chooseRandomAndOrder() instead of onMenuSelect
+    div.addEventListener('click', ()=> chooseRandomAndOrder());
+    menuGrid.appendChild(div);
+  }
+
+  // render the rest of MENUS (skip 'random' if present)
   for(const id in MENUS){
+    if (id === 'random') continue;
     const it = MENUS[id];
     const div = document.createElement('div'); div.className='menu-item';
     const img = document.createElement('img'); img.className='menu-thumb';
+    // use first frame image by default
     const url = getAssetUrl(it.imageBase + '1.png');
     try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
     div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
@@ -678,6 +732,13 @@ async function buildMenu(){
     menuGrid.appendChild(div);
   }
 }
+
+
+
+
+
+  
+  
 function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
 orderBtn.addEventListener('click', ()=> {
@@ -717,6 +778,51 @@ async function onMenuSelect(item){
     showClientStatus('現在対応待ち中');
   }
 }
+
+
+
+
+
+
+
+
+
+// ☆ランダム選択して注文する関数
+function chooseRandomAndOrder(){
+  // 集合から 'random' キーを除いた候補リストを作る
+  const keys = Object.keys(MENUS).filter(k => k !== 'random');
+  if (!keys.length){
+    alert('ランダム対象のメニューがありません');
+    return;
+  }
+  // 完全ランダムに1つ選ぶ
+  const chosenKey = keys[Math.floor(Math.random() * keys.length)];
+  const chosenMenu = MENUS[chosenKey];
+  if (!chosenMenu){
+    alert('選択に失敗しました');
+    return;
+  }
+  // メニューを選択した時と同じフローを呼ぶ（既存 onMenuSelect を流用）
+  onMenuSelect(chosenMenu);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 async function scheduleOrderTimeout(orderId, expiresAt){
   const remaining = (expiresAt || 0) - Date.now();
   if (remaining <= 0) return;
