@@ -291,7 +291,7 @@
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small" style="display:none"></button>
-          <div id="eatSoundInfo" class="small-info">長押し・クリック（５クリック目：完食）</div>
+          <div id="eatSoundInfo" class="small-info">長押し・クリック（４クリック目：完食）</div>
           <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
         </div>
       </div>
@@ -484,7 +484,7 @@ const MENUS = {
 // 例: MENUS 定義直後に追加する場合:
 MENUS.random = {
   id: 'random',
-  title: 'ランダム商品',
+  title: 'ランダム',
   // random.png をリポジトリに配置してください（例: files/random.png）
   imageBase: '@zzcafe2800/reiji_cafe/main/random', // ← getAssetUrl(imageBase + '.png') で参照します
   frameCount: 1,
@@ -492,7 +492,7 @@ MENUS.random = {
   password: '',
   longPressSound: '', clickSound: '',
   artBg: '#cccccc', artPen: '#000000', cardBg: '#fff2e6', cardPen: '#000000',
-  ui: { makeTitle:'ランダム商品', espressoLabel:'', milkLabel:'', latteArtLabel:'' }
+  ui: { makeTitle:'ランダム', espressoLabel:'', milkLabel:'', latteArtLabel:'' }
 };
 
 
