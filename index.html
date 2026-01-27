@@ -12,23 +12,13 @@
   }
   html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
 
- /*.container{
+ .container{
   width:100%;
   max-width:none;    
   margin:18px auto;
   padding:0;
   position:relative;
-  perspective:2000px;*/
-.container{
-  width:100%;
-  max-width:420px;
-  margin:12px auto;
-  position:relative;
   perspective:2000px;
-
-  aspect-ratio: 3 / 4;
-}
-
 
 /*container{max-width:1100px;margin:18px auto;padding:0;background:none;position:relative; min-height:720px;perspective:2000px;} *//* ====== book ====== */*/
 /*.book{position:relative;width:100%;min-height:720px;}*//* 共通ページ */
@@ -128,23 +118,8 @@ header{
 
 /* ====== スマホ対応 ====== */
 /*@media (max-width:768px){.container{ min-height:560px;}.book{min-height:560px;}}*/
-/*@media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio: 11 / 7;}}*/
-@media (min-width:768px){
-  .container{
-    max-width:720px;
+@media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio: 11 / 7;}}
 
-    /* 画面からはみ出さない */
-    max-height: calc(100vh - 40px);
-
-    /* 高さ制限時に横を自動調整 */
-    aspect-ratio: auto;
-    height: auto;
-  }
-
-  .book{
-    height:100%;
-  }
-}
 
 
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
