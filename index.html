@@ -87,6 +87,12 @@
   border-radius:10px;
   border:6px solid var(--accent);
   z-index:1;
+
+  /* ここから追加 */
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 3;   /* ← カード比率 */
+  overflow: hidden;
   display:flex;
   flex-direction:column;
 }
