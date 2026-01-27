@@ -41,17 +41,41 @@
   overflow:hidden;
 }
 
-/* 表紙 */
+/* 表紙 
 .cover{
   background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png")
     center/cover no-repeat;
   transform-origin:right center;
   z-index:2;
-}
+}*/
 
-/* OK押した時だけ動く */
+/* OK押した時だけ動く 
 .cover.open{
   animation:flip 2.2s ease-in-out forwards;
+}*/
+
+  .cover{
+  background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png")
+    center/cover no-repeat;
+  transform-origin:right center;
+  z-index:2;
+  pointer-events:auto;
+}
+
+/* 開く前 */
+.cover:not(.open){
+  transform:rotateY(0deg);
+}
+
+/* 開いた後 */
+.cover.open{
+  animation:flip 2.2s ease-in-out forwards;
+  pointer-events:none;
+}
+
+/* 完全に影響を断つ */
+.cover.open.finished{
+  display:none;
 }
 
 
@@ -1525,6 +1549,13 @@ document.getElementById("enableSoundBtn")?.addEventListener("click", () => {
   if (cover) {
     cover.classList.add("open");
   }
+});
+</script>
+<script>
+const cover = document.querySelector(".cover");
+
+cover.addEventListener("animationend", () => {
+  cover.classList.add("finished");
 });
 </script>
 
