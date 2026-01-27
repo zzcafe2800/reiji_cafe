@@ -11,17 +11,22 @@
     --card-skin:#fff2e6;
   }
   html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
+body{
+  min-height:100vh;
+  display:flex;
+  align-items:center;      /* 縦中央 */
+  justify-content:center;  /* 横中央 */
+}
 
 .container{
   width:100%;
-  max-width:420px;     /* ← スマホ基準で制限 */
-  margin:12px auto;
-  padding:0;
+  max-width:420px;
+  margin:0;                /* ← ここ重要 */
   position:relative;
   perspective:2000px;
-
-  aspect-ratio: 3 / 5; /* 縦長本 */
+  aspect-ratio: 3 / 5;
 }
+
 
 
 /*container{max-width:1100px;margin:18px auto;padding:0;background:none;position:relative; min-height:720px;perspective:2000px;} *//* ====== book ====== */*/
