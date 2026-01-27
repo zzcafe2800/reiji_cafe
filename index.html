@@ -81,21 +81,22 @@
 
 /* 中ページ（今までのカード） */
 .inner{
-  background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png")
-    center/cover no-repeat;
-  box-shadow:0 6px 20px rgba(0,0,0,0.15);
-  border-radius:10px;
-  border:6px solid var(--accent);
-  z-index:1;
+  position: absolute;
+  inset: 0; /* ← 親(.book)いっぱい */
+  
+  background: url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png")
+    center / cover no-repeat;
 
-  /* ここから追加 */
-  position: relative;
-  width: 100%;
-  aspect-ratio: 3 / 5;   /* ← カード比率 */
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  border-radius: 10px;
+  border: 6px solid var(--accent);
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  display:flex;
-  flex-direction:column;
 }
+
 
 /* headerはそのまま使える */
 header{
