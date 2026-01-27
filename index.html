@@ -457,6 +457,15 @@ const ordersCol = collection(db, 'orders');
 /* app state */
 const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
 
+  
+  // 既存の state 宣言の直後あたりに追加してください
+// state が既にある場合はその直後に入れると見つけやすいです
+const dismissedOrdersStored = JSON.parse(localStorage.getItem('reiji_dismissed_orders') || '[]');
+const dismissedOrders = new Set(dismissedOrdersStored);
+
+
+
+  
 /* client id (local) */
 let clientId = localStorage.getItem('reiji_clientId');
 if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
@@ -1164,9 +1173,19 @@ function showClientStatus(text){ orderStatusMain.textContent = text; orderStatus
 function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
 
 function updateClientOverlay(){
+
+    if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){
+    // 既に閉じた注文なので、再表示しないように currentOrderIdForClient をクリアする
+    state.currentOrderIdForClient = null;
+    return;
+  }
+
   if (!state.currentOrderIdForClient) return;
   const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
   if (!o) return;
+// if (!state.currentOrderIdForClient) return;
+ // const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
+ // if (!o) return;
   if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
   else if (o.state === 'inprogress'){
     showClientStatus('現在調理中…');
@@ -1289,16 +1308,48 @@ saveAllBtn.addEventListener('click', ()=>{
 });
 
 /* homeFromEat: when client returns home, remove drawing data for that order from Firestore so it won't be shared further */
+
 homeFromEat.addEventListener('click', async ()=>{
-  const o = state.orders.find(x=>x.id === state.currentOrderIdForClient);
-  if (o && o.clientId === clientId){
+  // 現在表示中の注文 ID を取得
+  const curId = state.currentOrderIdForClient;
+  if (curId){
+    // Firestore に保存された手書きデータを消す（注文者のものだけ）
     try {
-      await updateDoc(doc(db,'orders',o.id), { artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, artMeta:null, cardMeta:null });
-    } catch(e){ console.warn('clear art data failed', e); }
+      const o = state.orders.find(x => x.id === curId);
+      if (o && o.clientId === clientId){
+        await updateDoc(doc(db,'orders',curId), {
+          artStrokes: null,
+          cardStrokes: null,
+          artDataUrl: null,
+          cardDataUrl: null,
+          servedImageData: null,
+          artMeta: null,
+          cardMeta: null
+        });
+      }
+    } catch(e){
+      console.warn('clear art data failed', e);
+    }
+    // この注文は「閉じた」とマークして再表示を防ぐ
+    dismissedOrders.add(curId);
+    try { localStorage.setItem('reiji_dismissed_orders', JSON.stringify(Array.from(dismissedOrders))); } catch(e){}
+    // ローカル状態をクリア
+    state.currentOrderIdForClient = null;
   }
+  // モーダルを閉じる
   document.getElementById('modalEat').style.display = 'none';
-  state.currentOrderIdForClient = null;
 });
+  
+//homeFromEat.addEventListener('click', async ()=>{
+  ///const o = state.orders.find(x=>x.id === state.currentOrderIdForClient);
+  //if (o && o.clientId === clientId){
+  //  try {
+   //   await updateDoc(doc(db,'orders',o.id), { artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, artMeta:null, cardMeta:null });
+//    } catch(e){ console.warn('clear art data failed', e); }
+//  }
+//  document.getElementById('modalEat').style.display = 'none';
+//  state.currentOrderIdForClient = null;
+//});
 
 /* J/E/C/K jukebox build */
 function buildJukebox(){
