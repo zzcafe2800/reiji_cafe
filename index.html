@@ -24,8 +24,11 @@
   transform-origin:right center;
   animation:flip 2.2s ease-in-out forwards;
   z-index:2;
-}
 
+.cover.open{
+  animation:flip 2.2s ease-in-out forwards;
+}
+}
 /* 中ページ（今までのカード） */
 .inner{
   background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png")
@@ -1490,5 +1493,14 @@ showSoundOverlay();
 
 /* End of script */
 </script>
+  <script>
+document.getElementById("enableSoundBtn")?.addEventListener("click", () => {
+  const cover = document.querySelector(".cover");
+  if (cover) {
+    cover.classList.add("open");
+  }
+});
+</script>
+
 </body>
 </html>
