@@ -240,7 +240,7 @@ header{
     <div class="page inner">
 
       <header>
-        <h1>０時過ぎの飲食</h1>
+        <h1></h1>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="small-info">時刻: <span id="nowtime">--:--:--</span></div>
           <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
@@ -256,7 +256,7 @@ header{
  <div style="  position:absolute; left:50%; bottom:23px; transform:translateX(-50%);
     width:100%;  max-width:360px;  display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; ">
     <div id="helperSmall" class="small-info">
-    実際の支払いはありません。雰囲気を楽しめる仮想飲食提供が出来ます
+    実際の支払いはありません
   </div>
   <div id="jukeboxArea"style="display:flex;gap:8px;justify-content:center;" ></div>
 
@@ -487,7 +487,7 @@ header{
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small" style="display:none"></button>
-          <div id="eatSoundInfo" class="small-info">長押し・クリック（４クリック目：完食）</div>
+          <div id="eatSoundInfo" class="small-info">長押し・クリック（5クリック目：完食）</div>
           <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
         </div>
       </div>
@@ -669,13 +669,13 @@ if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localSt
 /* menu config data-driven */
 const MENUS = {
   rate: {
-    id: 'rate', title: 'カフェ・ラテ（150zz）', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
+    id: 'rate', title: 'カフェ・ラテ（おすすめ）', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
     password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' }
   },
   omu: {
-    id: 'omu', title: 'オムライス（620zz）', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
+    id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
     password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' }
@@ -767,8 +767,8 @@ setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 function renderShiftShort(){
   const now = new Date();
   const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!active.length) shiftShort.textContent = '注文”できない”　：　現在対応できる店員がおりません　';
-  else shiftShort.textContent = '注文”できる”：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+  if (!active.length) shiftShort.textContent = 'シフト”：現在対応できる店員がおりません　';
+  else shiftShort.textContent = 'シフト”：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
 function renderShiftList(){
   shiftList.innerHTML = '';
