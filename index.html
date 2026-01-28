@@ -1445,7 +1445,7 @@ function updateClientOverlay(){
  // if (!o) return;
   if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
   else if (o.state === 'inprogress'){
-    showClientStatus('現在調理中…');
+    showClientStatus('現在調理中（数分そのままでお待ちください）…');
     if (state.audioUnlocked){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
     else state.pendingPlayQueue.push({ type:'cook' });
   }
