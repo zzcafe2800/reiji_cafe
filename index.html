@@ -1628,6 +1628,86 @@ cover.addEventListener("animationend", () => {
   cover.classList.add("finished");
 });
 </script>
+<!-- BGMコントロールUI -->
+<div id="bgmControl" style="position:fixed;top:8px;left:8px;display:flex;align-items:center;gap:6px;z-index:9999;font-size:18px;">
+  <button id="bgmMuteBtn" title="ミュート解除/ミュート" style="padding:4px;">🔊</button>
+  <button id="bgmLoopBtn" title="ループ" style="padding:4px;">🔁</button>
+  <button id="bgmNextBtn" title="次の曲" style="padding:4px;">▶▶</button>
+</div>
+
+<script>
+const audioList = [
+  "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/sie.mp3",
+  "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/tyaimu.mp3",
+  "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/cookbgm.mp3"
+  // 追加したい曲はここに増やすだけ
+];
+
+// 状態管理
+let currentTrackIndex = 0;
+let isMuted = false;
+let isLoop = false;
+
+// Audioオブジェクト
+let audio = new Audio();
+audio.src = audioList[currentTrackIndex];
+audio.loop = false;
+audio.volume = 1;
+
+// シャッフル関数
+function shuffleArray(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+let shuffledList = shuffleArray([...audioList]);
+
+// 曲再生
+function playTrack(index){
+  currentTrackIndex = index;
+  audio.src = shuffledList[currentTrackIndex];
+  audio.play();
+}
+
+// 次の曲
+function nextTrack(){
+  currentTrackIndex++;
+  if(currentTrackIndex >= shuffledList.length){
+    shuffledList = shuffleArray([...audioList]); // 全曲再シャッフル
+    currentTrackIndex = 0;
+  }
+  playTrack(currentTrackIndex);
+}
+
+// ループボタン
+const loopBtn = document.getElementById('bgmLoopBtn');
+loopBtn.addEventListener('click',()=>{
+  isLoop = !isLoop;
+  audio.loop = isLoop;
+  loopBtn.style.opacity = isLoop ? 1 : 0.5;
+});
+
+// ミュートボタン
+const muteBtn = document.getElementById('bgmMuteBtn');
+muteBtn.addEventListener('click',()=>{
+  isMuted = !isMuted;
+  audio.muted = isMuted;
+  muteBtn.textContent = isMuted ? '🔇' : '🔊';
+});
+
+// 次曲ボタン
+document.getElementById('bgmNextBtn').addEventListener('click', nextTrack);
+
+// 曲終了時
+audio.addEventListener('ended', ()=>{
+  if(!isLoop) nextTrack();
+});
+
+// 初回自動再生（ユーザー操作後でないとブラウザにブロックされる場合がある）
+document.body.addEventListener('click',{once:true},()=>audio.play());
+</script>
 
 </body>
 </html>
