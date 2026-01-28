@@ -692,7 +692,55 @@ const MENUS = {
     password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' }
-  }
+   },
+
+  souda: {
+    id: 'souda',
+    title: 'ソーダ（試験）',
+    imageBase: '@zzcafe2800/reiji_cafe/main/souda', // 従来の静止画群
+    frameCount: 3,
+    lastFrameRandom: false,
+    enhanced: true,   // ← 新機能 ON にする（切り替え可能）
+    // 新機能用フィールド（すべて配列。空で良い）
+    enhancedConfig: {
+      loopBgmUrls: [
+        // e.g. 'https://example.com/bgm1.mp3'
+      ],
+      gifPoolUrls: [
+        // GIF の URL リスト（ランダム/シャッフル再生）
+        // e.g. 'https://raw.githubusercontent.com/owner/repo/main/gif1.gif'
+      ],
+      clickPairs: [
+        // クリックで発火する「ペア」の配列。index によって text/mp3/gif が紐づく
+        // { text: 'やった！', mp3: 'https://...', gif: 'https://...' }
+        ],
+      clickCooldownMs: 60 * 1000, // 1分（クリック禁止期間、コードで調整可能）
+      groupedPairsByElapsed: [
+        // クリックしたときの「前回クリックからの経過時間」によって選ぶ候補グループ
+        // { minSec:0, maxSec:60, pairIndexes: [0,1,2] }, ...
+      ],
+      periodicVoiceUrls: [
+        // モーダル開いてる人だけにランダムで流す音声リスト（30s~5min 間隔）
+      ],
+      idleVoiceGroups: [
+        // 「一定時間クリックされなかったら流す」設定
+        // { minSec: 60, maxSec: 120, urls: ['a.mp3','b.mp3'] }, ...
+      ],
+      doubleClickUrlGroup: [
+        // ダブルクリックで順次（履歴管理）再生する mp3 列
+      ],
+      longPressPetUrlGroup: [
+        // 長押し＆なで動作で再生する mp3 列
+      ],
+      // その他パラメータ
+      clickRandomAvoidRepeatUntilSeen: true
+    },
+    // ラテアート表示 on/off
+    showLatteArt: true
+  },
+
+  // ...既存メニュー...
+
 };
 
   
