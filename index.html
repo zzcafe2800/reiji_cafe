@@ -3,14 +3,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム（０時カフェ・ズズカフェ店用）</title>
+<title>仮想飲食システム</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
     --card-skin:#fff2e6;
   }
-  html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}
+
+
+  html,body{
+  height:100%;
+  margin:0;
+  font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+
+  /* 背景画像に変更 */
+  background:
+    url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg")
+    center center / cover no-repeat fixed;
+}
+
+ /* html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}*/
 body{
   min-height:100vh;
   display:flex;
@@ -242,7 +255,7 @@ header{
  <div style="  position:absolute; left:50%; bottom:23px; transform:translateX(-50%);
     width:100%;  max-width:360px;  display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; ">
     <div id="helperSmall" class="small-info">
-    実際の支払いはありません。のんびり雰囲気を楽しんでね
+    実際の支払いはありません。雰囲気を楽しめる仮想飲食提供が出来ます
   </div>
   <div id="jukeboxArea"style="display:flex;gap:8px;justify-content:center;" ></div>
 
@@ -259,7 +272,7 @@ header{
 </div>
   <div class="guest-mini" id="guestMini">
     <div id="guestRole"><strong>あなた：客</strong></div>
-    <div class="small-info" style="margin-top:6px">目的：注文する</div>
+    <div class="small-info" style="margin-top:6px">目的：注文</div>
   </div>
   <!-- J/E/C/K ボタン -->
    
