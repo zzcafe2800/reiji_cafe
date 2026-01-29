@@ -1769,20 +1769,19 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
 
 
 
+
 <script>
 /*
   新機能スクリプト（単独で末尾に置くだけで動くように設計）
-  - const MENU に商品を定義すると、ホームの注文ボタン下にアイテムボタン群を生成します。
-  - クリックすると「作業画面（オフライン・個別表示）」が開き、GIF群をシャッフルして順に再生します。
-  - GIFごとに「経過秒で再生するMP3セット」を登録可能（複数）。GIFが表示されてから指定秒後にMP3を再生します。
-  - 休憩ボタン（左下）：登録されたペア（テキスト＋gif＋mp3）をランダムで再生。重複しないようデッキ管理。再生中は押せない。
-  - 一定間隔でランダムにMP3を再生（別途設定）。再生済みは全プレイまで再度選ばれない。
-  - 休憩が未押下で一定時間経過したら（コードで設定可能）自動で音を流す仕組みあり。
-  - GIFのダブルクリックで別のMP3列（doubleClickSounds）を順にランダムで再生（重複管理）。
-  - GIFを長押しして左右に動かす（なでなでジェスチャ）と petSounds を順次再生（重複管理）。
-  - 全て「そのウィンドウを開いているその一人だけ」に作用します（サーバ不要）。
-  - 追加は MENU オブジェクトに項目を追加するだけで使えます（下に sample souda を含む）。
-  - 実際の mp3/gif URL はサンプルで書いてあります。実パスに置き換えてください。
+  --- UI部分のみ「ホームの画像を置き換える新UI」に差し替えました（それ以外の挙動は元のまま）
+  - 変更点（要点）
+    ・ホームにある既存の画像を可能な限り検出して削除し、その場所に「おともちゃん選択UI」を差し替えます。
+    ・選択UIは中央に星型の窓（SVGクリップ）で画像を見せるデザイン。左右に小さな ◀ ▶ ボタン、上に名前、下に決定ボタンを持ちます。
+    ・画像の見え方（サイズ）はスクリプト内の STAR_IMAGE_SCALE 数値で調整できます（デフォルト 0.92）。
+    ・内部ではおともちゃんの配列をランダム順（横並びの列）にして中央表示するものを制御、左右ボタンでループします。
+    ・決定ボタンは既存の画像がクリックされたときと同じ挙動になるよう openItemScreen(item) を呼び出します（作業画面を開きます）。
+    ・UIは既存の「注文」ボタンと視覚的に別物になるよう見た目のラベル等を追加しています。
+  - 元���機能（GIF/MP3再生、休憩、ダブルクリック、長押しジェスチャ等）はそのまま維持しています。
 */
 
 /* IIFE で囲む */
@@ -1794,40 +1793,33 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
       id: 'souda',
       title: 'ソーダちゃん',
       thumb: '@zzcafe2800/reiji_cafe/files/souda.png', // サムネイル（表示用）
-      // gifs: 各 gif は url と triggers 配列を持てる（trigger: { afterSec, mp3Url }）
       gifs: [
         { url: '@zzcafe2800/reiji_cafe/files/souda_anim1.gif', triggers: [ { afterSec: 2, mp3: '@zzcafe2800/reiji_cafe/files/souda1.mp3' } ] },
         { url: '@zzcafe2800/reiji_cafe/files/souda_anim2.gif', triggers: [ { afterSec: 4, mp3: '@zzcafe2800/reiji_cafe/files/souda2.mp3' } ] },
         { url: '@zzcafe2800/reiji_cafe/files/souda_anim3.gif', triggers: [] }
       ],
-      // 休憩（左下）で再生するペア群（text, gif, mp3）
       restPairs: [
         { text: 'ひとやすみ...', gif: '@zzcafe2800/reiji_cafe/files/souda_rest1.gif', mp3: '@zzcafe2800/reiji_cafe/files/souda_rest1.mp3' },
         { text: 'おやすみソーダ', gif: '@zzcafe2800/reiji_cafe/files/souda_rest2.gif', mp3: '@zzcafe2800/reiji_cafe/files/souda_rest2.mp3' }
       ],
-      // periodic random mp3s while screen open (30s-300s range default)
       periodicSounds: [
         '@zzcafe2800/reiji_cafe/files/souda_ping1.mp3',
         '@zzcafe2800/reiji_cafe/files/souda_ping2.mp3'
       ],
       periodicMinSec: 30,
       periodicMaxSec: 300,
-      // inactivity groups: if rest not pressed within min..max minutes, play random from sounds.
       inactivityGroups: [
-        { minMin: 1, maxMin: 2, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle1.mp3'] }, // demo: 1-2 minutes
+        { minMin: 1, maxMin: 2, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle1.mp3'] },
         { minMin: 3, maxMin: 5, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle2.mp3'] }
       ],
-      // double-click sounds (⑥)
       doubleClickSounds: [
         '@zzcafe2800/reiji_cafe/files/souda_dbl1.mp3',
         '@zzcafe2800/reiji_cafe/files/souda_dbl2.mp3'
       ],
-      // pet (long-press + horizontal move) sounds (⑦)
       petSounds: [
         '@zzcafe2800/reiji_cafe/files/souda_pet1.mp3',
         '@zzcafe2800/reiji_cafe/files/souda_pet2.mp3'
       ],
-      // additional UI texts if needed
       ui: {
         homeButtonText: 'ホームへ',
         restButtonText: '休憩',
@@ -1839,10 +1831,14 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
   };
   // ------- 設定ここまで -------
 
-  // ------------- セレクタ用調整値（ここを変えると選択画面の画像サイズを変更できます）--------------
-  // 中のPNGを星形の縁の中に収める割合（0.0 - 1.0）
-  const SELECTOR_IMG_SCALE = 0.86;
-  // ------------- ここまで --------------------------------------------------------
+  // ---------- カスタマイズ可能な見た目パラメータ ----------
+  // 星型窓内で画像の表示スケール（1.0が等倍）。0.5〜1.2 あたりで調整してください。
+  const STAR_IMAGE_SCALE = 0.92;
+  // 星型窓の表示サイズ（px）
+  const STAR_SIZE_PX = 140;
+  // 矢印ボタンのサイズ
+  const ARROW_BTN_SIZE_PX = 28;
+  // -------------------------------------------------------
 
   // ユーティリティ
   function rawUrl(path){ if (!path) return ''; if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1); try{return new URL(path).href;} catch(e){return path;} }
@@ -1883,7 +1879,7 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     };
   }
 
-  // Create main modal UI elements and mount to body (既存の作業画面用)
+  // Create modal UI elements and mount to body (既存作業画面モーダルは変更無し)
   function createUI(){
     // container modal
     const modal = document.createElement('div');
@@ -1915,222 +1911,285 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     };
   }
 
-  // -------------------- 新：キャラ選択モーダルを作る（ホームボタン用） ------------------------
-  function createSelectorUI(){
-    const sel = document.createElement('div');
-    sel.id = 'characterSelectorModal';
-    Object.assign(sel.style, {
-      position:'fixed', inset:0, display:'none', background:'rgba(0,0,0,0.65)', zIndex:10000, alignItems:'center', justifyContent:'center', padding:'18px'
+  // ---------------- 新：ホーム用のおともちゃん選択UI挿入 ----------------
+  // 既存ホームの画像を削除し、新しい UI を差し替える
+  function injectCompanionSelector(){
+    // 1) 既存のホーム画像らしき要素を可能な限り検出して削除（安全にtry）
+    const selectors = [
+      '#homeImage', '.home-image', '#home img', '.home img', '.main img', 'img.home', '#mainImage', '.top-image', '.hero img'
+    ];
+    for (const sel of selectors){
+      const el = document.querySelector(sel);
+      if (el) {
+        // もし親があって、その親に差し替え予定の場所ならそこを使う
+        const parent = el.parentElement;
+        // 削除
+        try { el.remove(); } catch(e) {}
+        // If parent is suitable, we'll attach our UI to parent. Save candidate parent
+        if (parent) {
+          // attach to parent and return
+          const attached = buildAndAttachSelector(parent);
+          if (attached) return attached;
+        }
+      }
+    }
+    // 2) 上で見つからなかった場合は、orderBtn の直後に差し替え UI を挿入
+    const orderBtn = document.getElementById('orderBtn');
+    if (orderBtn){
+      return buildAndAttachSelector(orderBtn.parentElement || orderBtn);
+    }
+    // 3) 最後の手段で body に追加
+    return buildAndAttachSelector(document.body);
+  }
+
+  // buildAndAttachSelector: 実際の DOM を作って parent に append する
+  function buildAndAttachSelector(parentEl){
+    if (!parentEl) return null;
+    // 既に設置済みなら上書きしない（存在チェック）
+    if (document.getElementById('companionSelector')) return document.getElementById('companionSelector');
+
+    // create wrapper
+    const wrapper = document.createElement('div');
+    wrapper.id = 'companionSelector';
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '8px';
+    wrapper.style.margin = '10px 0';
+    wrapper.style.userSelect = 'none';
+
+    // header label to make it visually distinct from "注文" button
+    const header = document.createElement('div');
+    header.textContent = 'おともちゃん選択';
+    header.style.fontSize = '13px';
+    header.style.fontWeight = '600';
+    header.style.color = '#444';
+    header.style.background = 'linear-gradient(90deg,#fff2,#ffe6cc)';
+    header.style.padding = '6px 10px';
+    header.style.borderRadius = '12px';
+    header.style.border = '1px solid rgba(0,0,0,0.06)';
+    wrapper.appendChild(header);
+
+    // name label
+    const nameLabel = document.createElement('div');
+    nameLabel.id = 'cs-name';
+    nameLabel.style.fontSize = '14px';
+    nameLabel.style.fontWeight = '700';
+    nameLabel.style.color = '#222';
+    nameLabel.style.textAlign = 'center';
+    nameLabel.style.minHeight = '20px';
+    wrapper.appendChild(nameLabel);
+
+    // main area with left arrow, star image, right arrow
+    const main = document.createElement('div');
+    main.style.display = 'flex';
+    main.style.alignItems = 'center';
+    main.style.gap = '10px';
+    main.style.padding = '4px';
+    main.style.background = 'transparent';
+
+    // left arrow
+    const leftBtn = document.createElement('button');
+    leftBtn.id = 'cs-left';
+    leftBtn.textContent = '◀';
+    leftBtn.title = '前のキャラ';
+    Object.assign(leftBtn.style, {
+      width: ARROW_BTN_SIZE_PX + 'px',
+      height: ARROW_BTN_SIZE_PX + 'px',
+      borderRadius: '6px',
+      border: '1px solid #ddd',
+      background: '#fff',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0'
+    });
+    main.appendChild(leftBtn);
+
+    // star window (SVG clip + image)
+    const starWrap = document.createElement('div');
+    starWrap.id = 'cs-star-wrap';
+    starWrap.style.width = STAR_SIZE_PX + 'px';
+    starWrap.style.height = STAR_SIZE_PX + 'px';
+    starWrap.style.position = 'relative';
+    starWrap.style.display = 'flex';
+    starWrap.style.alignItems = 'center';
+    starWrap.style.justifyContent = 'center';
+    starWrap.style.background = 'transparent';
+
+    // Build SVG star with clipPath: unique id to avoid conflicts
+    const clipId = 'starClip_' + Math.random().toString(36).slice(2,9);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.style.position = 'absolute';
+    svg.style.left = 0;
+    svg.style.top = 0;
+
+    const defs = document.createElementNS(svgNS, 'defs');
+    const clipPath = document.createElementNS(svgNS, 'clipPath');
+    clipPath.setAttribute('id', clipId);
+
+    // star polygon points (5-point star)
+    // normalized to viewBox 100x100
+    const poly = document.createElementNS(svgNS, 'polygon');
+    poly.setAttribute('points', '50,5 61,39 98,39 68,59 79,93 50,72 21,93 32,59 2,39 39,39');
+    poly.setAttribute('fill', '#fff');
+
+    clipPath.appendChild(poly);
+    defs.appendChild(clipPath);
+    svg.appendChild(defs);
+
+    // image element that is clipped
+    const imgEl = document.createElementNS(svgNS, 'image');
+    imgEl.setAttribute('id', 'cs-image');
+    imgEl.setAttribute('width', '100%');
+    imgEl.setAttribute('height', '100%');
+    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    imgEl.setAttribute('clip-path', `url(#${clipId})`);
+    // the 'href' attribute must be set with setAttributeNS for xlink in some browsers, but modern supports href
+    imgEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '');
+    // We'll use CSS transform to scale the displayed image inside clip (scale around center)
+    imgEl.style.transformOrigin = '50% 50%';
+    imgEl.style.transform = `scale(${STAR_IMAGE_SCALE})`;
+    svg.appendChild(imgEl);
+
+    // star stroke overlay (transparent fill, stroke visible)
+    const starStroke = document.createElementNS(svgNS, 'polygon');
+    starStroke.setAttribute('points', '50,5 61,39 98,39 68,59 79,93 50,72 21,93 32,59 2,39 39,39');
+    starStroke.setAttribute('fill', 'transparent');
+    starStroke.setAttribute('stroke', '#ffb6d5'); // cute pastel stroke
+    starStroke.setAttribute('stroke-width', '4');
+    starStroke.setAttribute('stroke-linejoin', 'round');
+    starStroke.setAttribute('pointer-events', 'none');
+    svg.appendChild(starStroke);
+
+    starWrap.appendChild(svg);
+    main.appendChild(starWrap);
+
+    // right arrow
+    const rightBtn = document.createElement('button');
+    rightBtn.id = 'cs-right';
+    rightBtn.textContent = '▶';
+    rightBtn.title = '次のキャラ';
+    Object.assign(rightBtn.style, {
+      width: ARROW_BTN_SIZE_PX + 'px',
+      height: ARROW_BTN_SIZE_PX + 'px',
+      borderRadius: '6px',
+      border: '1px solid #ddd',
+      background: '#fff',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0'
+    });
+    main.appendChild(rightBtn);
+
+    wrapper.appendChild(main);
+
+    // decision area: confirm button
+    const decision = document.createElement('div');
+    decision.style.display = 'flex';
+    decision.style.gap = '8px';
+    decision.style.alignItems = 'center';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.id = 'cs-confirm';
+    confirmBtn.textContent = '決定';
+    Object.assign(confirmBtn.style, {
+      padding: '6px 12px',
+      borderRadius: '8px',
+      border: '1px solid #e0a6c7',
+      background: 'linear-gradient(90deg,#fff,#ffeef8)',
+      cursor: 'pointer',
+      fontWeight: '700'
     });
 
-    // スタイルとSVGクリップ（星形）を使って中央の見た目を作る
-    sel.innerHTML = `
-      <div id="selectorInner" style="width:100%;max-width:780px;height:640px;background:linear-gradient(180deg,#fff9fb,#fff);border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,0.3);position:relative;display:flex;flex-direction:column;align-items:center;padding:20px;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;width:100%;justify-content:space-between;">
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button id="selectorCloseBtn" style="background:#ffeef8;border:0;padding:8px 12px;border-radius:12px;cursor:pointer;box-shadow:0 4px 8px rgba(255,0,150,0.08);">閉じる</button>
-            <div style="font-weight:700;font-size:18px;color:#333;">おともちゃんを選ぶ</div>
-          </div>
-          <div style="font-size:13px;color:#666;">注文ボタンとは別のキャラ選択画面です</div>
-        </div>
+    // small hint label
+    const hint = document.createElement('div');
+    hint.textContent = '（画像をクリックすると作業画面に移動）';
+    hint.style.fontSize = '11px';
+    hint.style.color = '#666';
 
-        <div id="selectorName" style="font-weight:800;font-size:22px;color:#444;margin-top:6px;">キャラ名</div>
+    decision.appendChild(confirmBtn);
+    decision.appendChild(hint);
+    wrapper.appendChild(decision);
 
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;width:100%;position:relative;">
-          <!-- 左矢印 -->
-          <button id="selectorLeft" aria-label="左へ" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:#fff;border:0;box-shadow:0 6px 12px rgba(0,0,0,0.12);cursor:pointer;font-size:18px;">◀</button>
+    // attach wrapper to parent
+    parentEl.appendChild(wrapper);
 
-          <!-- 星形SVG + 画像配置領域 -->
-          <div id="starWrapper" style="width:360px;height:360px;display:flex;align-items:center;justify-content:center;position:relative;">
-            <svg id="starSvg" viewBox="0 0 100 100" width="100%" height="100%" style="display:block;">
-              <defs>
-                <clipPath id="starClip">
-                  <!-- 10点の星形パス（適切なクリップ） -->
-                  <path d="M50 2 L61.6 35.5 L96 35.5 L67 56.5 L78.6 89.8 L50 69 L21.4 89.8 L33 56.5 L4 35.5 L38.4 35.5 Z"/>
-                </clipPath>
-              </defs>
-              <circle cx="50" cy="50" r="49" fill="#ffdff1" opacity="0.6"/>
-              <!-- 枠（星形の縁） -->
-              <path d="M50 2 L61.6 35.5 L96 35.5 L67 56.5 L78.6 89.8 L50 69 L21.4 89.8 L33 56.5 L4 35.5 L38.4 35.5 Z" fill="none" stroke="#ff7fbf" stroke-width="3"/>
-              <!-- 画像は <image> 要素で表示、clipPathで切る -->
-              <image id="selectorImage" xlink:href="" x="10" y="10" width="80" height="80" clip-path="url(#starClip)" preserveAspectRatio="xMidYMid slice"></image>
-            </svg>
-            <!-- 外側のデコ（星の周りにかわいい装飾） -->
-            <div style="position:absolute;right:-10px;top:-10px;width:54px;height:54px;border-radius:12px;background:linear-gradient(180deg,#fff,#ffeaf5);box-shadow:0 6px 12px rgba(255,100,160,0.08);display:flex;align-items:center;justify-content:center;font-weight:700;color:#ff3d8a;">★</div>
-          </div>
-
-          <!-- 右矢印 -->
-          <button id="selectorRight" aria-label="右へ" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:#fff;border:0;box-shadow:0 6px 12px rgba(0,0,0,0.12);cursor:pointer;font-size:18px;">▶</button>
-        </div>
-
-        <div style="width:100%;display:flex;justify-content:center;gap:10px;">
-          <div id="selectorHint" style="font-size:13px;color:#666;">左右ボタンで切り替えます。ループします。</div>
-        </div>
-
-        <div style="width:100%;display:flex;justify-content:center;gap:8px;margin-top:6px;">
-          <button id="selectConfirmBtn" style="padding:8px 14px;border-radius:12px;background:linear-gradient(180deg,#ff8ecf,#ff6fb4);color:#fff;border:0;cursor:pointer;font-weight:700;">このキャラにする</button>
-        </div>
-
-      </div>
-    `;
-
-    document.body.appendChild(sel);
+    // return elements for later wiring
     return {
-      modal: sel,
-      nameEl: sel.querySelector('#selectorName'),
-      imgEl: sel.querySelector('#selectorImage'),
-      leftBtn: sel.querySelector('#selectorLeft'),
-      rightBtn: sel.querySelector('#selectorRight'),
-      closeBtn: sel.querySelector('#selectorCloseBtn'),
-      confirmBtn: sel.querySelector('#selectConfirmBtn')
+      wrapper, nameLabel, leftBtn, rightBtn, confirmBtn, imgElSvg: imgEl
     };
   }
 
-  // -------------------- 新：セレクタのロジック（MENU を使って中央表示/左右移動） ------------------------
-  function openSelectorModal(){
-    // ensure UI created
-    const SEL = window._CHAR_SELECTOR_UI || createSelectorUI();
-    window._CHAR_SELECTOR_UI = SEL;
-
-    // build list of items (thumbs & titles)
-    const items = Object.keys(MENU).map(k => {
-      const it = MENU[k];
-      return { key: k, title: it.title || k, thumb: rawUrl(it.thumb) };
-    });
-
-    // ensure at least one placeholder if MENU empty
-    if (!items.length){
-      items.push({ key:'none', title:'未登録', thumb: '' });
-    }
-
-    // random initial index (display middle of hidden horizontal array conceptually)
-    let idx = Math.floor(Math.random() * items.length);
-
-    function render(){
-      const it = items[idx];
-      SEL.nameEl.textContent = it.title || '';
-      // compute SVG image position & size based on SELECTOR_IMG_SCALE and viewBox
-      // the <image> uses x,y,width,height in percent of viewBox 100x100, so convert
-      const box = 100;
-      const scale = Math.max(0.05, Math.min(1, SELECTOR_IMG_SCALE));
-      const size = box * scale;
-      const pos = (box - size) / 2;
-      SEL.imgEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', it.thumb || '');
-      SEL.imgEl.setAttribute('width', size);
-      SEL.imgEl.setAttribute('height', size);
-      SEL.imgEl.setAttribute('x', pos);
-      SEL.imgEl.setAttribute('y', pos);
-      // if no thumb, show a faint placeholder (set href blank)
-      if (!it.thumb){
-        SEL.imgEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '');
-        // optionally fill with a base64 tiny svg or leave empty
-      }
-    }
-
-    function next(){
-      idx = (idx + 1) % items.length;
-      render();
-    }
-    function prev(){
-      idx = (idx - 1 + items.length) % items.length;
-      render();
-    }
-
-    // open modal
-    SEL.modal.style.display = 'flex';
-    render();
-
-    // attach handlers (remove previous to avoid multiple)
-    SEL.leftBtn.onclick && (SEL.leftBtn.onclick = null);
-    SEL.rightBtn.onclick && (SEL.rightBtn.onclick = null);
-    SEL.closeBtn.onclick && (SEL.closeBtn.onclick = null);
-    SEL.confirmBtn.onclick && (SEL.confirmBtn.onclick = null);
-
-    SEL.leftBtn.addEventListener('click', prev);
-    SEL.rightBtn.addEventListener('click', next);
-    SEL.closeBtn.addEventListener('click', ()=> { SEL.modal.style.display = 'none'; });
-    SEL.confirmBtn.addEventListener('click', ()=> {
-      // 確定ボタンで何かしらの動作をする場合はここに（現状はモーダル閉じる）
-      SEL.modal.style.display = 'none';
-      // 例えば選択したキャラをデバッグ用に window に公開
-      window._SELECTED_CHARACTER = Object.keys(MENU)[idx] || null;
-      // 必要なら openItemScreen を呼んでそのキャラの作業画面を開くこともできます:
-      // const key = Object.keys(MENU)[idx]; if (key) openItemScreen(MENU[key]);
-    });
-
-    // キーボード（← → エスケープ）
-    function onKey(e){
-      if (SEL.modal.style.display !== 'flex') return;
-      if (e.key === 'ArrowLeft') prev();
-      if (e.key === 'ArrowRight') next();
-      if (e.key === 'Escape') { SEL.modal.style.display = 'none'; document.removeEventListener('keydown', onKey); }
-    }
-    document.addEventListener('keydown', onKey);
-
-    // タッチスワイプで左右切り替えも追加
-    let tStartX = null;
-    function onTouchStart(ev){ tStartX = ev.touches ? ev.touches[0].clientX : ev.clientX; }
-    function onTouchEnd(ev){
-      if (tStartX == null) return;
-      const endX = (ev.changedTouches ? ev.changedTouches[0].clientX : ev.clientX);
-      const dx = endX - tStartX;
-      if (Math.abs(dx) > 30){
-        if (dx > 0) prev(); else next();
-      }
-      tStartX = null;
-    }
-    SEL.modal.addEventListener('touchstart', onTouchStart, {passive:true});
-    SEL.modal.addEventListener('touchend', onTouchEnd, {passive:true});
-
-    // 返り値で現在 index や confirm を操作できるようにする（必要なら）
-    return {
-      getIndex: ()=> idx,
-      setIndex: (n)=> { idx = ((n%items.length)+items.length)%items.length; render(); }
-    };
-  }
-  // -------------------- 新：ここまで ------------------------
-
-  // Attach item buttons area under existing order button area.
+  // injectItemButtons の代わりに、ホームUI差し替え + 小さなアイテムボタン群（互換性のため）を作る
   function injectItemButtons(){
-    // Find a sensible insertion point: the element with id "orderBtn" exists in page per prior code.
+    // まず既存の小ボタン領域を保持（orderBtn の直後に元の itemButtonsWrapper を作る）
     const orderBtn = document.getElementById('orderBtn');
     if (!orderBtn){
-      console.warn('orderBtn not found; cannot inject item buttons');
-      return;
+      console.warn('orderBtn not found; cannot inject item buttons or companion selector. Will still try to insert selector on body.');
     }
-    // create wrapper if not exist
+
+    // 1) companion selector を挿入（既存ホーム画像の削除を含む）
+    const cs = injectCompanionSelector();
+    const nameLabel = cs && cs.nameLabel ? cs.nameLabel : (document.getElementById('cs-name') || null);
+    const leftBtn = cs && cs.leftBtn ? cs.leftBtn : document.getElementById('cs-left');
+    const rightBtn = cs && cs.rightBtn ? cs.rightBtn : document.getElementById('cs-right');
+    const confirmBtn = cs && cs.confirmBtn ? cs.confirmBtn : document.getElementById('cs-confirm');
+    const imgElSvg = (cs && cs.imgElSvg) ? cs.imgElSvg : document.getElementById('cs-image');
+
+    // 2) 小アイテムボタン群（互換）を orderBtn の直後に作る（既存コードと似た見た目）
     let wrapper = document.getElementById('itemButtonsWrapper');
-    if (!wrapper){
+    if (!wrapper && orderBtn){
       wrapper = document.createElement('div');
       wrapper.id = 'itemButtonsWrapper';
       wrapper.style.display = 'flex';
       wrapper.style.gap = '8px';
       wrapper.style.marginTop = '8px';
       orderBtn.insertAdjacentElement('afterend', wrapper);
+    } else if (!wrapper) {
+      // fallback: body
+      wrapper = document.createElement('div');
+      wrapper.id = 'itemButtonsWrapper';
+      wrapper.style.display = 'flex';
+      wrapper.style.gap = '8px';
+      wrapper.style.marginTop = '8px';
+      document.body.appendChild(wrapper);
     }
-    // clear
-    wrapper.innerHTML = '';
+    wrapper.innerHTML = ''; // clear old content
 
-    // Insert a distinct Home/キャラ選択ボタン (目立つUI、注文ボタンとは別と分かるように)
-    const selectorBtn = document.createElement('button');
-    selectorBtn.id = 'homeSelectBtn';
-    selectorBtn.textContent = 'キャラ選択';
-    Object.assign(selectorBtn.style, {
-      background: 'linear-gradient(180deg,#fff,#ffeef6)',
-      border: '1px solid #ffbfd9',
-      color: '#ff2f88',
-      padding: '8px 12px',
-      borderRadius: '10px',
-      cursor: 'pointer',
-      fontWeight: 800,
-      boxShadow: '0 8px 18px rgba(255, 80, 150, 0.08)'
-    });
-    selectorBtn.addEventListener('click', ()=> openSelectorModal());
-    wrapper.appendChild(selectorBtn);
+    // Build array of items from MENU
+    const keys = Object.keys(MENU);
+    const items = keys.map(k => MENU[k]);
 
-    // create per MENU entry button (既存のアイテム個別ボタン)
-    for (const key of Object.keys(MENU)){
-      const item = MENU[key];
+    // if no items, do nothing
+    if (!items.length){
+      if (nameLabel) nameLabel.textContent = 'おともちゃんがいません';
+      return;
+    }
+
+    // Create a random-seeded horizontal array (carousel) that is used internally (player won't see full row)
+    // We'll shuffle the items into an array 'carousel'
+    const carousel = items.slice();
+    // Fisher-Yates shuffle
+    for (let i = carousel.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [carousel[i], carousel[j]] = [carousel[j], carousel[i]];
+    }
+
+    // central index is initially the middle of the carousel to give "横並びの中央を表示" 感
+    let centralIndex = Math.floor(carousel.length / 2);
+    // But choose a random offset for "最初に中央にランダムで表示される"
+    centralIndex = Math.floor(Math.random() * carousel.length);
+
+    // small (compat) buttons creation (same as original for quick access)
+    for (const item of items){
       const btn = document.createElement('button');
       btn.className = 'item-btn';
       btn.style.display = 'flex';
@@ -2149,40 +2208,95 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
       img.style.objectFit = 'cover';
       img.style.borderRadius = '6px';
       const label = document.createElement('div');
-      label.textContent = item.title || key;
+      label.textContent = item.title || item.id;
       label.style.fontSize = '12px';
       label.style.marginTop = '6px';
       btn.appendChild(img); btn.appendChild(label);
       btn.addEventListener('click', ()=> openItemScreen(item));
       wrapper.appendChild(btn);
     }
+
+    // Helper: update central display (star image + name)
+    function updateCentralDisplay(){
+      const current = carousel[centralIndex];
+      if (!current) return;
+      if (nameLabel) nameLabel.textContent = current.title || current.id || '';
+      // set image href in svg <image>
+      try {
+        // imgElSvg is an SVG <image> element; set xlink:href for compatibility
+        if (imgElSvg){
+          imgElSvg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', rawUrl(current.thumb));
+          // also set href attribute if supported
+          imgElSvg.setAttribute('href', rawUrl(current.thumb));
+          // apply transform scale (in case changed after init)
+          imgElSvg.style.transform = `scale(${STAR_IMAGE_SCALE})`;
+        }
+      } catch(e){}
+    }
+
+    // arrow handlers: advance centralIndex with wrap-around
+    function toLeft(){
+      if (!carousel.length) return;
+      centralIndex = (centralIndex - 1 + carousel.length) % carousel.length;
+      updateCentralDisplay();
+    }
+    function toRight(){
+      if (!carousel.length) return;
+      centralIndex = (centralIndex + 1) % carousel.length;
+      updateCentralDisplay();
+    }
+
+    // wire up clicks/touches
+    if (leftBtn) leftBtn.addEventListener('click', toLeft);
+    if (rightBtn) rightBtn.addEventListener('click', toRight);
+
+    // clicking image also opens work screen (同様の挙動)
+    if (imgElSvg){
+      // Some browsers don't forward pointer events to svg image element; attach click on wrapper
+      const starWrapDiv = document.getElementById('cs-star-wrap') || imgElSvg.parentElement;
+      const openCurrent = () => {
+        const current = carousel[centralIndex];
+        if (current) openItemScreen(current);
+      };
+      starWrapDiv.addEventListener('click', openCurrent);
+      // also add keyboard support
+      starWrapDiv.setAttribute('tabindex', '0');
+      starWrapDiv.addEventListener('keydown', (e) => { if (e.key === 'Enter') openCurrent(); });
+    }
+
+    // decision button opens current item screen (決定)
+    if (confirmBtn){
+      confirmBtn.addEventListener('click', () => {
+        const current = carousel[centralIndex];
+        if (current) openItemScreen(current);
+      });
+    }
+
+    // initialize display
+    updateCentralDisplay();
+
+    // Provide the player a small visual affordance: when pressing arrows rapidly it cycles; if only one item, arrows still work but show same
+    return;
   }
 
-  // per-item state manager (keeps decks etc.)
+  // per-item state manager (keeps decks etc.) -- unchanged
   function createItemSession(item){
-    // gifs deck: ensure each gif is shown once before repeating; but user wanted "shuffle" that uses all before repeat
     const gifs = item.gifs && item.gifs.length ? item.gifs.map(g => ({...g, url: rawUrl(g.url)})) : [];
     const gifUrls = gifs.map(g=>g.url);
     const gifDeck = makeDeck(gifs);
 
-    // triggers are contained in gifs[].triggers: array of { afterSec, mp3 }
-    // rest pairs deck
     const restPairs = (item.restPairs || []).map(r => ({...r, gif: rawUrl(r.gif)}));
     const restDeck = makeDeck(restPairs);
 
-    // periodic sound deck
     const periodic = (item.periodicSounds || []).map(s => rawUrl(s));
     const periodicDeck = makeDeck(periodic);
 
-    // double click deck
     const dbl = (item.doubleClickSounds || []).map(s=> rawUrl(s));
     const dblDeck = makeDeck(dbl);
 
-    // pet deck
     const pet = (item.petSounds || []).map(s=> rawUrl(s));
     const petDeck = makeDeck(pet);
 
-    // inactivity groups processed into arrays of {minMs,maxMs,soundsDeck}
     const inactivity = (item.inactivityGroups||[]).map(g => ({
       minMs: (g.minMin||1)*60*1000,
       maxMs: (g.maxMin||2)*60*1000,
@@ -2194,7 +2308,7 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     };
   }
 
-  // main open modal & behavior
+  // main open modal & behavior -- unchanged, except uses UI created below
   function openItemScreen(item){
     const session = createItemSession(item);
     const ui = UI || createUI();
@@ -2234,14 +2348,12 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
           triggerTimers.push(tId);
         }
       }
-      // show this gif indefinitely until nextShuffle call triggers; we will schedule next shuffle time randomly between gifs or rely on user interactions.
     }
 
-    // start initial sequence: shuffle through all gifs continuously (each shown until user-driven)
+    // start initial sequence
     showNextGif();
 
-    // shuffle behavior: when / how to proceed? We'll advance to next gif if user double-clicks, or after a default period.
-    // For simplicity, each gif will auto-advance after a default display duration (if triggers set by user, could be longer). Use 8s default.
+    // schedule auto-advance
     let defaultDisplaySec = 8;
     function scheduleAutoAdvance(){
       gifTimerId = setTimeout(()=>{
@@ -2251,7 +2363,7 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     }
     scheduleAutoAdvance();
 
-    // rest button behavior: pick a rest pair and play it (disable while playing)
+    // rest button behavior
     let restPlaying = false;
     ui.restBtn.textContent = item.ui && item.ui.restButtonText ? item.ui.restButtonText : '休憩';
     ui.restBtn.disabled = false;
@@ -2259,27 +2371,22 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
       if (restPlaying) return;
       restPlaying = true;
       ui.restBtn.disabled = true;
-      // pick a pair
       const pair = session.restDeck.draw();
       if (!pair){
-        // nothing configured: re-enable
         restPlaying = false; ui.restBtn.disabled = false; return;
       }
-      // show overlay gif and text, play mp3
       ui.tempOverlayImg.src = pair.gif;
       ui.tempOverlay.style.display = 'flex';
       ui.overlayText.textContent = pair.text || '';
       ui.overlayText.style.display = 'block';
       await playAudioOnce(pair.mp3);
-      // hide overlay
       ui.tempOverlay.style.display = 'none';
       ui.overlayText.style.display = 'none';
-      // mark done (deck ensures non-repeat until exhausted)
       restPlaying = false;
       ui.restBtn.disabled = false;
     });
 
-    // periodic random mp3 timer (30s - 300s default)
+    // periodic random mp3 timer
     let periodicTimer = null;
     function schedulePeriodic(){
       if (!session.periodicDeck) return;
@@ -2294,10 +2401,9 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     }
     if ((item.periodicSounds||[]).length) schedulePeriodic();
 
-    // inactivity triggers (if rest not pressed in ranges)
+    // inactivity triggers
     let inactivityTimers = [];
     function scheduleInactivity(){
-      // cancel existing
       inactivityTimers.forEach(t => clearTimeout(t)); inactivityTimers = [];
       const now = Date.now();
       for (const g of session.inactivity){
@@ -2311,7 +2417,7 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     }
     if ((item.inactivityGroups||[]).length) scheduleInactivity();
 
-    // double-click on gif to play doubleClickSounds deck until exhausted (non-overlap)
+    // double-click on gif to play doubleClickSounds deck
     ui.gifEl.addEventListener('dblclick', async (e)=>{
       if (!session.dblDeck) return;
       const snd = session.dblDeck.next ? session.dblDeck.next() : null;
@@ -2356,7 +2462,6 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
 
     // home button closes modal and clears timers
     ui.homeBtn.addEventListener('click', ()=> {
-      // cleanup
       ui.modal.style.display = 'none';
       clearGifTriggers();
       if (gifTimerId) { clearTimeout(gifTimerId); gifTimerId = null; }
@@ -2364,27 +2469,20 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
       inactivityTimers.forEach(t => clearTimeout(t)); inactivityTimers = [];
     }, { once:true });
 
-    // ensure rest button cannot be spammed: handled in onRest by flag
-
-    // Note: additional features such as grouping by click-frequency windows (複数分間のルール)
-    // can be added by expanding restDeck selection logic with time-since-last-click heuristics.
-
   }
 
   // Initialize: create UI once
   const UI = createUI();
 
-  // Inject item buttons into page
+  // Inject item buttons / companion selector into page
   injectItemButtons();
-
-  // Utility to build menu items for menuModal if needed (the new items are independent)
-  async function buildMenu(){ /* kept for compatibility */ }
 
   // expose MENU to window for debugging
   window._ITEM_MENU = MENU;
 
 })();
 </script>
+
 
 
 
