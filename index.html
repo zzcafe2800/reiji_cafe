@@ -1426,7 +1426,7 @@ completeMake.addEventListener('click', async ()=>{
 });
 
 /* Client overlay handling and reconstructing images for only the ordering client */
-function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '店員が対応できない場合もございます'; orderStatusOverlay.style.display = 'flex'; }
+function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '数分そのままでお待ちください'; orderStatusOverlay.style.display = 'flex'; }
 function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
 
 function updateClientOverlay(){
