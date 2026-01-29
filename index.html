@@ -1773,15 +1773,17 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
 <script>
 /*
   新機能スクリプト（単独で末尾に置くだけで動くように設計）
-  --- UI部分のみ「ホームの画像を置き換える新UI」に差し替えました（それ以外の挙動は元のまま）
-  - 変更点（要点）
-    ・ホームにある既存の画像を可能な限り検出して削除し、その場所に「おともちゃん選択UI」を差し替えます。
-    ・選択UIは中央に星型の窓（SVGクリップ）で画像を見せるデザイン。左右に小さな ◀ ▶ ボタン、上に名前、下に決定ボタンを持ちます。
-    ・画像の見え方（サイズ）はスクリプト内の STAR_IMAGE_SCALE 数値で調整できます（デフォルト 0.92）。
-    ・内部ではおともちゃんの配列をランダム順（横並びの列）にして中央表示するものを制御、左右ボタンでループします。
-    ・決定ボタンは既存の画像がクリックされたときと同じ挙動になるよう openItemScreen(item) を呼び出します（作業画面を開きます）。
-    ・UIは既存の「注文」ボタンと視覚的に別物になるよう見た目のラベル等を追加しています。
-  - 元���機能（GIF/MP3再生、休憩、ダブルクリック、長押しジェスチャ等）はそのまま維持しています。
+  - const MENU に商品を定義すると、ホームの注文ボタン下にアイテムボタン群を生成します。
+  - クリックすると「作業画面（オフライン・個別表示）」が開き、GIF群をシャッフルして順に再生します。
+  - GIFごとに「経過秒で再生するMP3セット」を登録可能（複数）。GIFが表示されてから指定秒後にMP3を再生します。
+  - 休憩ボタン（左下）：登録されたペア（テキスト＋gif＋mp3）をランダムで再生。重複しないようデッキ管理。再生中は押せない。
+  - 一定間隔でランダムにMP3を再生（別途設定）。再生済みは全プレイまで再度選ばれない。
+  - 休憩が未押下で一定時間経過したら（コードで設定可能）自動で音を流す仕組みあり。
+  - GIFのダブルクリックで別のMP3列（doubleClickSounds）を順にランダムで再生（重複管理）。
+  - GIFを長押しして左右に動かす（なでなでジェスチャ）と petSounds を順次再生（重複管理）。
+  - 全て「そのウィンドウを開いているその一人だけ」に作用します（サーバ不要）。
+  - 追加は MENU オブジェクトに項目を追加するだけで使えます（下に sample souda を含む）。
+  - 実際の mp3/gif URL はサンプルで書いてあります。実パスに置き換えてください。
 */
 
 /* IIFE で囲む */
@@ -1793,33 +1795,40 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
       id: 'souda',
       title: 'ソーダちゃん',
       thumb: '@zzcafe2800/reiji_cafe/files/souda.png', // サムネイル（表示用）
+      // gifs: 各 gif は url と triggers 配列を持てる（trigger: { afterSec, mp3Url }）
       gifs: [
         { url: '@zzcafe2800/reiji_cafe/files/souda_anim1.gif', triggers: [ { afterSec: 2, mp3: '@zzcafe2800/reiji_cafe/files/souda1.mp3' } ] },
         { url: '@zzcafe2800/reiji_cafe/files/souda_anim2.gif', triggers: [ { afterSec: 4, mp3: '@zzcafe2800/reiji_cafe/files/souda2.mp3' } ] },
         { url: '@zzcafe2800/reiji_cafe/files/souda_anim3.gif', triggers: [] }
       ],
+      // 休憩（左下）で再生するペア群（text, gif, mp3）
       restPairs: [
         { text: 'ひとやすみ...', gif: '@zzcafe2800/reiji_cafe/files/souda_rest1.gif', mp3: '@zzcafe2800/reiji_cafe/files/souda_rest1.mp3' },
         { text: 'おやすみソーダ', gif: '@zzcafe2800/reiji_cafe/files/souda_rest2.gif', mp3: '@zzcafe2800/reiji_cafe/files/souda_rest2.mp3' }
       ],
+      // periodic random mp3s while screen open (30s-300s range default)
       periodicSounds: [
         '@zzcafe2800/reiji_cafe/files/souda_ping1.mp3',
         '@zzcafe2800/reiji_cafe/files/souda_ping2.mp3'
       ],
       periodicMinSec: 30,
       periodicMaxSec: 300,
+      // inactivity groups: if rest not pressed within min..max minutes, play random from sounds.
       inactivityGroups: [
-        { minMin: 1, maxMin: 2, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle1.mp3'] },
+        { minMin: 1, maxMin: 2, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle1.mp3'] }, // demo: 1-2 minutes
         { minMin: 3, maxMin: 5, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle2.mp3'] }
       ],
+      // double-click sounds (⑥)
       doubleClickSounds: [
         '@zzcafe2800/reiji_cafe/files/souda_dbl1.mp3',
         '@zzcafe2800/reiji_cafe/files/souda_dbl2.mp3'
       ],
+      // pet (long-press + horizontal move) sounds (⑦)
       petSounds: [
         '@zzcafe2800/reiji_cafe/files/souda_pet1.mp3',
         '@zzcafe2800/reiji_cafe/files/souda_pet2.mp3'
       ],
+      // additional UI texts if needed
       ui: {
         homeButtonText: 'ホームへ',
         restButtonText: '休憩',
@@ -1831,14 +1840,9 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
   };
   // ------- 設定ここまで -------
 
-  // ---------- カスタマイズ可能な見た目パラメータ ----------
-  // 星型窓内で画像の表示スケール（1.0が等倍）。0.5〜1.2 あたりで調整してください。
-  const STAR_IMAGE_SCALE = 0.92;
-  // 星型窓の表示サイズ（px）
-  const STAR_SIZE_PX = 140;
-  // 矢印ボタンのサイズ
-  const ARROW_BTN_SIZE_PX = 28;
-  // -------------------------------------------------------
+  // 調整可能パラメータ（ホームの星の中の画像サイズをここで変えられます）
+  // 0.0〜1.0 の比率で指定。1.0 は star 内にぴったり収まる（大きめ）、0.7 などで余白を確保。
+  const STAR_IMAGE_SCALE = 0.86;
 
   // ユーティリティ
   function rawUrl(path){ if (!path) return ''; if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1); try{return new URL(path).href;} catch(e){return path;} }
@@ -1879,7 +1883,7 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     };
   }
 
-  // Create modal UI elements and mount to body (既存作業画面モーダルは変更無し)
+  // Create modal UI elements and mount to body
   function createUI(){
     // container modal
     const modal = document.createElement('div');
@@ -1911,367 +1915,395 @@ document.body.addEventListener('click',{once:true},()=>audio.play());
     };
   }
 
-  // ---------------- 新：ホーム用のおともちゃん選択UI挿入 ----------------
-  // 既存ホームの画像を削除し、新しい UI を差し替える
-  function injectCompanionSelector(){
-    // 1) 既存のホーム画像らしき要素を可能な限り検出して削除（安全にtry）
-    const selectors = [
-      '#homeImage', '.home-image', '#home img', '.home img', '.main img', 'img.home', '#mainImage', '.top-image', '.hero img'
-    ];
-    for (const sel of selectors){
-      const el = document.querySelector(sel);
-      if (el) {
-        // もし親があって、その親に差し替え予定の場所ならそこを使う
-        const parent = el.parentElement;
-        // 削除
-        try { el.remove(); } catch(e) {}
-        // If parent is suitable, we'll attach our UI to parent. Save candidate parent
-        if (parent) {
-          // attach to parent and return
-          const attached = buildAndAttachSelector(parent);
-          if (attached) return attached;
-        }
-      }
-    }
-    // 2) 上で見つからなかった場合は、orderBtn の直後に差し替え UI を挿入
-    const orderBtn = document.getElementById('orderBtn');
-    if (orderBtn){
-      return buildAndAttachSelector(orderBtn.parentElement || orderBtn);
-    }
-    // 3) 最後の手段で body に追加
-    return buildAndAttachSelector(document.body);
-  }
-
-  // buildAndAttachSelector: 実際の DOM を作って parent に append する
-  function buildAndAttachSelector(parentEl){
-    if (!parentEl) return null;
-    // 既に設置済みなら上書きしない（存在チェック）
-    if (document.getElementById('companionSelector')) return document.getElementById('companionSelector');
-
-    // create wrapper
-    const wrapper = document.createElement('div');
-    wrapper.id = 'companionSelector';
-    wrapper.style.display = 'flex';
-    wrapper.style.flexDirection = 'column';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '8px';
-    wrapper.style.margin = '10px 0';
-    wrapper.style.userSelect = 'none';
-
-    // header label to make it visually distinct from "注文" button
-    const header = document.createElement('div');
-    header.textContent = 'おともちゃん選択';
-    header.style.fontSize = '13px';
-    header.style.fontWeight = '600';
-    header.style.color = '#444';
-    header.style.background = 'linear-gradient(90deg,#fff2,#ffe6cc)';
-    header.style.padding = '6px 10px';
-    header.style.borderRadius = '12px';
-    header.style.border = '1px solid rgba(0,0,0,0.06)';
-    wrapper.appendChild(header);
-
-    // name label
-    const nameLabel = document.createElement('div');
-    nameLabel.id = 'cs-name';
-    nameLabel.style.fontSize = '14px';
-    nameLabel.style.fontWeight = '700';
-    nameLabel.style.color = '#222';
-    nameLabel.style.textAlign = 'center';
-    nameLabel.style.minHeight = '20px';
-    wrapper.appendChild(nameLabel);
-
-    // main area with left arrow, star image, right arrow
-    const main = document.createElement('div');
-    main.style.display = 'flex';
-    main.style.alignItems = 'center';
-    main.style.gap = '10px';
-    main.style.padding = '4px';
-    main.style.background = 'transparent';
-
-    // left arrow
-    const leftBtn = document.createElement('button');
-    leftBtn.id = 'cs-left';
-    leftBtn.textContent = '◀';
-    leftBtn.title = '前のキャラ';
-    Object.assign(leftBtn.style, {
-      width: ARROW_BTN_SIZE_PX + 'px',
-      height: ARROW_BTN_SIZE_PX + 'px',
-      borderRadius: '6px',
-      border: '1px solid #ddd',
-      background: '#fff',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '0'
-    });
-    main.appendChild(leftBtn);
-
-    // star window (SVG clip + image)
-    const starWrap = document.createElement('div');
-    starWrap.id = 'cs-star-wrap';
-    starWrap.style.width = STAR_SIZE_PX + 'px';
-    starWrap.style.height = STAR_SIZE_PX + 'px';
-    starWrap.style.position = 'relative';
-    starWrap.style.display = 'flex';
-    starWrap.style.alignItems = 'center';
-    starWrap.style.justifyContent = 'center';
-    starWrap.style.background = 'transparent';
-
-    // Build SVG star with clipPath: unique id to avoid conflicts
-    const clipId = 'starClip_' + Math.random().toString(36).slice(2,9);
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('viewBox', '0 0 100 100');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.style.position = 'absolute';
-    svg.style.left = 0;
-    svg.style.top = 0;
-
-    const defs = document.createElementNS(svgNS, 'defs');
-    const clipPath = document.createElementNS(svgNS, 'clipPath');
-    clipPath.setAttribute('id', clipId);
-
-    // star polygon points (5-point star)
-    // normalized to viewBox 100x100
-    const poly = document.createElementNS(svgNS, 'polygon');
-    poly.setAttribute('points', '50,5 61,39 98,39 68,59 79,93 50,72 21,93 32,59 2,39 39,39');
-    poly.setAttribute('fill', '#fff');
-
-    clipPath.appendChild(poly);
-    defs.appendChild(clipPath);
-    svg.appendChild(defs);
-
-    // image element that is clipped
-    const imgEl = document.createElementNS(svgNS, 'image');
-    imgEl.setAttribute('id', 'cs-image');
-    imgEl.setAttribute('width', '100%');
-    imgEl.setAttribute('height', '100%');
-    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-    imgEl.setAttribute('clip-path', `url(#${clipId})`);
-    // the 'href' attribute must be set with setAttributeNS for xlink in some browsers, but modern supports href
-    imgEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '');
-    // We'll use CSS transform to scale the displayed image inside clip (scale around center)
-    imgEl.style.transformOrigin = '50% 50%';
-    imgEl.style.transform = `scale(${STAR_IMAGE_SCALE})`;
-    svg.appendChild(imgEl);
-
-    // star stroke overlay (transparent fill, stroke visible)
-    const starStroke = document.createElementNS(svgNS, 'polygon');
-    starStroke.setAttribute('points', '50,5 61,39 98,39 68,59 79,93 50,72 21,93 32,59 2,39 39,39');
-    starStroke.setAttribute('fill', 'transparent');
-    starStroke.setAttribute('stroke', '#ffb6d5'); // cute pastel stroke
-    starStroke.setAttribute('stroke-width', '4');
-    starStroke.setAttribute('stroke-linejoin', 'round');
-    starStroke.setAttribute('pointer-events', 'none');
-    svg.appendChild(starStroke);
-
-    starWrap.appendChild(svg);
-    main.appendChild(starWrap);
-
-    // right arrow
-    const rightBtn = document.createElement('button');
-    rightBtn.id = 'cs-right';
-    rightBtn.textContent = '▶';
-    rightBtn.title = '次のキャラ';
-    Object.assign(rightBtn.style, {
-      width: ARROW_BTN_SIZE_PX + 'px',
-      height: ARROW_BTN_SIZE_PX + 'px',
-      borderRadius: '6px',
-      border: '1px solid #ddd',
-      background: '#fff',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '0'
-    });
-    main.appendChild(rightBtn);
-
-    wrapper.appendChild(main);
-
-    // decision area: confirm button
-    const decision = document.createElement('div');
-    decision.style.display = 'flex';
-    decision.style.gap = '8px';
-    decision.style.alignItems = 'center';
-
-    const confirmBtn = document.createElement('button');
-    confirmBtn.id = 'cs-confirm';
-    confirmBtn.textContent = '決定';
-    Object.assign(confirmBtn.style, {
-      padding: '6px 12px',
-      borderRadius: '8px',
-      border: '1px solid #e0a6c7',
-      background: 'linear-gradient(90deg,#fff,#ffeef8)',
-      cursor: 'pointer',
-      fontWeight: '700'
-    });
-
-    // small hint label
-    const hint = document.createElement('div');
-    hint.textContent = '（画像をクリックすると作業画面に移動）';
-    hint.style.fontSize = '11px';
-    hint.style.color = '#666';
-
-    decision.appendChild(confirmBtn);
-    decision.appendChild(hint);
-    wrapper.appendChild(decision);
-
-    // attach wrapper to parent
-    parentEl.appendChild(wrapper);
-
-    // return elements for later wiring
-    return {
-      wrapper, nameLabel, leftBtn, rightBtn, confirmBtn, imgElSvg: imgEl
-    };
-  }
-
-  // injectItemButtons の代わりに、ホームUI差し替え + 小さなアイテムボタン群（互換性のため）を作る
+  // -------------------- ここを主要に差し替えました：ホームの UI（星型セレクタ） --------------------
+  // Attach new star-shaped character selector UI near existing order button.
   function injectItemButtons(){
-    // まず既存の小ボタン領域を保持（orderBtn の直後に元の itemButtonsWrapper を作る）
+    // Find insertion point (orderBtn exists per prior code)
     const orderBtn = document.getElementById('orderBtn');
     if (!orderBtn){
-      console.warn('orderBtn not found; cannot inject item buttons or companion selector. Will still try to insert selector on body.');
-    }
-
-    // 1) companion selector を挿入（既存ホーム画像の削除を含む）
-    const cs = injectCompanionSelector();
-    const nameLabel = cs && cs.nameLabel ? cs.nameLabel : (document.getElementById('cs-name') || null);
-    const leftBtn = cs && cs.leftBtn ? cs.leftBtn : document.getElementById('cs-left');
-    const rightBtn = cs && cs.rightBtn ? cs.rightBtn : document.getElementById('cs-right');
-    const confirmBtn = cs && cs.confirmBtn ? cs.confirmBtn : document.getElementById('cs-confirm');
-    const imgElSvg = (cs && cs.imgElSvg) ? cs.imgElSvg : document.getElementById('cs-image');
-
-    // 2) 小アイテムボタン群（互換）を orderBtn の直後に作る（既存コードと似た見た目）
-    let wrapper = document.getElementById('itemButtonsWrapper');
-    if (!wrapper && orderBtn){
-      wrapper = document.createElement('div');
-      wrapper.id = 'itemButtonsWrapper';
-      wrapper.style.display = 'flex';
-      wrapper.style.gap = '8px';
-      wrapper.style.marginTop = '8px';
-      orderBtn.insertAdjacentElement('afterend', wrapper);
-    } else if (!wrapper) {
-      // fallback: body
-      wrapper = document.createElement('div');
-      wrapper.id = 'itemButtonsWrapper';
-      wrapper.style.display = 'flex';
-      wrapper.style.gap = '8px';
-      wrapper.style.marginTop = '8px';
-      document.body.appendChild(wrapper);
-    }
-    wrapper.innerHTML = ''; // clear old content
-
-    // Build array of items from MENU
-    const keys = Object.keys(MENU);
-    const items = keys.map(k => MENU[k]);
-
-    // if no items, do nothing
-    if (!items.length){
-      if (nameLabel) nameLabel.textContent = 'おともちゃんがいません';
+      console.warn('orderBtn not found; cannot inject new home selector UI');
       return;
     }
 
-    // Create a random-seeded horizontal array (carousel) that is used internally (player won't see full row)
-    // We'll shuffle the items into an array 'carousel'
-    const carousel = items.slice();
-    // Fisher-Yates shuffle
-    for (let i = carousel.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [carousel[i], carousel[j]] = [carousel[j], carousel[i]];
-    }
+    // Remove any previously injected legacy wrapper or item-btns to "消す"（ホームの既存画像を置き換え）
+    const oldWrapper = document.getElementById('itemButtonsWrapper');
+    if (oldWrapper) oldWrapper.remove();
+    // also hide any existing elements with class item-btn (defensive)
+    document.querySelectorAll('.item-btn').forEach(el => el.remove());
 
-    // central index is initially the middle of the carousel to give "横並びの中央を表示" 感
-    let centralIndex = Math.floor(carousel.length / 2);
-    // But choose a random offset for "最初に中央にランダムで表示される"
-    centralIndex = Math.floor(Math.random() * carousel.length);
+    // Create selector container
+    let container = document.getElementById('characterSelector');
+    if (container) container.remove(); // clean up if present
 
-    // small (compat) buttons creation (same as original for quick access)
-    for (const item of items){
-      const btn = document.createElement('button');
-      btn.className = 'item-btn';
-      btn.style.display = 'flex';
-      btn.style.flexDirection = 'column';
-      btn.style.alignItems = 'center';
-      btn.style.padding = '6px';
-      btn.style.borderRadius = '8px';
-      btn.style.background = '#fff';
-      btn.style.border = '1px solid #ddd';
-      btn.style.cursor = 'pointer';
-      btn.style.minWidth = '80px';
-      const img = document.createElement('img');
-      img.src = rawUrl(item.thumb);
-      img.style.width = '56px';
-      img.style.height = '56px';
-      img.style.objectFit = 'cover';
-      img.style.borderRadius = '6px';
-      const label = document.createElement('div');
-      label.textContent = item.title || item.id;
-      label.style.fontSize = '12px';
-      label.style.marginTop = '6px';
-      btn.appendChild(img); btn.appendChild(label);
-      btn.addEventListener('click', ()=> openItemScreen(item));
-      wrapper.appendChild(btn);
-    }
-
-    // Helper: update central display (star image + name)
-    function updateCentralDisplay(){
-      const current = carousel[centralIndex];
-      if (!current) return;
-      if (nameLabel) nameLabel.textContent = current.title || current.id || '';
-      // set image href in svg <image>
-      try {
-        // imgElSvg is an SVG <image> element; set xlink:href for compatibility
-        if (imgElSvg){
-          imgElSvg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', rawUrl(current.thumb));
-          // also set href attribute if supported
-          imgElSvg.setAttribute('href', rawUrl(current.thumb));
-          // apply transform scale (in case changed after init)
-          imgElSvg.style.transform = `scale(${STAR_IMAGE_SCALE})`;
+    container = document.createElement('div');
+    container.id = 'characterSelector';
+    // Basic layout: center star, small arrows left/right, name above, confirm below
+    container.innerHTML = `
+      <style>
+        /* scoped styles for selector */
+        #characterSelector { display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:10px; }
+        #characterSelector .selectorRow { display:flex; align-items:center; gap:10px; }
+        #characterSelector .arrowBtn {
+          background:transparent; border:none; font-size:20px; cursor:pointer; width:36px; height:36px;
+          display:flex; align-items:center; justify-content:center; color:#333;
+          box-shadow: none;
         }
-      } catch(e){}
+        #characterSelector .arrowBtn:active { transform:translateY(1px); }
+        #characterSelector .starWrap { width:160px; height:160px; display:flex; align-items:center; justify-content:center; position:relative; }
+        /* SVG will handle clipping; border drawn by polygon stroke */
+        #characterSelector .selName { font-size:14px; color:#222; font-weight:600; text-align:center; }
+        #characterSelector .confirmBtn {
+          padding:6px 12px; border-radius:999px; border:1px solid #dcdcdc; background:linear-gradient(#fff,#f7f7f7); cursor:pointer;
+          font-size:14px;
+        }
+        /* ensure only the selector is visible as requested */
+        /* hide other known home image containers if possible (safe selectors) */
+        .home-character, .home-thumb, .home-image { display:none !important; }
+      </style>
+
+      <div class="selectorRow" aria-hidden="false">
+        <button id="selPrev" class="arrowBtn" aria-label="前のキャラ">◀</button>
+        <div class="starWrap" id="starWrap">
+          <!-- Inline SVG star with clipPath. Image is sized using transform scale with JS controlled STAR_IMAGE_SCALE -->
+          <svg id="starSvg" viewBox="0 0 200 200" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <clipPath id="starClip">
+                <!-- 5-point star path -->
+                <path id="starPath" d="M100,10 L122,74 L190,74 L134,112 L154,180 L100,140 L46,180 L66,112 L10,74 L78,74 Z" />
+              </clipPath>
+            </defs>
+            <!-- image will be placed and clipped to star -->
+            <image id="selImage" href="" clip-path="url(#starClip)" x="0" y="0" width="200" height="200" preserveAspectRatio="xMidYMid slice"></image>
+            <!-- star border -->
+            <use href="#starPath" fill="none" stroke="#ffd56b" stroke-width="6" stroke-linejoin="round" />
+            <!-- inner subtle shadow for cute look -->
+            <use href="#starPath" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="1" stroke-linejoin="round" transform="translate(0,2)"/>
+          </svg>
+        </div>
+        <button id="selNext" class="arrowBtn" aria-label="次のキャラ">▶</button>
+      </div>
+      <div id="selName" class="selName"></div>
+      <button id="selConfirm" class="confirmBtn">決定</button>
+    `;
+
+    // insert after orderBtn
+    orderBtn.insertAdjacentElement('afterend', container);
+
+    // Build items list (hidden underlying "横並び列" that loops)
+    const items = Object.keys(MENU).map(k => MENU[k]);
+    if (!items.length){
+      // nothing to show: create placeholder
+      const nameEl = container.querySelector('#selName');
+      nameEl.textContent = 'おともちゃんがいません';
+      container.querySelector('#selConfirm').disabled = true;
+      return;
     }
 
-    // arrow handlers: advance centralIndex with wrap-around
-    function toLeft(){
-      if (!carousel.length) return;
-      centralIndex = (centralIndex - 1 + carousel.length) % carousel.length;
-      updateCentralDisplay();
-    }
-    function toRight(){
-      if (!carousel.length) return;
-      centralIndex = (centralIndex + 1) % carousel.length;
-      updateCentralDisplay();
-    }
+    // create an internal "横並び列" by duplicating items array (the UI won't display it, but logic assumes items in a loop)
+    // Start at random center
+    let currentIndex = Math.floor(Math.random()*items.length);
 
-    // wire up clicks/touches
-    if (leftBtn) leftBtn.addEventListener('click', toLeft);
-    if (rightBtn) rightBtn.addEventListener('click', toRight);
+    const selImage = container.querySelector('#selImage');
+    const selName = container.querySelector('#selName');
+    const prevBtn = container.querySelector('#selPrev');
+    const nextBtn = container.querySelector('#selNext');
+    const confirmBtn = container.querySelector('#selConfirm');
 
-    // clicking image also opens work screen (同様の挙動)
-    if (imgElSvg){
-      // Some browsers don't forward pointer events to svg image element; attach click on wrapper
-      const starWrapDiv = document.getElementById('cs-star-wrap') || imgElSvg.parentElement;
-      const openCurrent = () => {
-        const current = carousel[centralIndex];
-        if (current) openItemScreen(current);
-      };
-      starWrapDiv.addEventListener('click', openCurrent);
-      // also add keyboard support
-      starWrapDiv.setAttribute('tabindex', '0');
-      starWrapDiv.addEventListener('keydown', (e) => { if (e.key === 'Enter') openCurrent(); });
+    // function to update display based on currentIndex
+    function updateDisplay(){
+      const it = items[currentIndex];
+      selImage.setAttribute('href', rawUrl(it.thumb));
+      // scale the image inside the SVG using viewbox ratio: we will use STAR_IMAGE_SCALE by applying preserveAspectRatio + transform via image width/height
+      // For simplicity, we set image width/height to 200 and use a transform to scale around center.
+      const scale = Math.max(0.01, Math.min(2, STAR_IMAGE_SCALE));
+      // apply transform via pattern: translate to center, scale, translate back
+      const tx = (200*(1-scale))/2;
+      const ty = (200*(1-scale))/2;
+      selImage.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`);
+      selName.textContent = it.title || it.id || '無名のキャラ';
     }
 
-    // decision button opens current item screen (決定)
-    if (confirmBtn){
-      confirmBtn.addEventListener('click', () => {
-        const current = carousel[centralIndex];
-        if (current) openItemScreen(current);
-      });
+    // navigation handlers (looping)
+    prevBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateDisplay();
+    });
+    nextBtn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      currentIndex = (currentIndex + 1) % items.length;
+      updateDisplay();
+    });
+
+    // also allow keyboard arrow navigation when selector has focus (optional)
+    container.addEventListener('keydown', (e)=>{
+      if (e.key === 'ArrowLeft') { prevBtn.click(); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { nextBtn.click(); e.preventDefault(); }
+      if (e.key === 'Enter') { confirmBtn.click(); e.preventDefault(); }
+    });
+    // make container focusable
+    container.tabIndex = 0;
+
+    // confirm opens the same item screen as if clicking that item's image
+    confirmBtn.addEventListener('click', ()=>{
+      const it = items[currentIndex];
+      // call the same function used by item buttons
+      // openItemScreen is defined later in this script; this call will work since injectItemButtons is invoked after definition in original control flow.
+      openItemScreen(it);
+    });
+
+    // initialize display
+    updateDisplay();
+
+    // extra: small accessibility/touch tweaks - swiping left/right on the star area
+    let touchStartX = null;
+    const starWrap = container.querySelector('#starWrap');
+    starWrap.addEventListener('touchstart', (ev) => {
+      if (!ev.touches || !ev.touches[0]) return;
+      touchStartX = ev.touches[0].clientX;
+    }, {passive:true});
+    starWrap.addEventListener('touchend', (ev) => {
+      if (touchStartX === null) return;
+      const endX = (ev.changedTouches && ev.changedTouches[0]) ? ev.changedTouches[0].clientX : null;
+      if (endX === null) { touchStartX = null; return; }
+      const dx = endX - touchStartX;
+      if (Math.abs(dx) > 30){
+        if (dx < 0) nextBtn.click(); else prevBtn.click();
+      }
+      touchStartX = null;
+    }, {passive:true});
+
+    // End of injectItemButtons
+  }
+  // -------------------- ここまで差し替え --------------------
+
+  // per-item state manager (keeps decks etc.)
+  function createItemSession(item){
+    // gifs deck: ensure each gif is shown once before repeating; but user wanted "shuffle" that uses all before repeat
+    const gifs = item.gifs && item.gifs.length ? item.gifs.map(g => ({...g, url: rawUrl(g.url)})) : [];
+    const gifUrls = gifs.map(g=>g.url);
+    const gifDeck = makeDeck(gifs);
+
+    // triggers are contained in gifs[].triggers: array of { afterSec, mp3 }
+    // rest pairs deck
+    const restPairs = (item.restPairs || []).map(r => ({...r, gif: rawUrl(r.gif)}));
+    const restDeck = makeDeck(restPairs);
+
+    // periodic sound deck
+    const periodic = (item.periodicSounds || []).map(s => rawUrl(s));
+    const periodicDeck = makeDeck(periodic);
+
+    // double click deck
+    const dbl = (item.doubleClickSounds || []).map(s=> rawUrl(s));
+    const dblDeck = makeDeck(dbl);
+
+    // pet deck
+    const pet = (item.petSounds || []).map(s=> rawUrl(s));
+    const petDeck = makeDeck(pet);
+
+    // inactivity groups processed into arrays of {minMs,maxMs,soundsDeck}
+    const inactivity = (item.inactivityGroups||[]).map(g => ({
+      minMs: (g.minMin||1)*60*1000,
+      maxMs: (g.maxMin||2)*60*1000,
+      deck: makeDeck((g.sounds||[]).map(s=> rawUrl(s)))
+    }));
+
+    return {
+      item, gifDeck, gifs, restDeck, periodicDeck, dblDeck, petDeck, inactivity
+    };
+  }
+
+  // main open modal & behavior
+  function openItemScreen(item){
+    const session = createItemSession(item);
+    const ui = UI || createUI();
+    // show modal
+    ui.modal.style.display = 'flex';
+
+    // manage current GIF playing loop
+    let gifTimerId = null;
+    let currentGifObj = null; // {url,triggers,...}
+    let triggerTimers = [];
+
+    // helper to clear triggers
+    function clearGifTriggers(){
+      triggerTimers.forEach(t => clearTimeout(t));
+      triggerTimers = [];
     }
 
+    // show next gif (draw from deck)
+    function showNextGif(){
+      clearGifTriggers();
+      // draw gif metadata
+      const g = session.gifDeck.draw();
+      if (!g) return;
+      currentGifObj = g;
+      ui.gifEl.src = g.url;
+      ui.gifEl.style.display = '';
+      ui.tempOverlay.style.display = 'none';
+      ui.overlayText.style.display = 'none';
+
+      // schedule triggers for this gif
+      if (Array.isArray(g.triggers)){
+        for (const trig of g.triggers){
+          const tId = setTimeout(()=>{
+            // play mp3 for trigger (non-blocking)
+            playAudioOnce(trig.mp3);
+          }, (trig.afterSec || 0) * 1000);
+          triggerTimers.push(tId);
+        }
+      }
+      // show this gif indefinitely until nextShuffle call triggers; we will schedule next shuffle time randomly between gifs or rely on user interactions.
+    }
+
+    // start initial sequence: shuffle through all gifs continuously (each shown until user-driven)
+    showNextGif();
+
+    // shuffle behavior: when / how to proceed? We'll advance to next gif if user double-clicks, or after a default period.
+    // For simplicity, each gif will auto-advance after a default display duration (if triggers set by user, could be longer). Use 8s default.
+    let defaultDisplaySec = 8;
+    function scheduleAutoAdvance(){
+      gifTimerId = setTimeout(()=>{
+        showNextGif();
+        scheduleAutoAdvance();
+      }, defaultDisplaySec * 1000);
+    }
+    scheduleAutoAdvance();
+
+    // rest button behavior: pick a rest pair and play it (disable while playing)
+    let restPlaying = false;
+    ui.restBtn.textContent = item.ui && item.ui.restButtonText ? item.ui.restButtonText : '休憩';
+    ui.restBtn.disabled = false;
+    ui.restBtn.addEventListener('click', async function onRest(){
+      if (restPlaying) return;
+      restPlaying = true;
+      ui.restBtn.disabled = true;
+      // pick a pair
+      const pair = session.restDeck.draw();
+      if (!pair){
+        // nothing configured: re-enable
+        restPlaying = false; ui.restBtn.disabled = false; return;
+      }
+      // show overlay gif and text, play mp3
+      ui.tempOverlayImg.src = pair.gif;
+      ui.tempOverlay.style.display = 'flex';
+      ui.overlayText.textContent = pair.text || '';
+      ui.overlayText.style.display = 'block';
+      await playAudioOnce(pair.mp3);
+      // hide overlay
+      ui.tempOverlay.style.display = 'none';
+      ui.overlayText.style.display = 'none';
+      // mark done (deck ensures non-repeat until exhausted)
+      restPlaying = false;
+      ui.restBtn.disabled = false;
+    });
+
+    // periodic random mp3 timer (30s - 300s default)
+    let periodicTimer = null;
+    function schedulePeriodic(){
+      if (!session.periodicDeck) return;
+      const min = item.periodicMinSec || 30;
+      const max = item.periodicMaxSec || 300;
+      const delay = randInt(min, max) * 1000;
+      periodicTimer = setTimeout(async ()=>{
+        const snd = session.periodicDeck.draw();
+        if (snd) await playAudioOnce(snd);
+        schedulePeriodic();
+      }, delay);
+    }
+    if ((item.periodicSounds||[]).length) schedulePeriodic();
+
+    // inactivity triggers (if rest not pressed in ranges)
+    let inactivityTimers = [];
+    function scheduleInactivity(){
+      // cancel existing
+      inactivityTimers.forEach(t => clearTimeout(t)); inactivityTimers = [];
+      const now = Date.now();
+      for (const g of session.inactivity){
+        const delay = randInt(g.minMs, g.maxMs);
+        const tId = setTimeout(async ()=>{
+          const snd = g.deck.draw();
+          if (snd) await playAudioOnce(snd);
+        }, delay);
+        inactivityTimers.push(tId);
+      }
+    }
+    if ((item.inactivityGroups||[]).length) scheduleInactivity();
+
+    // double-click on gif to play doubleClickSounds deck until exhausted (non-overlap)
+    ui.gifEl.addEventListener('dblclick', async (e)=>{
+      if (!session.dblDeck) return;
+      const snd = session.dblDeck.next ? session.dblDeck.next() : null;
+      if (snd) await playAudioOnce(snd);
+    });
+
+    // pet gesture detection (long-press + horizontal move)
+    let pressStart = null, moved = false, longPressTimeout = null;
+    const longPressMs = 400;
+    let petPlaying = false;
+    function onStartPress(ev){
+      ev.preventDefault();
+      pressStart = { x: ev.touches ? ev.touches[0].clientX : ev.clientX, y: ev.touches ? ev.touches[0].clientY : ev.clientY, t: Date.now() };
+      moved = false;
+      longPressTimeout = setTimeout(()=>{ /* long press ready */ }, longPressMs);
+    }
+    function onMovePress(ev){
+      if (!pressStart) return;
+      const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const dx = x - pressStart.x;
+      if (Math.abs(dx) > 30) moved = true;
+    }
+    function onEndPress(ev){
+      if (!pressStart) return;
+      const duration = Date.now() - pressStart.t;
+      clearTimeout(longPressTimeout);
+      if (duration >= longPressMs && moved && !petPlaying){
+        petPlaying = true;
+        const snd = session.petDeck.next();
+        if (snd){
+          playAudioOnce(snd).then(()=> { petPlaying = false; });
+        } else petPlaying = false;
+      }
+      pressStart = null;
+    }
+    ui.gifEl.addEventListener('mousedown', onStartPress);
+    ui.gifEl.addEventListener('mousemove', onMovePress);
+    ui.gifEl.addEventListener('mouseup', onEndPress);
+    ui.gifEl.addEventListener('touchstart', onStartPress, {passive:false});
+    ui.gifEl.addEventListener('touchmove', onMovePress, {passive:false});
+    ui.gifEl.addEventListener('touchend', onEndPress, {passive:false});
+
+    // home button closes modal and clears timers
+    ui.homeBtn.addEventListener('click', ()=> {
+      // cleanup
+      ui.modal.style.display = 'none';
+      clearGifTriggers();
+      if (gifTimerId) { clearTimeout(gifTimerId); gifTimerId = null; }
+      if (periodicTimer) { clearTimeout(periodicTimer); periodicTimer = null; }
+      inactivityTimers.forEach(t => clearTimeout(t)); inactivityTimers = [];
+    }, { once:true });
+
+    // ensure rest button cannot be spammed: handled in onRest by flag
+
+    // Note: additional features such as grouping by click-frequency windows (複数分間のルール)
+    // can be added by expanding restDeck selection logic with time-since-last-click heuristics.
+
+  }
+
+  // Initialize: create UI once
+  const UI = createUI();
+
+  // Inject item buttons into page (now our star selector)
+  injectItemButtons();
+
+  // Utility to build menu items for menuModal if needed (the new items are independent)
+  async function buildMenu(){ /* kept for compatibility */ }
+
+  // expose MENU to window for debugging
+  window._ITEM_MENU = MENU;
+
+})();
+</script>
     // initialize display
     updateCentralDisplay();
 
