@@ -497,6 +497,24 @@ header{
         <div id="eatMainWrap" style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
           <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
           <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">長押しで音を鳴らし、離すと次へ</div>
+        
+        
+        
+        
+        <!-- modalEat 内、servedImage を囲む要素の直下に追加 -->
+<div id="enhancedGifOverlay" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:80;">
+  <img id="enhancedGif" src="" alt="gif" style="max-width:90%;max-height:90%;display:block;pointer-events:auto;border-radius:8px;" />
+  <div id="enhancedBubble" style="position:absolute;bottom:10%;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:12px;display:none;font-weight:700;"></div>
+</div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small" style="display:none"></button>
@@ -693,7 +711,7 @@ const MENUS = {
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' }
    }
-/*,
+,
   souda: {
     id: 'souda',
     title: 'ソーダ（試験）',
@@ -739,11 +757,36 @@ const MENUS = {
     showLatteArt: true
   },
 
-  // ...既存メニュー...*/
+  // ...既存メニュー...
 
 };
 
-  
+  MENUS.souda.enhancedConfig = {
+  loopBgmUrls: ['https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_bgm1.mp3'],
+  gifPoolUrls: [
+    'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_anim1.gif',
+    'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_anim2.gif'
+  ],
+  clickPairs: [
+    { text: 'シュワッ！', mp3: 'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_voice1.mp3', gif: 'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_click1.gif' },
+    { text: 'おいしそう！', mp3: 'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_voice2.mp3', gif: 'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_click2.gif' }
+  ],
+  clickCooldownMs: 60000,
+  periodicVoiceUrls: [
+    'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_periodic1.mp3'
+  ],
+  idleVoiceGroups: [
+    { minSec: 30, maxSec: 120, urls: ['https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_idle1.mp3'] }
+  ],
+  doubleClickUrlGroup: [
+    'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_dbl_1.mp3',
+    'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_dbl_2.mp3'
+  ],
+  longPressPetUrlGroup: [
+    'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/souda_pet_1.mp3'
+  ],
+  clickRandomAvoidRepeatUntilSeen: true
+};
   
   // --- 追加: ランダム商品定義（MENUS の中に入れても良いし、ここで separate にしてもOK） ---
 // 既に MENUS があるので、その中に 'random' を追加する場合は MENUS['random']=... としてください。
@@ -761,7 +804,18 @@ MENUS.random = {
   ui: { makeTitle:'ランダム', espressoLabel:'', milkLabel:'', latteArtLabel:'' }
 };
 
-
+// state 既存オブジェクトに追記例
+state.enhanced = {
+  activeOrderId: null,        // 現在 enhanced を動かしている order id
+  gifTimerId: null,           // gif シャッフルタイマー
+  periodicVoiceTimerId: null, // periodic voice timer
+  idleTimerId: null,          // idle trigger timer
+  clickHistory: [],           // 使用済み clickPair index の履歴（reset条件あり）
+  lastClickAt: 0,             // 前回クリック時刻（ms）
+  doubleClickHistory: [],     // double-click履歴
+  longPressActive: false,
+  recentlyPlayedPairIndexes: new Set()
+};
 
   
 /* --- helper functions --- */
@@ -1048,11 +1102,6 @@ async function onMenuSelect(item){
 
 
 
-
-
-
-
-
 // ☆ランダム選択して注文する関数
 function chooseRandomAndOrder(){
   // 集合から 'random' キーを除いた候補リストを作る
@@ -1071,20 +1120,6 @@ function chooseRandomAndOrder(){
   // メニューを選択した時と同じフローを呼ぶ（既存 onMenuSelect を流用）
   onMenuSelect(chosenMenu);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1310,6 +1345,17 @@ function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.pu
 let currentMakingOrderId = null;
 let currentOrderObj = null;
 async function openMakeModal(order){
+
+
+if (MENUS[order.item] && MENUS[order.item].showLatteArt === false) {
+  document.getElementById('artArea').style.display = 'none';
+} else {
+  document.getElementById('artArea').style.display = 'block';
+}
+
+
+
+  
   // ensure order object with id available
   currentMakingOrderId = order.id;
   currentOrderObj = order;
@@ -1461,6 +1507,25 @@ function updateClientOverlay(){
 
 /* showClientServed: only render art/card if order.clientId === local clientId */
 async function showClientServed(order){
+
+
+
+
+// モーダルを開くとき
+if (order.item && MENUS[order.item] && MENUS[order.item].enhanced) {
+  initEnhancedForOrder(order);
+} else {
+  cleanupEnhancedForOrder();
+}
+
+// モーダルを閉じる時 (homeFromEatクリックハンドラの最後)
+cleanupEnhancedForOrder();
+
+
+
+
+
+  
   if (order.servedImageData){
     servedImage.src = order.servedImageData;
   } else {
@@ -1498,8 +1563,320 @@ async function showClientServed(order){
   if (servedSequence.length) servedImage.src = servedSequence[0];
 
   document.getElementById('modalEat').style.display = 'flex';
+
+
+
+// 既存 showClientServed の最後に追加
+if (order.item && MENUS[order.item] && MENUS[order.item].enhanced) {
+  initEnhancedForOrder(order);
+} else {
+  cleanupEnhancedForOrder(); // 古いタイマー等をクリアする保険
 }
 
+  
+}
+
+
+
+
+
+
+
+
+  
+
+
+/* ====== enhanced feature: functions to add ====== */
+
+/* ヘルパ：配列から重複しないランダム選択（履歴に出尽くしたら履歴クリア）
+   list: array, historySet: Set, count: 選ぶ個数(1)
+*/
+function chooseNonRepeatingRandomIndex(list, historySet) {
+  if (!Array.isArray(list) || list.length === 0) return -1;
+  // 全部履歴にある -> クリアして再利用
+  if (historySet.size >= list.length) historySet.clear();
+  const available = list.map((v,i)=>i).filter(i => !historySet.has(i));
+  const idx = available[Math.floor(Math.random()*available.length)];
+  historySet.add(idx);
+  return idx;
+}
+
+/* 初期化：注文（order）を受けて enhanced 機能のタイマーや状態をセットする */
+function initEnhancedForOrder(order){
+  cleanupEnhancedForOrder(); // まずクリア
+
+  state.enhanced.activeOrderId = order.id;
+  const cfg = (MENUS[order.item] && MENUS[order.item].enhancedConfig) || {};
+  // prepare gif pool and shuffle
+  const gifPool = Array.isArray(cfg.gifPoolUrls) ? cfg.gifPoolUrls.slice() : [];
+  // store refs on state for this session
+  state.enhanced.gifPool = gifPool;
+  state.enhanced.gifIndexHistory = new Set();
+  state.enhanced.clickPairs = Array.isArray(cfg.clickPairs) ? cfg.clickPairs.slice() : [];
+  state.enhanced.clickPairHistory = new Set();
+  state.enhanced.lastClickAt = 0;
+  state.enhanced.clickCooldownMs = cfg.clickCooldownMs || 60*1000;
+
+  // start GIF loop: if there are gifs, schedule change at short interval (e.g. every 5 sec)
+  if (gifPool.length > 0) {
+    const overlay = document.getElementById('enhancedGifOverlay');
+    const gifEl = document.getElementById('enhancedGif');
+    overlay.style.display = 'flex'; // show overlay container (but gif is set below)
+    // initial set
+    const idx = chooseNonRepeatingRandomIndex(gifPool, state.enhanced.gifIndexHistory);
+    gifEl.src = gifPool[idx] || '';
+    // schedule shuffle playback: change every N seconds (configurable; here 5-10s random)
+    const scheduleNextGif = () => {
+      const delay = 3000 + Math.floor(Math.random()*5000); // 3~8s
+      state.enhanced.gifTimerId = setTimeout(()=>{
+        const i2 = chooseNonRepeatingRandomIndex(gifPool, state.enhanced.gifIndexHistory);
+        gifEl.src = gifPool[i2] || gifEl.src;
+        scheduleNextGif();
+      }, delay);
+    };
+    scheduleNextGif();
+  }
+
+  // schedule periodic voice play for this client (random interval)
+  if (Array.isArray(cfg.periodicVoiceUrls) && cfg.periodicVoiceUrls.length){
+    const pickAndPlay = ()=>{
+      const arr = cfg.periodicVoiceUrls;
+      const idx = Math.floor(Math.random()*arr.length);
+      const url = arr[idx];
+      if (!url) return;
+      const a = new Audio(url);
+      if (!state.audioUnlocked) {
+        // queue to play after unlock
+        state.pendingPlayQueue.push({ type:'oneoff', fn: ()=> a.play().catch(()=>{}) });
+      } else a.play().catch(()=>{});
+    };
+    const schedulePeriodic = ()=>{
+      const delay = 30*1000 + Math.floor(Math.random()* (5*60*1000 - 30*1000)); // 30s ~ 5min
+      state.enhanced.periodicVoiceTimerId = setTimeout(()=>{
+        pickAndPlay();
+        schedulePeriodic();
+      }, delay);
+    };
+    schedulePeriodic();
+  }
+
+  // schedule idle voice groups if configured
+  if (Array.isArray(cfg.idleVoiceGroups) && cfg.idleVoiceGroups.length){
+    const scheduleIdleCheck = ()=>{
+      // schedule check at a conservative interval
+      state.enhanced.idleTimerId = setTimeout(()=>{
+        const elapsedSecs = (Date.now() - (state.enhanced.lastClickAt || 0))/1000;
+        // find group where min <= elapsed < max
+        for (const g of cfg.idleVoiceGroups){
+          if (elapsedSecs >= (g.minSec || 0) && elapsedSecs < (g.maxSec || Infinity)){
+            // pick random url in g.urls
+            const urls = g.urls || [];
+            if (urls.length){
+              const url = urls[Math.floor(Math.random()*urls.length)];
+              const a = new Audio(url);
+              if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'oneoff', fn: ()=> a.play().catch(()=>{}) });
+              else a.play().catch(()=>{});
+            }
+            break;
+          }
+        }
+        // reschedule
+        scheduleIdleCheck();
+      }, 10*1000); // check every 10s
+    };
+    scheduleIdleCheck();
+  }
+
+  // attach click handler to GIF element (so click triggers pair playback)
+  const gifEl = document.getElementById('enhancedGif');
+  if (gifEl){
+    gifEl.onclick = async (ev) => {
+      await handleEnhancedClick(order);
+    };
+    // double-click and long-press handlers can be registered similarly
+    gifEl.ondblclick = ()=> handleEnhancedDoubleClick(order);
+    attachLongPressAndDragHandlers(gifEl, order);
+  }
+
+  // block click reentrancy flag
+  state.enhanced.locked = false;
+}
+
+/* cleanup: stop timers, hide overlay, reset state */
+function cleanupEnhancedForOrder(){
+  const st = state.enhanced || {};
+  if (st.gifTimerId) { clearTimeout(st.gifTimerId); st.gifTimerId = null; }
+  if (st.periodicVoiceTimerId) { clearTimeout(st.periodicVoiceTimerId); st.periodicVoiceTimerId = null; }
+  if (st.idleTimerId) { clearTimeout(st.idleTimerId); st.idleTimerId = null; }
+  // hide overlay
+  const overlay = document.getElementById('enhancedGifOverlay');
+  const gifEl = document.getElementById('enhancedGif');
+  const bubble = document.getElementById('enhancedBubble');
+  if (overlay) overlay.style.display = 'none';
+  if (gifEl) { gifEl.src = ''; gifEl.onclick = null; gifEl.ondblclick = null; }
+  if (bubble) { bubble.style.display = 'none'; bubble.textContent = ''; }
+  // reset enhanced state
+  state.enhanced = { activeOrderId: null, gifTimerId: null, periodicVoiceTimerId: null, idleTimerId: null, clickHistory: [], lastClickAt: 0, doubleClickHistory: [], longPressActive:false, recentlyPlayedPairIndexes:new Set() };
+}
+
+/* handle click: pick a pair (text+mp3+gif) according to rules */
+async function handleEnhancedClick(order){
+  const cfg = (MENUS[order.item] && MENUS[order.item].enhancedConfig) || {};
+  const pairs = (state.enhanced.clickPairs || []);
+  if (!pairs.length) return; // nothing to do
+  if (state.enhanced.locked) return; // blocked while playing
+  // cooldown check
+  const now = Date.now();
+  if (state.enhanced.lastClickAt && (now - state.enhanced.lastClickAt) < (state.enhanced.clickCooldownMs || 60000)){
+    // if within special grouped window, pick from different group set if configured
+    // else return or ignore: choose to still pick but possibly from groupedPairsByElapsed
+  }
+  // selection logic: try chooseNonRepeatingRandomIndex using clickPairHistory
+  const idx = chooseNonRepeatingRandomIndex(pairs, state.enhanced.clickPairHistory);
+  if (idx < 0) return;
+  const pair = pairs[idx];
+  // lock UI to prevent re-click until done
+  state.enhanced.locked = true;
+  state.enhanced.lastClickAt = now;
+  // show GIF overlay with pair.gif and bubble text
+  const overlay = document.getElementById('enhancedGifOverlay');
+  const gifEl = document.getElementById('enhancedGif');
+  const bubble = document.getElementById('enhancedBubble');
+  if (overlay && gifEl){
+    gifEl.src = pair.gif || gifEl.src;
+    overlay.style.display = 'flex';
+    // bubble
+    if (bubble){
+      bubble.textContent = pair.text || '';
+      bubble.style.display = 'block';
+    }
+  }
+  // play pair.mp3 once
+  if (pair.mp3){
+    const a = new Audio(pair.mp3);
+    // ensure audio unlocked or queue
+    if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'oneoff', fn: ()=> a.play().catch(()=>{}) });
+    else await a.play().catch(()=>{});
+    // wait til audio ends if you want to block: use onended Promise
+    await new Promise(resolve=>{
+      a.onended = ()=> resolve();
+      // fallback: resolve after duration if onended doesn't fire
+      setTimeout(()=> resolve(), (pair.waitMs || 2500));
+    });
+  } else {
+    // if no mp3, still wait a short default time so gif/bubble are visible
+    await new Promise(r=> setTimeout(r, 1200));
+  }
+  // hide bubble and restore GIF overlay (set to next gif from pool)
+  if (bubble) bubble.style.display = 'none';
+  // resume original pool gif (random)
+  if (state.enhanced.gifPool && state.enhanced.gifPool.length){
+    const i2 = chooseNonRepeatingRandomIndex(state.enhanced.gifPool, state.enhanced.gifIndexHistory);
+    const gifEl2 = document.getElementById('enhancedGif');
+    if (gifEl2) gifEl2.src = state.enhanced.gifPool[i2] || gifEl2.src;
+  }
+  state.enhanced.locked = false;
+}
+
+/* double-click handler: plays group of mp3 sequentially without repetition until all played */
+function handleEnhancedDoubleClick(order){
+  const cfg = (MENUS[order.item] && MENUS[order.item].enhancedConfig) || {};
+  const group = cfg.doubleClickUrlGroup || [];
+  if (!group.length) return;
+  // pick non-repeating from group (we will store doubleClickHistory)
+  const idx = chooseNonRepeatingRandomIndex(group, new Set(state.enhanced.doubleClickHistory || []));
+  if (idx < 0) return;
+  // sequential play until group consumed: simplified example - play one url
+  const url = group[idx];
+  const a = new Audio(url);
+  if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'oneoff', fn: ()=> a.play().catch(()=>{}) });
+  else a.play().catch(()=>{});
+  // record history
+  state.enhanced.doubleClickHistory.push(idx);
+}
+
+/* long-press & drag ("なでなで") detection helper
+   - start longpress with mousedown / touchstart
+   - while moving left/right beyond threshold, consider as "pet" and trigger play of random from longPressPetUrlGroup
+   - ensure that each long-press action triggers only once until release
+*/
+function attachLongPressAndDragHandlers(el, order){
+  if (!el) return;
+  let isDown = false;
+  let startX = 0;
+  let moved = false;
+  let longpressTimer = null;
+  const cfg = (MENUS[order.item] && MENUS[order.item].enhancedConfig) || {};
+  function onDown(e){
+    isDown = true;
+    moved = false;
+    const p = (e.touches && e.touches[0]) || e;
+    startX = p.clientX;
+    longpressTimer = setTimeout(()=> {
+      // after longpress threshold, start listening for drag
+      state.enhanced.longPressActive = true;
+    }, 400); // 400ms threshold
+  }
+  function onMove(e){
+    if (!isDown) return;
+    const p = (e.touches && e.touches[0]) || e;
+    const dx = p.clientX - startX;
+    if (Math.abs(dx) > 15) moved = true;
+    if (moved && state.enhanced.longPressActive){
+      // trigger pet play once
+      state.enhanced.longPressActive = false; // block until next down
+      const arr = cfg.longPressPetUrlGroup || [];
+      if (arr.length){
+        const idx = Math.floor(Math.random()*arr.length);
+        const url = arr[idx];
+        const a = new Audio(url);
+        if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'oneoff', fn: ()=> a.play().catch(()=>{}) });
+        else a.play().catch(()=>{});
+      }
+    }
+  }
+  function onUp(e){
+    isDown = false;
+    moved = false;
+    if (longpressTimer){ clearTimeout(longpressTimer); longpressTimer = null; }
+    state.enhanced.longPressActive = false;
+  }
+  el.addEventListener('mousedown', onDown);
+  el.addEventListener('mousemove', onMove);
+  el.addEventListener('mouseup', onUp);
+  el.addEventListener('mouseleave', onUp);
+  el.addEventListener('touchstart', (e)=>{ onDown(e.touches[0]); }, {passive:false});
+  el.addEventListener('touchmove', (e)=>{ onMove(e.touches[0]); }, {passive:false});
+  el.addEventListener('touchend', onUp, {passive:false});
+}
+
+/* cleanup: called when modal closed or switching away */
+function cleanupEnhancedForOrder(){
+  // ... same as earlier cleanup function definition; ensure idempotent
+  const st = state.enhanced || {};
+  try { if (st.gifTimerId) clearTimeout(st.gifTimerId); } catch(e){}
+  try { if (st.periodicVoiceTimerId) clearTimeout(st.periodicVoiceTimerId); } catch(e){}
+  try { if (st.idleTimerId) clearTimeout(st.idleTimerId); } catch(e){}
+  const overlay = document.getElementById('enhancedGifOverlay');
+  const gifEl = document.getElementById('enhancedGif');
+  const bubble = document.getElementById('enhancedBubble');
+  if (overlay) overlay.style.display = 'none';
+  if (gifEl){ gifEl.src = ''; gifEl.onclick = null; gifEl.ondblclick = null; }
+  if (bubble){ bubble.style.display = 'none'; bubble.textContent = ''; }
+  state.enhanced = { activeOrderId: null, gifTimerId: null, periodicVoiceTimerId: null, idleTimerId: null, clickHistory: [], lastClickAt: 0, doubleClickHistory: [], longPressActive:false, recentlyPlayedPairIndexes:new Set() };
+}
+
+/* ====== end enhanced functions ====== */
+
+
+
+
+
+
+
+
+
+  
 /* preload frames */
 async function preloadFrames(basePath, frameCount=5, lastRandom=false){
   const frames = [];
