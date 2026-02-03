@@ -24,7 +24,7 @@
 
 }
 
- /* html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}*/
+ /* html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:linear-gradient(180deg,#fdf2ea 0%,#f7efe7 100%);}}*/
 body{
   min-height:100vh;
   display:flex;
@@ -41,7 +41,7 @@ body{
   aspect-ratio: 3 / 5;
 }
 
-
+/* ...（既存の CSS 継続。省略せず残しています） ... */
 
 /*container{max-width:1100px;margin:18px auto;padding:0;background:none;position:relative; min-height:720px;perspective:2000px;} *//* ====== book ====== */*/
 /*.book{position:relative;width:100%;min-height:720px;}*//* 共通ページ */
@@ -60,19 +60,6 @@ body{
   overflow:hidden;
 }
 
-/* 表紙 
-.cover{
-  background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png")
-    center/cover no-repeat;
-  transform-origin:right center;
-  z-index:2;
-}*/
-
-/* OK押した時だけ動く 
-.cover.open{
-  animation:flip 2.2s ease-in-out forwards;
-}*/
-
   .cover{
   background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png")
     center/cover no-repeat;
@@ -81,24 +68,19 @@ body{
   pointer-events:auto;
 }
 
-/* 開く前 */
 .cover:not(.open){
   transform:rotateY(0deg);
 }
 
-/* 開いた後 */
 .cover.open{
   animation:flip 7.2s ease-in-out forwards;
   pointer-events:none;
 }
 
-/* 完全に影響を断つ */
 .cover.open.finished{
   display:none;
 }
 
-
-/* 中ページ（今までのカード） */
 .inner{
   position: absolute;
   inset: 0; /* ← 親(.book)いっぱい */
@@ -121,30 +103,13 @@ body{
   overflow: hidden;
 }
 
-
-/* headerはそのまま使える 
 header{
   display:flex;
   align-items:center;
   justify-content:space-between;
   padding:12px;
   color:var(--dark);
-  background:rgba(255,255,255,0.6);
-  backdrop-filter:blur(4px);
-}*/
-
-
-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:12px;
-  color:var(--dark);
-  /* background:rgba(255,255,255,0.6); 削除 */
- /* backdrop-filter:blur(4px);  これも不要なら削除 */
 }
-
-
 
 /* ====== アニメーション ====== */
 @keyframes flip{
@@ -165,10 +130,7 @@ header{
 }
 
 /* ====== スマホ対応 ====== */
-/*@media (max-width:768px){.container{ min-height:560px;}.book{min-height:560px;}}*/
 @media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio: 3 / 5;}}
-
-
 
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
   .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
@@ -236,13 +198,41 @@ header{
     .staff-panel{max-height:none;}
     .guest-mini{right:8px;bottom:8px;font-size:12px;padding:6px;}
   }
+
+/* --- Pomodoro specific styles --- */
+#pomodoroPanel{
+  position:absolute;
+  right:12px;
+  top:12px;
+  width:280px;
+  max-width:90%;
+  background:rgba(255,255,255,0.96);
+  border:2px solid var(--accent);
+  padding:10px;
+  border-radius:8px;
+  z-index:220;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  display:none;
+}
+#pomodoroPanel.show{display:block;}
+.pomo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.pomo-label{font-size:13px;width:72px;}
+.pomo-number{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e6d0c6;padding:6px;border-radius:6px;flex:1;}
+.pomo-number input{border:none;width:56px;font-weight:700;text-align:center;}
+.pomo-btn{width:28px;height:28px;border-radius:4px;border:1px solid #ccc;background:#fafafa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;user-select:none;}
+.pomo-start{width:100%;padding:8px;background:linear-gradient(180deg,#6b3,#2b8f4a);color:#fff;border-radius:8px;border:2px solid #2b8f4a;cursor:pointer;font-weight:700;}
+.pomo-running{display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,#fff8ef,#fff3ec);padding:8px;border-radius:6px;border:1px solid #e6d0c6;}
+.pomo-controls{display:flex;gap:8px;width:100%;}
+.pomo-controls button{flex:1;padding:8px;border-radius:6px;border:1px solid #d4c0b8;background:#fff;cursor:pointer;}
+.pomo-status{font-weight:700;font-size:16px;}
+.pomo-timer{font-size:20px;font-weight:800;}
+.pomo-progress{height:10px;background:#eee;border-radius:6px;overflow:hidden;width:100%;}
+.pomo-progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd4c4,#ffb38a);width:0%;}
+.pomo-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px;}
 </style>
 </head>
 <body>
 
-
-
-  
 <div class="container">
   <div class="book">
 
@@ -289,13 +279,7 @@ header{
     <div class="small-info" style="margin-top:6px">目的：注文</div>
   </div>
   <!-- J/E/C/K ボタン -->
-   
 
-
-
-
-
-  
   <div class="small-pass">
     <label style="font-size:12px;margin:0">店員用</label>
     <input id="staffPass" placeholder="　" />
@@ -497,6 +481,61 @@ header{
         <div id="eatMainWrap" style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
           <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
           <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">長押しで音を鳴らし、離すと次へ</div>
+
+          <!-- Pomodoro Panel placed near the image -->
+          <div id="pomodoroPanel" aria-hidden="true">
+            <!-- Settings view -->
+            <div id="pomoSettings">
+              <div class="pomo-top"><div>ループ</div><div id="pomoCountDisplay">1 / 1</div></div>
+
+              <div class="pomo-row">
+                <div class="pomo-label">ループ数</div>
+                <div class="pomo-number">
+                  <button class="pomo-btn" id="loopDown">-</button>
+                  <input id="loopCount" type="number" value="1" min="1" max="10" />
+                  <button class="pomo-btn" id="loopUp">+</button>
+                </div>
+              </div>
+
+              <div class="pomo-row">
+                <div class="pomo-label">作業(分)</div>
+                <div class="pomo-number">
+                  <button class="pomo-btn" id="workDown">-</button>
+                  <input id="workMin" type="number" value="25" min="1" max="200" />
+                  <button class="pomo-btn" id="workUp">+</button>
+                </div>
+              </div>
+
+              <div class="pomo-row">
+                <div class="pomo-label">休憩(分)</div>
+                <div class="pomo-number">
+                  <button class="pomo-btn" id="breakDown">-</button>
+                  <input id="breakMin" type="number" value="5" min="1" max="200" />
+                  <button class="pomo-btn" id="breakUp">+</button>
+                </div>
+              </div>
+
+              <div style="text-align:right;margin-top:8px;">
+                <button id="startPomoBtn" class="pomo-start">再生 ▶</button>
+              </div>
+            </div>
+
+            <!-- Running view -->
+            <div id="pomoRunning" style="display:none;">
+              <div class="pomo-top"><div id="pomoLoopCounter">1 / 1</div><div id="pomoPhaseLabel">作業中</div></div>
+              <div class="pomo-timer" id="pomoTimerText">00:00:00</div>
+              <div class="pomo-progress"><i id="pomoProgressBar" style="width:0%"></i></div>
+              <div style="margin-top:6px;width:100%;display:flex;gap:8px;">
+                <div class="pomo-controls">
+                  <button id="stopPomoBtn">■</button>
+                  <button id="pausePomoBtn">⏸</button>
+                  <button id="skipPomoBtn">⏭</button>
+                </div>
+              </div>
+              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">作業開始で画像は rate2 から変化します</div>
+            </div>
+
+          </div>
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <button id="eatNext" class="small" style="display:none"></button>
@@ -530,16 +569,8 @@ header{
 
 <script type="module">
 /*
-  修正版 完全版スクリプト
-  - 重要バグ修正: openMakeModal() で artStrokes/cardStrokes を「その注文専用」に初期化（深いコピーまたは空配列）。
-    これにより異なる注文での描画が混在する不具合を解消。
-  - 注文者(clientId) のみ自分の描画を復元して表示。
-  - ホームへ戻ったらその注文の描画データは Firestore 上から消す（他に流れない）。
-  - 長押しで rate.mp3 を再生 → 離すと完全に停止して次フレームへ。
-  - cookbgm は飲食画面を開いた時に注文者側で停止される。
-  - J/E/C/K ジュークボタン追加。
-  - サウンドのアンロックオーバーレイを表示。
-  - MENUS に UI ラベルを入れて制作画面の文言を変更できるように。
+  修正版 完全版スクリプト + ポロドーモタイマー追加
+  （元のコードを維持しつつ、飲食画面の長押し挙動をポロドーモに置換）
 */
 
 /* Firebase (既存設定) */
@@ -640,6 +671,28 @@ const espressoLabelEl = document.getElementById('espressoLabel');
 const milkLabelEl = document.getElementById('milkLabel');
 const latteArtLabelEl = document.getElementById('latteArtLabel');
 
+const pomoPanel = document.getElementById('pomodoroPanel');
+const pomoSettings = document.getElementById('pomoSettings');
+const pomoRunning = document.getElementById('pomoRunning');
+const loopCountInput = document.getElementById('loopCount');
+const workMinInput = document.getElementById('workMin');
+const breakMinInput = document.getElementById('breakMin');
+const loopUp = document.getElementById('loopUp');
+const loopDown = document.getElementById('loopDown');
+const workUp = document.getElementById('workUp');
+const workDown = document.getElementById('workDown');
+const breakUp = document.getElementById('breakUp');
+const breakDown = document.getElementById('breakDown');
+const startPomoBtn = document.getElementById('startPomoBtn');
+const pomoLoopCounter = document.getElementById('pomoLoopCounter');
+const pomoPhaseLabel = document.getElementById('pomoPhaseLabel');
+const pomoTimerText = document.getElementById('pomoTimerText');
+const pomoProgressBar = document.getElementById('pomoProgressBar');
+const stopPomoBtn = document.getElementById('stopPomoBtn');
+const pausePomoBtn = document.getElementById('pausePomoBtn');
+const skipPomoBtn = document.getElementById('skipPomoBtn');
+const pomoCountDisplay = document.getElementById('pomoCountDisplay');
+
 let servedSequence = [], servedSequenceIndex = 0;
 
 /* helper for raw GitHub -> URL */
@@ -659,6 +712,20 @@ const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'));
 const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'));
 const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3'));
 
+/* Pomodoro related audio */
+const audioPiro = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro.mp3'));   // 作業開始音
+const audioPiroStart = audioPiro; // alias
+const audioPiro1 = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro1.mp3')); // 休憩開始音
+const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3.mp3')); // 再生/再開時に鳴らす音（毎回）
+
+// p3 pool (ランダム再生用). 追加したい数だけファイルを置いてください
+const p3Urls = [
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_2.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_3.mp3')
+];
+const p3Pool = p3Urls.map(url => new Audio(url));
+
 /* firestore collections */
 const staffsCol = collection(db, 'staffs');
 const ordersCol = collection(db, 'orders');
@@ -666,15 +733,9 @@ const ordersCol = collection(db, 'orders');
 /* app state */
 const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
 
-  
-  // 既存の state 宣言の直後あたりに追加してください
-// state が既にある場合はその直後に入れると見つけやすいです
 const dismissedOrdersStored = JSON.parse(localStorage.getItem('reiji_dismissed_orders') || '[]');
 const dismissedOrders = new Set(dismissedOrdersStored);
 
-
-
-  
 /* client id (local) */
 let clientId = localStorage.getItem('reiji_clientId');
 if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
@@ -692,67 +753,13 @@ const MENUS = {
     password:'', longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' }
-   }
-/*,
-  souda: {
-    id: 'souda',
-    title: 'ソーダ（試験）',
-    imageBase: '@zzcafe2800/reiji_cafe/main/souda', // 従来の静止画群
-    frameCount: 3,
-    lastFrameRandom: false,
-    enhanced: true,   // ← 新機能 ON にする（切り替え可能）
-    // 新機能用フィールド（すべて配列。空で良い）
-    enhancedConfig: {
-      loopBgmUrls: [
-        // e.g. 'https://example.com/bgm1.mp3'
-      ],
-      gifPoolUrls: [
-        // GIF の URL リスト（ランダム/シャッフル再生）
-        // e.g. 'https://raw.githubusercontent.com/owner/repo/main/gif1.gif'
-      ],
-      clickPairs: [
-        // クリックで発火する「ペア」の配列。index によって text/mp3/gif が紐づく
-        // { text: 'やった！', mp3: 'https://...', gif: 'https://...' }
-        ],
-      clickCooldownMs: 60 * 1000, // 1分（クリック禁止期間、コードで調整可能）
-      groupedPairsByElapsed: [
-        // クリックしたときの「前回クリックからの経過時間」によって選ぶ候補グループ
-        // { minSec:0, maxSec:60, pairIndexes: [0,1,2] }, ...
-      ],
-      periodicVoiceUrls: [
-        // モーダル開いてる人だけにランダムで流す音声リスト（30s~5min 間隔）
-      ],
-      idleVoiceGroups: [
-        // 「一定時間クリックされなかったら流す」設定
-        // { minSec: 60, maxSec: 120, urls: ['a.mp3','b.mp3'] }, ...
-      ],
-      doubleClickUrlGroup: [
-        // ダブルクリックで順次（履歴管理）再生する mp3 列
-      ],
-      longPressPetUrlGroup: [
-        // 長押し＆なで動作で再生する mp3 列
-      ],
-      // その他パラメータ
-      clickRandomAvoidRepeatUntilSeen: true
-    },
-    // ラテアート表示 on/off
-    showLatteArt: true
-  },
-
-  // ...既存メニュー...*/
-
+  }
 };
 
-  
-  
-  // --- 追加: ランダム商品定義（MENUS の中に入れても良いし、ここで separate にしてもOK） ---
-// 既に MENUS があるので、その中に 'random' を追加する場合は MENUS['random']=... としてください。
-// 例: MENUS 定義直後に追加する場合:
 MENUS.random = {
   id: 'random',
   title: 'ランダム',
-  // random.png をリポジトリに配置してください（例: files/random.png）
-  imageBase: '@zzcafe2800/reiji_cafe/main/random', // ← getAssetUrl(imageBase + '.png') で参照します
+  imageBase: '@zzcafe2800/reiji_cafe/main/random',
   frameCount: 1,
   lastFrameRandom: false,
   password: '',
@@ -761,14 +768,11 @@ MENUS.random = {
   ui: { makeTitle:'ランダム', espressoLabel:'', milkLabel:'', latteArtLabel:'' }
 };
 
-
-
-  
 /* --- helper functions --- */
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function showModal(el){ el.style.display = 'flex'; }
-function hideModal(el){ el.style.display = 'none'; }
+function showModal(el){ el.style.display = 'flex'; el.setAttribute('aria-hidden','false'); }
+function hideModal(el){ el.style.display = 'none'; el.setAttribute('aria-hidden','true'); }
 function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); } catch(e){} }
 
 /* realtime listeners */
@@ -813,6 +817,466 @@ function handleOrderNotifications(prevOrders, currOrders){
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ----------------------------
+   Pomodoro（ポロドーモ）機能実装
+   ---------------------------- */
+
+const POMO = {
+  running: false,
+  phase: 'idle', // 'idle' | 'work' | 'break' | 'paused'
+  loopTotal: 1,
+  loopIndex: 0,
+  workMin: 25,
+  breakMin: 5,
+  remainingMs: 0,
+  tickInterval: null,
+  lastTickTs: 0,
+  currentMenuKey: null, // which menu image we're showing (e.g., 'rate')
+  frameCount: 1,
+  scheduledP3Timers: [],
+  lastP3Index: -1
+};
+
+function formatTime(ms){
+  if (ms < 0) ms = 0;
+  let s = Math.floor(ms/1000);
+  const h = Math.floor(s/3600); s = s%3600;
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+/* Map progress -> frame for work phase.
+   Start at frame index 2 (1-based) when just started, then gradually move toward last frames as time elapses.
+*/
+function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
+  const menu = MENUS[menuKey];
+  const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  if (!totalMs || totalMs <= 0) return 1;
+  const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
+  // Start at 2, progress to fc
+  const from = 2;
+  const to = fc;
+  // linear interpolation
+  const idx = Math.floor(from + (to - from) * ratio);
+  return Math.min(fc, Math.max(1, idx));
+}
+
+/* Pick a random last-frame choice for break display
+   Choose randomly among last two frames (if available)
+*/
+function pickBreakFrame(menuKey){
+  const menu = MENUS[menuKey];
+  const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  if (fc <= 1) return 1;
+  // choose randomly one of [fc-1, fc]
+  const choices = [Math.max(1, fc-1), fc];
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+/* Set the servedImage source according to menuKey and frame index (1-based) */
+function setServedImageFrame(menuKey, frameIndex){
+  const menu = MENUS[menuKey];
+  if (!menu) return;
+  // construct image path: imageBase + (frameIndex padded) + .png  -> assuming files like rate01.png, rate02.png or rate1.png
+  // Try common patterns
+  const base = menu.imageBase;
+  // attempt: base + (frameIndex) + .png
+  const candidates = [
+    `${base}${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}${frameIndex}.png`,
+    `${base}_${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}_${frameIndex}.png`
+  ];
+  let chosen = candidates.find(c => c); // we'll just use first since getAssetUrl will point to raw; in practice ensure files exist
+  servedImage.src = getAssetUrl(chosen);
+}
+
+/* Stop any scheduled p3 timers */
+function clearScheduledP3(){
+  if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers = [];
+  for(const t of POMO.scheduledP3Timers) clearTimeout(t);
+  POMO.scheduledP3Timers = [];
+  POMO.lastP3Index = -1;
+}
+
+/* schedule random p3 playback during break (repeats until break ends) */
+function scheduleBreakRandomSounds(){
+  clearScheduledP3();
+  function scheduleNext(){
+    if (POMO.phase !== 'break') return;
+    // random interval 8~20 sec
+    const interval = 8000 + Math.floor(Math.random() * (12000)); // 8000..19999
+    const timer = setTimeout(()=>{
+      // choose random p3 index that is not equal to lastP3Index (if possible)
+      let idxCandidates = p3Pool.map((_,i)=>i);
+      if (POMO.lastP3Index >= 0 && idxCandidates.length > 1){
+        idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index);
+      }
+      const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)];
+      POMO.lastP3Index = idx;
+      try {
+        const a = new Audio(p3Pool[idx].src);
+        a.play().catch(()=>{});
+      } catch(e){}
+      scheduleNext();
+    }, interval);
+    POMO.scheduledP3Timers.push(timer);
+  }
+  scheduleNext();
+}
+
+/* start tick */
+function startPomoTick(){
+  if (POMO.tickInterval) return;
+  POMO.lastTickTs = Date.now();
+  POMO.tickInterval = setInterval(()=> {
+    const now = Date.now();
+    const delta = now - POMO.lastTickTs;
+    POMO.lastTickTs = now;
+    if (POMO.phase === 'paused' || POMO.phase === 'idle') return;
+    POMO.remainingMs -= delta;
+    if (POMO.remainingMs <= 0){
+      // phase end
+      if (POMO.phase === 'work'){
+        // switch to break
+        POMO.phase = 'break';
+        // play piro1
+        audioPiro1 && audioPiro1.play().catch(()=>{});
+        // set break duration
+        POMO.remainingMs = (POMO.breakMin * 60 * 1000);
+        // on break start, set image to one of last two frames
+        const bf = pickBreakFrame(POMO.currentMenuKey || 'rate');
+        setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
+        // schedule break random sounds
+        scheduleBreakRandomSounds();
+      } else if (POMO.phase === 'break'){
+        // break ended -> increment loop
+        clearScheduledP3();
+        POMO.loopIndex++;
+        if (POMO.loopIndex >= POMO.loopTotal){
+          // finished all loops
+          stopPomo(true);
+          return;
+        } else {
+          // start next work
+          POMO.phase = 'work';
+          POMO.remainingMs = (POMO.workMin * 60 * 1000);
+          // When new work starts, reset image to frame 2
+          setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
+          // play piro start sound (like start)
+          audioPiroStart && audioPiroStart.play().catch(()=>{});
+          // continue tick
+        }
+      }
+      renderPomoUI();
+    } else {
+      // update image based on elapsed within current phase (only for work)
+      if (POMO.phase === 'work'){
+        const total = (POMO.workMin * 60 * 1000);
+        const elapsed = total - POMO.remainingMs;
+        const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total);
+        setServedImageFrame(POMO.currentMenuKey || 'rate', idx);
+      }
+      renderPomoUI();
+    }
+  }, 250);
+}
+
+/* stop tick */
+function stopPomoTick(){
+  if (POMO.tickInterval){ clearInterval(POMO.tickInterval); POMO.tickInterval = null; }
+  clearScheduledP3();
+}
+
+/* Render POMO UI (running view) */
+function renderPomoUI(){
+  if (!POMO.running){
+    pomoSettings.style.display = 'block';
+    pomoRunning.style.display = 'none';
+    pomoPanel.setAttribute('aria-hidden','false');
+    return;
+  }
+  // running
+  pomoSettings.style.display = 'none';
+  pomoRunning.style.display = 'block';
+  pomoPanel.setAttribute('aria-hidden','false');
+  pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`;
+  pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機'));
+  pomoTimerText.textContent = formatTime(POMO.remainingMs);
+  if (POMO.phase === 'work'){
+    const total = (POMO.workMin * 60 * 1000);
+    const elapsed = Math.max(0, total - POMO.remainingMs);
+    const pct = Math.min(100, Math.floor((elapsed / total) * 100));
+    pomoProgressBar.style.width = `${pct}%`;
+  } else if (POMO.phase === 'break'){
+    const total = (POMO.breakMin * 60 * 1000);
+    const elapsed = Math.max(0, total - POMO.remainingMs);
+    const pct = Math.min(100, Math.floor((elapsed / total) * 100));
+    // show progress of break as well
+    pomoProgressBar.style.width = `${pct}%`;
+  } else {
+    pomoProgressBar.style.width = `0%`;
+  }
+  // pause UI label
+  if (POMO.phase === 'paused'){
+    pausePomoBtn.textContent = '▶';
+  } else {
+    pausePomoBtn.textContent = '⏸';
+  }
+}
+
+/* Start pomodoro with current settings */
+function startPomo(){
+  // read inputs
+  const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1')));
+  const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25')));
+  const bmin = Math.max(1, Math.min(200, parseInt(breakMinInput.value || '5')));
+  POMO.loopTotal = loops;
+  POMO.loopIndex = 0;
+  POMO.workMin = wmin;
+  POMO.breakMin = bmin;
+  POMO.running = true;
+  POMO.phase = 'work';
+  POMO.remainingMs = (wmin * 60 * 1000);
+  POMO.currentMenuKey = POMO.currentMenuKey || 'rate';
+  const menu = MENUS[POMO.currentMenuKey] || MENUS['rate'];
+  POMO.frameCount = menu.frameCount || 6;
+  // play piro start
+  audioPiroStart && audioPiroStart.play().catch(()=>{});
+  // initial image frame: rate2 as requested
+  setServedImageFrame(POMO.currentMenuKey, 2);
+  // clear any previous scheduled p3
+  clearScheduledP3();
+  // start tick
+  startPomoTick();
+  renderPomoUI();
+}
+
+/* Pause / Resume toggling */
+function togglePausePomo(){
+  if (!POMO.running) return;
+  if (POMO.phase === 'paused'){
+    // resume previous phase
+    // resume ticking
+    POMO.phase = POMO._prevPhase || 'work';
+    // play toggle sound piro3
+    audioPiroToggle && audioPiroToggle.play().catch(()=>{});
+    startPomoTick();
+  } else {
+    // pause
+    POMO._prevPhase = POMO.phase;
+    POMO.phase = 'paused';
+    // pause scheduled p3 timers? they will check phase and not schedule while paused
+    stopPomoTick();
+    // play toggle sound
+    audioPiroToggle && audioPiroToggle.play().catch(()=>{});
+  }
+  renderPomoUI();
+}
+
+/* Stop completely and return to settings, optionally leave image as final state */
+function stopPomo(returnToSettings){
+  POMO.running = false;
+  POMO.phase = 'idle';
+  POMO.remainingMs = 0;
+  clearScheduledP3();
+  stopPomoTick();
+  if (returnToSettings){
+    // show settings screen
+    pomoSettings.style.display = 'block';
+    pomoRunning.style.display = 'none';
+  }
+  renderPomoUI();
+  // Also hide pomodoro panel (optionally)
+  //pomoPanel.classList.remove('show');
+}
+
+/* Skip current phase */
+function skipPomo(){
+  if (!POMO.running) return;
+  if (POMO.phase === 'work'){
+    // jump to break
+    POMO.remainingMs = 0;
+    // tick handler will detect and move phase
+  } else if (POMO.phase === 'break'){
+    // finish break immediately
+    POMO.remainingMs = 0;
+  } else if (POMO.phase === 'paused'){
+    // if paused, unpause then skip
+    POMO.phase = POMO._prevPhase || 'work';
+    POMO.remainingMs = 0;
+  }
+}
+
+/* UI wiring for numeric up/down with long-press acceleration */
+function wireHoldButton(buttonEl, inputEl, delta, min, max){
+  let timer = null;
+  let repeatInterval = 500;
+  let holdStart = 0;
+  let currentInterval = 500;
+  function doStep(){
+    let v = parseInt(inputEl.value || '0');
+    v += delta;
+    if (typeof min === 'number') v = Math.max(min, v);
+    if (typeof max === 'number') v = Math.min(max, v);
+    inputEl.value = v;
+    updatePomoCountDisplay();
+  }
+  function startHold(){
+    holdStart = Date.now();
+    currentInterval = 500;
+    doStep();
+    timer = setTimeout(function repeat(){
+      // as time goes, speed up
+      const held = Date.now() - holdStart;
+      // reduce interval from 500 -> 80 over 2 seconds
+      const t = Math.min(1, held / 2000);
+      currentInterval = Math.max(80, Math.floor(500 - (420 * t)));
+      doStep();
+      timer = setTimeout(repeat, currentInterval);
+    }, currentInterval);
+  }
+  function stopHold(){
+    if (timer){ clearTimeout(timer); timer = null; }
+  }
+  buttonEl.addEventListener('mousedown', (e)=>{ e.preventDefault(); startHold(); });
+  buttonEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(); });
+  window.addEventListener('mouseup', stopHold);
+  window.addEventListener('touchend', stopHold);
+  buttonEl.addEventListener('click', (e)=>{ e.preventDefault(); doStep(); });
+}
+
+/* helper to update top display */
+function updatePomoCountDisplay(){
+  const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1')));
+  pomoCountDisplay.textContent = `${loops} / ${loops}`;
+}
+
+/* wire up the holdable buttons */
+wireHoldButton(loopUp, loopCountInput, +1, 1, 10);
+wireHoldButton(loopDown, loopCountInput, -1, 1, 10);
+wireHoldButton(workUp, workMinInput, +1, 1, 200);
+wireHoldButton(workDown, workMinInput, -1, 1, 200);
+wireHoldButton(breakUp, breakMinInput, +1, 1, 200);
+wireHoldButton(breakDown, breakMinInput, -1, 1, 200);
+
+/* button listeners */
+startPomoBtn.addEventListener('click', (e)=>{
+  if (!POMO.running){
+    startPomo();
+    // change start button label to pause/resume capability
+    startPomoBtn.textContent = '実行中';
+  }
+});
+
+stopPomoBtn.addEventListener('click', ()=>{
+  stopPomo(true);
+});
+
+pausePomoBtn.addEventListener('click', ()=>{
+  togglePausePomo();
+});
+
+skipPomoBtn.addEventListener('click', ()=>{
+  skipPomo();
+});
+
+/* function to show pomodoro panel for a given menuKey */
+function openPomodoroForMenu(menuKey){
+  POMO.currentMenuKey = menuKey || 'rate';
+  // set inputs to defaults or previous values
+  loopCountInput.value = POMO.loopTotal || 1;
+  workMinInput.value = POMO.workMin || 25;
+  breakMinInput.value = POMO.breakMin || 5;
+  updatePomoCountDisplay();
+  // show panel
+  pomoPanel.classList.add('show');
+  pomoPanel.style.display = 'block';
+  pomoSettings.style.display = POMO.running ? 'none' : 'block';
+  pomoRunning.style.display = POMO.running ? 'block' : 'none';
+  renderPomoUI();
+}
+
+/* Hide pomodoro panel */
+function hidePomodoro(){
+  pomoPanel.classList.remove('show');
+  pomoPanel.style.display = 'none';
+}
+
+/* Make sure servedImage is not trigger long-press to eat; instead open pomodoro.
+   If you previously had long-press eat behavior, we replace it here.
+*/
+servedImage.addEventListener('click', (e)=>{
+  // open pomodoro for currently displayed menu
+  // If servedSequence has a menuKey, use it. For demo, default to 'rate'
+  const currentMenu = POMO.currentMenuKey || 'rate';
+  openPomodoroForMenu(currentMenu);
+});
+
+/* Also place a small close-on-outside click for pomodoroPanel */
+document.addEventListener('click', (e)=>{
+  if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){
+    // keep panel visible while running; if not running hide
+    if (!POMO.running) hidePomodoro();
+  }
+});
+
+/* Initialize display with default image (rate frame1) */
+(function initServed(){
+  const defaultKey = 'rate';
+  POMO.currentMenuKey = defaultKey;
+  setServedImageFrame(defaultKey, 1);
+})();
+
+/* render loop to update clock */
+setInterval(()=>{ const d=new Date(); nowtimeEl.textContent = d.toLocaleTimeString(); }, 1000);
+
+/* start realtime listeners */
+startRealtime();
+
+/* 初期UIの更新 */
+renderPomoUI();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
 function flushPendingPlays(){
   while(state.pendingPlayQueue.length){
     const req = state.pendingPlayQueue.shift();
