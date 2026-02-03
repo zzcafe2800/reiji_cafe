@@ -412,7 +412,7 @@
                   <button id="skipPomoBtn">⏭</button>
                 </div>
               </div>
-              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">作業してお皿の底を見てみよう</div>
+              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">食べるには作業が必要です（お皿の底には…）</div>
             </div>
 
           </div>
@@ -1557,7 +1557,7 @@ function startPomoTick(){
 
   // start message rotation every 6s while running
   if (POMO.messageTimer) clearInterval(POMO.messageTimer);
-  POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000);
+  POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 20000);
   rotatePomoMessage();
 }
 
