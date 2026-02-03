@@ -3,30 +3,31 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム（ポロドーモ＆BOT対応）</title>
+<title>仮想飲食システム（v2 — Pomodoro / BOT / Offline 対応）</title>
 <meta name="format-detection" content="telephone=no">
-<!-- おしゃれな日本語フォント（カード用） -->
+<!-- おしゃれフォント（カード用） -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
     --card-skin:#fff2e6;
   }
-  html,body{height:100%;margin:0;font-family:"Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;}
+  html,body{height:100%;margin:0;font-family: "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;background: url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;}
   body{min-height:100vh;display:flex;align-items:center;justify-content:center;}
-  .container{width:100%;max-width:420px;margin:0;position:relative;perspective:2000px;aspect-ratio:3/5;}
+  .container{width:100%;max-width:420px;margin:0;position:relative;perspective:2000px;aspect-ratio: 3 / 5;}
   .book{position:relative;width:100%;height:100%;}
   .page{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;}
   .cover{background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png") center/cover no-repeat;transform-origin:right center;z-index:2;pointer-events:auto;}
   .cover.open{animation:flip 7.2s ease-in-out forwards;pointer-events:none;}
-  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center/cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
+  .cover.open.finished{display:none;}
+  .inner{position:absolute;inset:0;background: url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center / cover no-repeat;box-shadow: 0 6px 20px rgba(0,0,0,0.15);border-radius: 10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
   header{display:flex;align-items:center;justify-content:space-between;padding:12px;color:var(--dark);}
   @keyframes flip{0%{transform:rotateY(0deg);box-shadow:0 20px 40px rgba(0,0,0,.25);}40%{transform:rotateY(-55deg);}70%{transform:rotateY(-130deg);}100%{transform:rotateY(-180deg);box-shadow:none;}}
-  @media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio:3/5;}}
+  @media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio: 3 / 5;}}
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
   .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
-  .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:120px;aspect-ratio:5/3;font-size:clamp(16px,4vw,30px);display:flex;align-items:center;justify-content:center;text-align:center;}
+  .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:120px;aspect-ratio:5 / 3;font-size:clamp(16px, 4vw, 30px);display:flex;align-items:center;justify-content:center;text-align:center;}
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
   .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
   .small-pass input{width:100px;padding:4px;}
@@ -60,7 +61,8 @@
   .jukebox img{width:56px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;position:relative;}
   .jukebox .hint{position:absolute;right:2px;bottom:2px;font-size:9px;background:rgba(255,255,255,0.9);padding:2px;border-radius:3px;}
   .wrapper{position:relative;display:inline-block;}
-  /* Pomodoro panel */
+
+  /* POMODORO */
   #pomodoroPanel{position:absolute;right:10px;top:10px;width:260px;max-width:86%;background:rgba(255,255,255,0.98);border:2px solid var(--accent);padding:10px;border-radius:8px;z-index:220;box-shadow:0 10px 30px rgba(0,0,0,0.18);display:none;}
   #pomodoroPanel.show{display:block;}
   .pomo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
@@ -76,22 +78,32 @@
   .pomo-timer{font-size:20px;font-weight:800;}
   .pomo-progress{height:10px;background:#eee;border-radius:6px;overflow:hidden;width:100%;}
   .pomo-progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd4c4,#ffb38a);width:0%;}
+
+  /* small screens */
   @media (max-width:520px){
     #pomodoroPanel{right:6px;top:6px;width:220px;}
     .menu-item img.menu-thumb{height:90px;}
     .modal{width:94%;}
   }
-  /* bot overlay disable interact */
-  #botOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.36);display:none;align-items:center;justify-content:center;z-index:400;color:#fff;}
-  #botOverlay.show{display:flex;}
-  #botOverlay .panel{background:#fff;padding:18px;border-radius:8px;color:#111;border:3px solid var(--accent);width:320px;text-align:center;}
+
+  /* card text style for generated message-card */
+  .card-text{
+    font-family: 'Noto Serif JP', serif;
+    font-weight:700;
+    color:#222;
+    text-align:center;
+  }
 </style>
 </head>
 <body>
 
 <div class="container">
   <div class="book">
+
+    <!-- 表紙 -->
     <div class="page cover"></div>
+
+    <!-- 内側 -->
     <div class="page inner">
 
       <header>
@@ -167,6 +179,7 @@
   </div>
 </div>
 
+<!-- 音声アンロック -->
 <div id="soundOverlay" class="sound-overlay" style="display:none;">
   <div class="sound-panel">
     <h3>効果音など流しますか？</h3>
@@ -178,6 +191,7 @@
   </div>
 </div>
 
+<!-- ステータス -->
 <div id="orderStatusOverlay" class="status-overlay">
   <div class="status-card" id="orderStatusCard">
     <div id="orderStatusMain">状態</div>
@@ -185,10 +199,7 @@
   </div>
 </div>
 
-<!-- Bot processing overlay (blocks interactions while BOT processing) -->
-<div id="botOverlay"><div class="panel"><div id="botOverlayText">BOTが対応中です…</div></div></div>
-
-<!-- Modals -->
+<!-- 名前入力 -->
 <div id="modalName" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
     <h3>ゲーム内の名前</h3>
@@ -200,6 +211,7 @@
   </div>
 </div>
 
+<!-- メニュー -->
 <div id="modalMenu" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
     <h3>メニューを選択</h3>
@@ -210,6 +222,7 @@
   </div>
 </div>
 
+<!-- 制作モーダル（省略せず同様） -->
 <div id="modalMakeLatte" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
   <div class="modal" style="width:95%;max-width:920px;">
     <h3 id="makeTitle">カフェラテ制作（担当：<span id="makerName"></span>）</h3>
@@ -224,7 +237,6 @@
             </div>
           </div>
         </div>
-
         <div style="margin-top:8px;">
           <label id="espressoLabel">エスプレッソ注ぎ</label>
           <div style="background:#eee;border-radius:6px;padding:6px;">
@@ -240,7 +252,6 @@
             <div class="small-info">合格ゾーン: 95%〜105%</div>
           </div>
         </div>
-
         <div style="margin-top:8px;">
           <label id="milkLabel">フームドミルク注ぎ</label>
           <div style="background:#eee;border-radius:6px;padding:6px;">
@@ -263,7 +274,6 @@
           <strong id="latteArtLabel">ラテアート（似顔絵など）</strong>
           <div style="margin-top:8px;">
             <div class="art-area" id="artArea">
-              <!-- artBg (background) and artLayer (transparent layer for strokes) -->
               <canvas id="artBg" width="240" height="240"></canvas>
               <canvas id="artLayer" width="240" height="240"></canvas>
             </div>
@@ -311,10 +321,12 @@
           <button id="cancelMake" class="small">中止</button>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
+<!-- 飲食モーダル -->
 <div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal" style="width:95%;max-width:960px;">
     <h3>飲食</h3>
@@ -323,6 +335,7 @@
         <div id="eatMainWrap" style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;">
           <img id="servedImage" src="" alt="商品画像" style="max-width:100%;max-height:100%;border-radius:8px;" />
           <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">長押しで音を鳴らし、離すと次へ</div>
+
           <div id="pomodoroPanel" aria-hidden="true">
             <div id="pomoSettings">
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
@@ -375,6 +388,7 @@
             </div>
 
           </div>
+
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <div id="eatSoundInfo" class="small-info">—</div>
@@ -401,29 +415,33 @@
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
 <script type="module">
-/* ===== Firebase imports ===== */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import {
-  getFirestore,
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+/*
+  v2 完全版スクリプト
+  - Firebase 初期化は try/catch でフォールバック (offline mode)
+  - BOTスタッフ機能（人がいないときローカルで対応）
+  - Pomodoro統合（servedImageクリックで開く）
+  - erase/replayバグ修正（背景が消えないようにストロークの再構成）
+  - 名前入力のキャンセル挙動修正（イベントハンドラの重複を避ける）
+  - スタッフ名重複の際��旧レコードを削除して新しいのみ残す
+  - メニュー追加通知は staffFull が開いているスタッフにのみ tyaimu.mp3 を鳴らす
+  - 注文ボタン押下時の tyaimu 再生は行わない（要望）
+  - 「誰でも注文可」判定は日本時間に基づく（UTC+9）
+  - Firestore の読み書きを最小限にする（BOTモードは可能な限りローカル処理）
+*/
 
-/* ===== Firebase config（新サーバー） ===== */
-const firebaseConfig = {
+/* Firebase imports & init (try/catch fallback) */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-analytics.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+const firebaseConfigNew = {
   apiKey: "AIzaSyBJe7_PGeOEkCyC1NxaTMc5bjelQwv2OaU",
   authDomain: "insyoku-f9aee.firebaseapp.com",
   projectId: "insyoku-f9aee",
@@ -433,25 +451,20 @@ const firebaseConfig = {
   measurementId: "G-QET0N3KP2L"
 };
 
-/* ===== 初期化 ===== */
-let app, auth, db;
-
+let app, analytics, auth, db;
+let FIREBASE_AVAILABLE = true;
 try {
-  app  = initializeApp(firebaseConfig);
+  app = initializeApp(firebaseConfigNew);
+  analytics = getAnalytics(app);
   auth = getAuth(app);
-  db   = getFirestore(app);
-
-  // 匿名ログイン
-  signInAnonymously(auth).catch(e=>{
-    console.warn("anonymous sign-in failed", e);
-  });
-
+  db = getFirestore(app);
+  signInAnonymously(auth).catch(e=>console.warn('anonymous sign-in failed', e));
 } catch(e){
-  console.warn("Firebase init failed - offline mode", e);
-  db = null;
+  console.warn('Firebase init failed - offline mode', e);
+  app = null; analytics = null; auth = null; db = null; FIREBASE_AVAILABLE = false;
 }
 
-/* DOM refs */
+/* DOM refs (short names reused) */
 const nowtimeEl = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
 const shiftShort = document.getElementById('shiftShort');
@@ -459,8 +472,8 @@ const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
 const modalName = document.getElementById('modalName');
 const orderName = document.getElementById('orderName');
-const okOrderName = document.getElementById('okOrderName');
-const cancelOrderName = document.getElementById('cancelOrderName');
+const okOrderNameBtn = document.getElementById('okOrderName');
+const cancelOrderNameBtn = document.getElementById('cancelOrderName');
 const modalMenu = document.getElementById('modalMenu');
 const menuGrid = document.getElementById('menuGrid');
 const backMenu = document.getElementById('backMenu');
@@ -513,7 +526,6 @@ const modalEat = document.getElementById('modalEat');
 const servedImage = document.getElementById('servedImage');
 const servedArtMini = document.getElementById('servedArtMini');
 const servedCardMini = document.getElementById('servedCardMini');
-const eatNext = document.getElementById('eatNext');
 const saveAllBtn = document.getElementById('saveAllBtn');
 const homeFromEat = document.getElementById('homeFromEat');
 const orderStatusOverlay = document.getElementById('orderStatusOverlay');
@@ -521,8 +533,6 @@ const orderStatusMain = document.getElementById('orderStatusMain');
 const orderStatusSub = document.getElementById('orderStatusSub');
 const bgmBtn = document.getElementById('bgmBtn');
 const jukeboxArea = document.getElementById('jukeboxArea');
-const botOverlay = document.getElementById('botOverlay');
-const botOverlayText = document.getElementById('botOverlayText');
 
 const soundOverlay = document.getElementById('soundOverlay');
 const enableSoundBtn = document.getElementById('enableSoundBtn');
@@ -533,7 +543,6 @@ const espressoLabelEl = document.getElementById('espressoLabel');
 const milkLabelEl = document.getElementById('milkLabel');
 const latteArtLabelEl = document.getElementById('latteArtLabel');
 
-/* Pomodoro DOM */
 const pomoPanel = document.getElementById('pomodoroPanel');
 const pomoSettings = document.getElementById('pomoSettings');
 const pomoRunning = document.getElementById('pomoRunning');
@@ -558,7 +567,7 @@ const pomoCountDisplay = document.getElementById('pomoCountDisplay');
 
 let servedSequence = [], servedSequenceIndex = 0;
 
-/* helper for raw GitHub -> URL */
+/* helper: raw GitHub */
 function getAssetUrl(path){
   if (!path) return '';
   if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
@@ -566,6 +575,7 @@ function getAssetUrl(path){
 }
 
 /* audio assets */
+const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'));
 const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'));
 const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookdbgm.mp3'));
 const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/rate.mp3'));
@@ -574,12 +584,10 @@ const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'));
 const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'));
 const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3'));
 
-/* Pomodoro sounds */
-const audioPiroStart = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro.mp3')); // 作業開始
-const audioPiroBreak = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro1.mp3')); // 休憩開始
-const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3.mp3')); // 再生/再開音
-
-/* p3 pool (break random sounds) */
+/* piro/p3 pool */
+const audioPiroStart = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro.mp3'));
+const audioPiroBreak = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro1.mp3'));
+const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3.mp3'));
 const p3Urls = [
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_2.mp3'),
@@ -587,73 +595,69 @@ const p3Urls = [
 ];
 const p3Pool = p3Urls.map(url => new Audio(url));
 
-/* firestore collections if db available */
+/* firestore collections (if available) */
 const staffsCol = db ? collection(db, 'staffs') : null;
 const ordersCol = db ? collection(db, 'orders') : null;
 
-/* App state */
-const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
-
-/* dismissed orders stored locally */
+/* app state */
+const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[], localOrders:[] };
 const dismissedOrdersStored = JSON.parse(localStorage.getItem('reiji_dismissed_orders') || '[]');
 const dismissedOrders = new Set(dismissedOrdersStored);
 
-/* client id */
+/* clientId */
 let clientId = localStorage.getItem('reiji_clientId');
 if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
 
-/* MENUS with botArtUrls arrays for BOT to choose from */
+/* MENUS (imageBase points to raw GitHub base path without extension) */
 const MENUS = {
   rate: {
-    id:'rate', title:'カフェ・ラテ（おすすめ）', imageBase:'@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
+    id: 'rate', title: 'カフェ・ラテ（おすすめ）', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' },
-    // BOT art samples (pngs placed in repo) - replace / add as needed
-    botArtUrls:[
-      '@zzcafe2800/reiji_cafe/main/bot/rate_art1.png'
-    ]
+    // BOT用：ランダムアート画像群（png paths, relative to raw github)
+    botArts: [
+      '@zzcafe2800/reiji_cafe/main/bot/rate_art_1.png',
+      '@zzcafe2800/reiji_cafe/main/bot/rate_art_2.png',
+      '@zzcafe2800/reiji_cafe/main/bot/rate_art_3.png'
+    ],
+    botCardFonts: [] // optional custom font images
   },
   omu: {
-    id:'omu', title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
+    id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' },
-    botArtUrls:[
-      '@zzcafe2800/reiji_cafe/main/bot/omu_art1.png'
-    ]
+    botArts: [
+      '@zzcafe2800/reiji_cafe/main/bot/omu_art_1.png',
+      '@zzcafe2800/reiji_cafe/main/bot/omu_art_2.png'
+    ],
+    botCardFonts: []
   }
 };
-MENUS.random = {
-  id:'random', title:'ランダム', imageBase:'@zzcafe2800/reiji_cafe/main/random', frameCount:1, lastFrameRandom:false,
-  artBg:'#cccccc', artPen:'#000000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'ランダム', espressoLabel:'', milkLabel:'', latteArtLabel:'' },
-  botArtUrls: ['@zzcafe2800/reiji_cafe/main/bot/random1.png']
-};
+MENUS.random = { id:'random', title:'ランダム', imageBase:'@zzcafe2800/reiji_cafe/main/random', frameCount:1, lastFrameRandom:false, artBg:'#cccccc', artPen:'#000000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'ランダム', espressoLabel:'', milkLabel:'', latteArtLabel:'' }, botArts: [], botCardFonts: [] };
 
-/* helper functions */
+/* Prev menu count to detect additions */
+let prevMenuCount = Object.keys(MENUS).length;
+
+/* ---------- Helpers ---------- */
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function showModal(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
 function hideModal(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
 function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); }catch(e){} }
 
-/* flush pending plays after unlock */
+/* flush pending plays after audio unlock */
 function flushPendingPlays(){
   while(state.pendingPlayQueue.length){
     const req = state.pendingPlayQueue.shift();
+    if (req.type === 'tyaimu'){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
     if (req.type === 'cook'){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
     if (req.type === 'delivered'){ try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} }
   }
 }
 
-/* realtime listeners (if db available) */
+/* ---------- Realtime listeners (only when Firebase available) ---------- */
 function startRealtime(){
-  if (!db) {
-    // offline: nothing to subscribe
-    console.warn('Firestore not available - realtime disabled');
-    // Still set local UI state
-    renderShiftShort();
-    updateOrderButtonState();
-    return;
-  }
+  if (!db) return;
   try {
     const q = query(staffsCol, orderBy('createdAt','asc'));
     onSnapshot(q, snap=>{
@@ -664,6 +668,7 @@ function startRealtime(){
       updateStaffToggleUI();
     }, e=>console.warn(e));
   } catch(e){ console.warn(e); }
+
   try {
     const q2 = query(ordersCol, orderBy('createdAt','asc'));
     onSnapshot(q2, snap=>{
@@ -676,53 +681,48 @@ function startRealtime(){
   } catch(e){ console.warn(e); }
 }
 
-/* notification handling placeholder */
+/* handle notifications (minimal) */
 function handleOrderNotifications(prevOrders, currOrders){
-  // left intentionally light to avoid duplicate behavior
+  // Could detect new menus added server-side, new delivered etc.
+  // Minimal here.
 }
 
-/* ========== Shift rendering and Tokyo time check ========== */
-
+/* ---------- Shift rendering & helper ---------- */
 setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 
-/* check if given shift window includes current Tokyo time */
-function isNowWithinShiftTokyo(start,end){
-  if (!start || !end) return false;
-  // compute Tokyo now
-  const tokyoNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
-  const sDate = new Date(tokyoNow); sDate.setHours(sh,sm,0,0);
-  const eDate = new Date(tokyoNow); eDate.setHours(eh,em,0,0);
-  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
-  return tokyoNow >= sDate && tokyoNow <= eDate;
-}
-
 function renderShiftShort(){
-  const now = new Date();
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShiftTokyo(s.shiftStart,s.shiftEnd));
-  if (humanActive.length){
-    shiftShort.textContent = 'シフト：' + humanActive.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
-    shiftShort.dataset.bot = 'false';
-  } else {
-    // no human staff - show BOT available
+  // If human staff present show them, otherwise if botActive show BOT message
+  const nowJapan = getJapanNow();
+  const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,nowJapan));
+  if (active.length) {
+    shiftShort.textContent = 'シフト：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+    return;
+  }
+  // no human active -> show BOT if enabled
+  if (BOT.isActive){
     shiftShort.textContent = '現在：BOTスタッフ対応中（手書き接客✖）';
-    shiftShort.dataset.bot = 'true';
+  } else {
+    shiftShort.textContent = 'シフト：現在対応できる店員がおりません';
   }
 }
-
-/* shift list (shows stored staff shifts) */
 function renderShiftList(){
   shiftList.innerHTML = '';
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  const now = new Date();
   state.staffs.forEach(s => {
     const div = document.createElement('div');
-    const onNow = isNowWithinShiftTokyo(s.shiftStart,s.shiftEnd);
+    const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
     div.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
     shiftList.appendChild(div);
   });
 }
-
-/* staff toggle UI per current user */
+function isNowWithinShift(start,end,dateObj){
+  if (!start || !end) return false;
+  const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
+  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
+  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
+  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
+  return dateObj >= sDate && dateObj <= eDate;
+}
 function updateStaffToggleUI(){
   if (state.currentUser && state.currentUser.role === 'staff' && state.currentUser.staffId){
     const my = state.staffs.find(s=>s.id === state.currentUser.staffId);
@@ -736,7 +736,7 @@ function updateStaffToggleUI(){
   }
 }
 
-/* orders rendering for staff */
+/* ---------- Orders rendering & functions ---------- */
 function renderOrderLists(){
   staffOrderList.innerHTML = '';
   state.orders.forEach(o=>{
@@ -778,76 +778,124 @@ function computeOrderTasks(order){
   return pending;
 }
 
-/* staff login */
+/* ---------- Staff login & name duplication handling ---------- */
 passOk.addEventListener('click', ()=> {
   if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います');
 });
 function showStaffNameModal(){
+  orderName.value = '';
   showModal(modalName);
-  okOrderName.onclick = async ()=>{
-    const name = orderName.value.trim(); if (!name) { alert('名前'); return; }
-    hideModal(modalName);
-    try {
-      if (db){
-        const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
-        enterStaffFull(name, ref.id);
-      } else {
-        const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
-        state.staffs.push(s);
-        enterStaffFull(name, s.id);
+}
+function hideStaffNameModal(){
+  hideModal(modalName);
+}
+cancelOrderNameBtn.addEventListener('click', ()=>{
+  // simply close modal and do nothing (fixed bug)
+  orderName.value = '';
+  hideStaffNameModal();
+});
+// Use single handler for OK button to avoid duplicates
+okOrderNameBtn.addEventListener('click', async ()=>{
+  const name = orderName.value.trim(); if (!name) { alert('名前を入力してください'); return; }
+  hideStaffNameModal();
+  try {
+    // Remove any existing staff documents with same name (server-side prune)
+    if (db){
+      // find all staff docs with same name and delete them
+      // We avoid an extra query by using current state.staffs (kept by onSnapshot) if available
+      const same = state.staffs.filter(s => (s.name||'') === name);
+      for (const s of same){
+        try { await deleteDoc(doc(db,'staffs',s.id)); } catch(e){ console.warn('delete old staff failed', e); }
       }
-    } catch(e){
-      console.warn(e);
+      const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
+      enterStaffFull(name, ref.id);
+    } else {
+      // offline: add to local state & create pseudo id
       const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
+      // purge local duplicates
+      state.staffs = state.staffs.filter(x => x.name !== name);
       state.staffs.push(s);
       enterStaffFull(name, s.id);
+      renderShiftList();
+      renderShiftShort();
     }
-  };
-  // cancel handled below
-}
-cancelOrderName.addEventListener('click', ()=>{
-  // simply hide modal and do nothing — returns to previous state
-  hideModal(modalName);
+  } catch(e){
+    console.warn(e);
+    const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
+    state.staffs = state.staffs.filter(x => x.name !== name);
+    state.staffs.push(s);
+    enterStaffFull(name, s.id);
+  }
 });
-
-function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); updateStaffToggleUI(); }
-logoutStaff.addEventListener('click', async ()=> {
+function enterStaffFull(name, staffId){
+  state.currentUser = { role:'staff', staffId };
+  staffBadge.textContent = name;
+  staffFull.classList.add('show');
+  renderShiftList();
+  renderOrderLists();
+  updateStaffToggleUI();
+}
+logoutStaff.addEventListener('click', async ()=>{
   const id = state.currentUser.staffId;
   if (id && db){
     try { await deleteDoc(doc(db,'staffs',id)); } catch(e){}
   }
-  state.currentUser = { role:'guest', staffId:null }; staffFull.classList.remove('show');
+  state.currentUser = { role:'guest', staffId:null };
+  staffFull.classList.remove('show');
 });
 
 /* shift toggle */
 shiftBtn.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId; if (!id) return;
-  try { if (db) await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){ console.warn(e); }
-  updateStaffToggleUI();
+  if (db){
+    try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){}
+  } else {
+    const s = state.staffs.find(x=>x.id===id);
+    if (s){ s.onShift=true; s.breaking=false; renderShiftShort(); updateStaffToggleUI(); }
+  }
 });
 breakBtn.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId; if (!id) return;
-  try { if (db) await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){ console.warn(e); }
-  updateStaffToggleUI();
+  if (db){
+    try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){}
+  } else {
+    const s = state.staffs.find(x=>x.id===id);
+    if (s){ s.onShift=false; s.breaking=true; renderShiftShort(); updateStaffToggleUI(); }
+  }
 });
 saveShift.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId; if (!id) return;
-  try { if (db) await updateDoc(doc(db,'staffs',id), { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); }
+  if (db){
+    try { await updateDoc(doc(db,'staffs',id), { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' }); } catch(e){ console.warn(e); }
+  } else {
+    const s = state.staffs.find(x=>x.id===id);
+    if (s){ s.shiftStart = shiftStart.value || '09:00'; s.shiftEnd = shiftEnd.value || '17:00'; renderShiftList(); }
+  }
 });
 
-/* menu rendering */
+/* ---------- Menu & ordering ---------- */
 async function buildMenu(){
   menuGrid.innerHTML = '';
+  const currentCount = Object.keys(MENUS).length;
+  // If menu count increased, notify staff who have staffFull open
+  if (currentCount > prevMenuCount){
+    notifyMenuAdded();
+  }
+  prevMenuCount = currentCount;
+
+  // Random first if exists
   if (MENUS.random){
     const it = MENUS.random;
     const div = document.createElement('div'); div.className='menu-item';
     const img = document.createElement('img'); img.className='menu-thumb';
     const url = getAssetUrl(it.imageBase + '.png');
     try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
-    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
+    div.appendChild(img);
+    div.appendChild(document.createElement('div')).textContent = it.title;
     div.addEventListener('click', ()=> chooseRandomAndOrder());
     menuGrid.appendChild(div);
   }
+
   for(const id in MENUS){
     if (id === 'random') continue;
     const it = MENUS[id];
@@ -860,58 +908,98 @@ async function buildMenu(){
     menuGrid.appendChild(div);
   }
 }
+
 function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
-/* order button: note removed tyaimu play on press (per request) */
+/* orderBtn behavior:
+   - Do NOT play tyaimu.mp3 on button press (requirement)
+   - show name modal, then menu modal
+*/
 orderBtn.addEventListener('click', ()=> {
   if (orderBtn.classList.contains('disabled')) return;
-  // do NOT play tyaimu here
+  // Do not play tyaimu here (per request)
   showModal(modalName);
-  okOrderName.onclick = () => {
-    const name = orderName.value.trim();
-    if (!name) { alert('名前を入力してください'); return; }
-    hideModal(modalName);
-    buildMenu(); showModal(modalMenu);
-  };
 });
+
+/* menu flow */
 backMenu.addEventListener('click', ()=> hideModal(modalMenu));
 
-/* onMenuSelect: if no human staff (BOT active), bot handles; else normal flow*/
 async function onMenuSelect(item){
   hideModal(modalMenu);
   const name = orderName.value.trim() || '名無し';
-  // check if BOT active (no human on Tokyo time)
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShiftTokyo(s.shiftStart,s.shiftEnd));
-  const botActive = humanActive.length === 0;
-  if (botActive){
-    // Bot will handle this order
-    await processBotOrder(item, name);
+  // If password required check (existing behavior)
+  if (item.password && item.password.length){
+    const entered = prompt('パスワードを入力してください');
+    if (entered === null) return;
+    if (entered !== item.password){ alert('パスワードが違います'); return; }
+  }
+
+  const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
+  const orderObjBase = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
+
+  // If no human staff available -> BOT mode (immediate handling)
+  const nowJapan = getJapanNow();
+  const humanActive = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,nowJapan));
+
+  if (!humanActive && BOT.isEnabled){
+    // BOT takes care
+    const localOrder = { id: uid('o'), ...orderObjBase };
+    // push to localOrders for UI
+    state.localOrders.push(localOrder);
+    state.currentOrderIdForClient = localOrder.id;
+    showClientStatus('BOTが対応中…');
+    // disable UI to prevent interactions until served
+    disableUIWhileBotHandling(true);
+    // process BOT: create served image using random art/card
+    BOT.handleOrder(localOrder).then(async (servedData)=>{
+      // servedData: { servedImageData, artDataUrl, cardDataUrl }
+      // mark delivered locally and optionally write to firestore if available
+      if (db){
+        try {
+          const ref = await addDoc(ordersCol, { ...orderObjBase, state:'delivered', deliveredAt: Date.now(), servedImageData: servedData.servedImageData, artDataUrl: servedData.artDataUrl, cardDataUrl: servedData.cardDataUrl });
+          // remove local placeholder if any
+          state.currentOrderIdForClient = ref.id;
+        } catch(e){ console.warn('BOT write failed', e); }
+      } else {
+        // local delivered; show served modal
+        state.currentOrderIdForClient = localOrder.id;
+      }
+      // show served UI
+      showClientServed({ ...localOrder, servedImageData: servedData.servedImageData, artDataUrl: servedData.artDataUrl, cardDataUrl: servedData.cardDataUrl, item: item.id });
+      disableUIWhileBotHandling(false);
+    }).catch(e=>{
+      console.error('BOT handling failed', e);
+      disableUIWhileBotHandling(false);
+      showClientStatus('BOT処理に失敗しました');
+      setTimeout(()=> hideClientStatus(), 4000);
+    });
     return;
   }
-  // normal order flow (try to add to Firestore; if fails, fallback to local)
-  const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-  const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
-  try {
-    if (db){
-      const ref = await addDoc(ordersCol, orderObj);
+
+  // Normal flow: attempt to write order to Firestore if available, otherwise local fallback
+  if (db){
+    try {
+      const ref = await addDoc(ordersCol, orderObjBase);
       state.currentOrderIdForClient = ref.id;
       showClientStatus('現在対応待ち中');
       scheduleOrderTimeout(ref.id, expiresAt);
-    } else {
-      // offline fallback - process locally by adding to state.orders (so UI shows)
-      orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id;
-      showClientStatus('現在対応待ち中（オフライン）');
-      scheduleOrderTimeout(orderObj.id, expiresAt);
+    } catch(e){
+      console.warn('add order failed', e);
+      // fallback to local
+      const o = { id: uid('o'), ...orderObjBase };
+      state.localOrders.push(o);
+      state.currentOrderIdForClient = o.id;
+      showClientStatus('現在対応待ち中（ローカル）');
     }
-  } catch(e){
-    console.warn('add order failed', e);
-    orderObj.id = uid('o'); state.orders.push(orderObj);
-    state.currentOrderIdForClient = orderObj.id;
-    showClientStatus('現在対応待ち中（ローカル）');
+  } else {
+    const o = { id: uid('o'), ...orderObjBase };
+    state.localOrders.push(o);
+    state.currentOrderIdForClient = o.id;
+    showClientStatus('現在対応待ち中（オフライン）');
   }
 }
 
-/* chooseRandomAndOrder reuses onMenuSelect behavior */
+/* chooseRandomAndOrder */
 function chooseRandomAndOrder(){
   const keys = Object.keys(MENUS).filter(k => k !== 'random');
   if (!keys.length){ alert('ランダム対象のメニューがありません'); return; }
@@ -921,66 +1009,56 @@ function chooseRandomAndOrder(){
   onMenuSelect(chosenMenu);
 }
 
-/* schedule order timeout as before */
+/* schedule order timeout (only for firestore orders) */
 async function scheduleOrderTimeout(orderId, expiresAt){
   const remaining = (expiresAt || 0) - Date.now();
   if (remaining <= 0) return;
   setTimeout(async ()=>{
     try {
-      if (db){
-        const snap = await getDoc(doc(db,'orders',orderId));
-        if (snap.exists()){
-          const o = snap.data();
-          if (o.state === 'waiting'){
-            await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
-          }
+      if (!db) return;
+      const snap = await getDoc(doc(db,'orders',orderId));
+      if (snap.exists()){
+        const o = snap.data();
+        if (o.state === 'waiting'){
+          await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
         }
-      } else {
-        // local state: mark cancelled if still waiting
-        const idx = state.orders.findIndex(x=>x.id===orderId);
-        if (idx>=0 && state.orders[idx].state === 'waiting'){ state.orders[idx].state='cancelled'; renderOrderLists(); }
       }
     } catch(e){ console.warn(e); }
   }, remaining);
 }
 
-/* assign order to staff (existing behavior) */
+/* assign order to staff */
 async function assignOrderToCurrentStaff(orderId){
   const staffId = state.currentUser.staffId; if (!staffId) { alert('スタッフとしてログインしてください'); return; }
-  const s = state.staffs.find(x=>x.id===staffId);
-  try {
-    if (db){
+  const s = state.staffs.find(x=>x.id===staffId) || { name:'' };
+  if (db){
+    try {
       await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: s.name });
-    } else {
-      const idx = state.orders.findIndex(x=>x.id===orderId);
-      if (idx>=0){ state.orders[idx].state='inprogress'; state.orders[idx].assignedTo=staffId; state.orders[idx].assignedToName=s.name; renderOrderLists(); }
-    }
-    if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' });
-    else { try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
-  } catch(e){ console.warn(e); }
+      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' });
+      else { try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
+    } catch(e){ console.warn(e); }
+  } else {
+    // offline: update localOrders if present
+    const lo = state.localOrders.find(x=>x.id===orderId);
+    if (lo){ lo.state='inprogress'; lo.assignedTo = staffId; lo.assignedToName = s.name; renderOrderLists(); }
+  }
 }
 
-/* -----------------------------------------
-   STROKES / canvases & fixes (eraser/backgnd)
-   ----------------------------------------- */
-
-/* Note: artBg canvas holds the background (filled circle). artLayer is transparent and holds stroke drawing.
-   Eraser uses destination-out on artLayer only, so background remains intact.
-   When artBgColor changes we redraw artBg and preserve artLayer contents (no clearing).
+/* ---------- Strokes, canvases, erase bug fix ---------- */
+/* We will draw background on artBg canvas and keep all strokes on artLayer (transparent).
+   For saving/replaying, we create offscreen drawing layer where:
+    - draw background on 'base' canvas
+    - create offscreen 'strokes' canvas initially empty
+    - draw all 'draw' strokes onto strokes canvas (source-over)
+    - then apply 'erase' strokes to strokes canvas by using destination-out
+    - composite strokes onto base
 */
-
-/* helpers */
-function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
-function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
-
-/* init canvases */
 function initArtCanvas(bgColor){
-  // redraw background only
+  // artBg: filled with bgColor
   artBgCtx.clearRect(0,0,artBg.width,artBg.height);
   artBgCtx.fillStyle = bgColor || artBgColor.value || '#6b3b24';
-  artBgCtx.beginPath(); artBgCtx.arc(artBg.width/2, artBg.height/2, Math.min(artBg.width, artBg.height)/2 - 10, 0, Math.PI*2);
-  artBgCtx.fill();
-  // do not clear artLayer; we keep strokes
+  artBgCtx.fillRect(0,0,artBg.width,artBg.height);
+  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
   artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
 }
 function initCardCanvas(bgColor){
@@ -990,16 +1068,14 @@ function initCardCanvas(bgColor){
   cardCtx.lineCap='round'; cardCtx.lineJoin='round';
 }
 
-/* current editing arrays (per opened order) */
 let artStrokes = []; let currentArtStroke = null; let artDrawing = false;
 let cardStrokes = []; let currentCardStroke = null; let cardDrawing = false;
 
-/* saved local copies for Firestore write later */
 let savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
 let savedArtMeta = null, savedCardMeta = null;
-let savedArtStrokesLocal = null, savedCardStrokesLocal = null;
+let savedArtStrokesLocal = null;
+let savedCardStrokesLocal = null;
 
-/* get event pos on a canvas */
 function getEventPos(e, canvas){
   const r = canvas.getBoundingClientRect();
   const t = e.touches ? e.touches[0] : null;
@@ -1008,13 +1084,13 @@ function getEventPos(e, canvas){
   return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
 }
 
-/* art handlers write into artStrokes, which is per-order */
+/* art handlers on artLayer (transparent) */
 artLayer.addEventListener('mousedown', (e)=>{
   artDrawing = true;
   const p = getEventPos(e, artLayer);
   const tool = penMode.value;
   const w = parseInt(penSize.value, 10);
-  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ], pen: artPenColor.value || '#ffffff' };
+  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ] , pen: artPenColor.value || '#ffffff' };
 });
 artLayer.addEventListener('mousemove', (e)=>{
   if (!artDrawing || !currentArtStroke) return;
@@ -1028,49 +1104,29 @@ artLayer.addEventListener('mouseup', ()=>{
   if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke = null; saveArt.disabled = false; updateTaskStatus(); }
 });
 artLayer.addEventListener('mouseleave', ()=>{ if (artDrawing){ artDrawing=false; if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } } });
-artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
-artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
-artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
+artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); });
 
 function renderLatestArtStrokeSegment(stroke){
   if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
-  artLayerCtx.save();
+  // draw directly on artLayer for immediate feedback
   if (stroke.tool === 'draw'){
     artLayerCtx.globalCompositeOperation='source-over';
-    artLayerCtx.strokeStyle = stroke.pen || artPenColor.value || '#ffffff';
-    artLayerCtx.lineWidth = stroke.width;
+    artLayerCtx.strokeStyle=stroke.pen || artPenColor.value || '#ffffff';
+    artLayerCtx.lineWidth=stroke.width;
   } else {
+    // For eraser we clear from artLayer (not background)
     artLayerCtx.globalCompositeOperation='destination-out';
-    artLayerCtx.lineWidth = stroke.width;
+    artLayerCtx.lineWidth=stroke.width;
   }
   artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
-  artLayerCtx.restore();
+  artLayerCtx.globalCompositeOperation='source-over';
 }
 
-/* function to clear and replay strokes onto artLayer (preserves background) */
-function replayStrokesOnArtLayer(strokes){
-  artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
-  if (!strokes || !strokes.length) return;
-  for (const s of strokes){
-    artLayerCtx.save();
-    if (s.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle = s.pen || artPenColor.value || '#fff'; }
-    else { artLayerCtx.globalCompositeOperation='destination-out'; }
-    artLayerCtx.lineWidth = s.width || 4;
-    artLayerCtx.beginPath();
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){
-      const den = denormPoint(pts[i], artLayer);
-      if (i===0) artLayerCtx.moveTo(den.x, den.y);
-      else artLayerCtx.lineTo(den.x, den.y);
-    }
-    artLayerCtx.stroke();
-    artLayerCtx.restore();
-  }
-}
-
-/* card handlers */
+/* card handlers (similar) */
 cardCanvas.addEventListener('mousedown', (e)=>{
   cardDrawing = true;
   const p = getEventPos(e, cardCanvas);
@@ -1089,53 +1145,41 @@ cardCanvas.addEventListener('mouseup', ()=>{
   if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke = null; saveCard.disabled = false; updateTaskStatus(); }
 });
 cardCanvas.addEventListener('mouseleave', ()=>{ if (cardDrawing){ cardDrawing=false; if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); } } });
-cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
-cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); }, {passive:false});
-cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
+cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); });
 
 function renderLatestCardStrokeSegment(stroke){
   if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
-  cardCtx.save();
-  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle = stroke.pen || cardPenColor.value || '#000'; cardCtx.lineWidth = stroke.width; }
-  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth = stroke.width; }
+  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle=stroke.pen || cardPenColor.value || '#000'; cardCtx.lineWidth=stroke.width; }
+  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
   cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
-  cardCtx.restore();
+  cardCtx.globalCompositeOperation='source-over';
 }
 
 /* clear handlers */
-clearArt.addEventListener('click', ()=>{ artStrokes=[]; currentArtStroke=null; artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); saveArt.disabled=true; updateTaskStatus(); });
+clearArt.addEventListener('click', ()=>{ initArtCanvas(); artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
 clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
 
-/* background color change: redraw artBg only and replay art strokes */
-artBgColor.addEventListener('change', ()=>{
-  initArtCanvas(artBgColor.value);
-  replayStrokesOnArtLayer(artStrokes);
-});
-cardBgColor.addEventListener('change', ()=> initCardCanvas(cardBgColor.value));
-
-/* saveArt / saveCard create high-res PNG + meta */
+/* Save art/card: use offscreen replay that preserves background and simulates erase correctly */
 saveArt.addEventListener('click', ()=>{
   const scale = 2;
   const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
   const t = tmp.getContext('2d');
+  // draw background
   t.fillStyle = artBgColor.value || '#6b3b24'; t.fillRect(0,0,tmp.width,tmp.height);
-  t.lineCap = 'round'; t.lineJoin = 'round';
-  const strokes = JSON.parse(JSON.stringify(artStrokes || []));
-  for (const s of strokes){
-    t.beginPath(); t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    t.strokeStyle = s.pen || artPenColor.value || '#fff'; t.lineWidth = (s.width || 6) * scale;
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
-    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
-  }
-  savedArtDataUrlLocal = tmp.toDataURL('image/png');
-  savedArtMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#ffffff', scale };
-  savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes || []));
-  saveArt.disabled = true;
-  updateTaskStatus();
-  alert('アートを保存しました。');
+  // render strokes properly: build strokes canvas
+  renderStrokesToCanvasAndDraw(artStrokes, tmp, t, scale, (meta)=>{
+    // after rendering, we can export
+    savedArtDataUrlLocal = tmp.toDataURL('image/png');
+    savedArtMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#ffffff', scale };
+    savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes || []));
+    saveArt.disabled = true;
+    updateTaskStatus();
+    alert('アートを保存しました。');
+  });
 });
 
 saveCard.addEventListener('click', ()=>{
@@ -1143,24 +1187,76 @@ saveCard.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
   const t = tmp.getContext('2d');
   t.fillStyle = cardBgColor.value || '#fff2e6'; t.fillRect(0,0,tmp.width,tmp.height);
-  t.lineCap = 'round'; t.lineJoin = 'round';
-  const strokes = JSON.parse(JSON.stringify(cardStrokes || []));
-  for (const s of strokes){
-    t.beginPath(); t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    t.strokeStyle = s.pen || cardPenColor.value || '#000'; t.lineWidth = (s.width || 4) * scale;
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
-    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
-  }
-  savedCardDataUrlLocal = tmp.toDataURL('image/png');
-  savedCardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000000', scale };
-  savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes || []));
-  saveCard.disabled = true;
-  updateTaskStatus();
-  alert('カードを保存しました。。');
+  renderStrokesToCanvasAndDraw(cardStrokes, tmp, t, scale, (meta)=>{
+    savedCardDataUrlLocal = tmp.toDataURL('image/png');
+    savedCardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000000', scale };
+    savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes || []));
+    saveCard.disabled = true;
+    updateTaskStatus();
+    alert('カードを保存しました。。');
+  });
 });
 
-/* pouring logic unchanged */
+/* Offscreen renderer that draws strokes (respects erase) onto provided base context.
+   strokes: array of stroke objects {tool, width, points[], pen}
+   baseCanvas: canvas element whose context is 'baseCtx'
+   scale: scaling factor for output
+   cb(meta) called when done
+*/
+function renderStrokesToCanvasAndDraw(strokes, baseCanvas, baseCtx, scale=1, cb){
+  // Create offscreen strokes canvas
+  const strokesCanvas = document.createElement('canvas');
+  strokesCanvas.width = baseCanvas.width;
+  strokesCanvas.height = baseCanvas.height;
+  const sctx = strokesCanvas.getContext('2d');
+  sctx.clearRect(0,0,strokesCanvas.width,strokesCanvas.height);
+
+  // First draw all "draw" strokes onto strokesCanvas
+  for (const s of strokes || []){
+    if (s.tool !== 'erase'){
+      sctx.beginPath();
+      sctx.globalCompositeOperation = 'source-over';
+      sctx.strokeStyle = s.pen || '#000';
+      sctx.lineWidth = (s.width || 4) * scale;
+      sctx.lineCap = 'round';
+      sctx.lineJoin = 'round';
+      const pts = s.points || [];
+      for (let i=0;i<pts.length;i++){
+        const den = { x: pts[i].x * strokesCanvas.width, y: pts[i].y * strokesCanvas.height };
+        if (i===0) sctx.moveTo(den.x, den.y); else sctx.lineTo(den.x, den.y);
+      }
+      sctx.stroke();
+      sctx.closePath();
+    }
+  }
+  // Then apply erase strokes to strokesCanvas by drawing them with destination-out
+  for (const s of strokes || []){
+    if (s.tool === 'erase'){
+      sctx.beginPath();
+      sctx.globalCompositeOperation = 'destination-out';
+      sctx.lineWidth = (s.width || 6) * scale;
+      sctx.lineCap = 'round';
+      sctx.lineJoin = 'round';
+      const pts = s.points || [];
+      for (let i=0;i<pts.length;i++){
+        const den = { x: pts[i].x * strokesCanvas.width, y: pts[i].y * strokesCanvas.height };
+        if (i===0) sctx.moveTo(den.x, den.y); else sctx.lineTo(den.x, den.y);
+      }
+      sctx.stroke();
+      sctx.closePath();
+    }
+  }
+
+  // Composite strokes onto baseCtx (which already has background drawn by caller)
+  baseCtx.drawImage(strokesCanvas, 0, 0);
+  if (typeof cb === 'function') cb({});
+}
+
+/* Utility to normalize/denorm points */
+function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
+function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+
+/* ---------- Pouring & latte visuals (kept as before) ---------- */
 let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
 function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
 resetPouring();
@@ -1175,7 +1271,6 @@ startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatc
 startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
 startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
 
-/* latte visuals */
 const latteCanvas = document.getElementById('latteCanvas'); const latteCtx = latteCanvas.getContext('2d');
 function latteClear(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle='#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
 function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
@@ -1184,64 +1279,20 @@ latteClear();
 
 function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtStrokesLocal && (!artStrokes || !artStrokes.length)) parts.push('アート'); if (!savedCardStrokesLocal && (!cardStrokes || !cardStrokes.length)) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
 
-/* openMakeModal(order) with per-order isolation */
+/* replay helper for canvas display (used for servedArtMini and servedCardMini)
+   Uses the same safe approach: draw background then strokes layer with erase applied
+*/
+function replayStrokesOnCanvasImmediateSafe(strokes, canvasEl, ctx, meta){
+  // draw background
+  ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+  ctx.fillStyle = (meta && meta.bg) || '#fff';
+  ctx.fillRect(0,0,canvasEl.width,canvasEl.height);
+  renderStrokesToCanvasAndDraw(strokes, canvasEl, ctx, 1, ()=>{});
+}
+
+/* ---------- completeMake (unchanged logic but using safe replay) ---------- */
 let currentMakingOrderId = null;
 let currentOrderObj = null;
-async function openMakeModal(order){
-  currentMakingOrderId = order.id;
-  currentOrderObj = order;
-  makerName.textContent = order.assignedToName || order.assignedTo || '';
-  const cfg = MENUS[order.item] || MENUS['rate'];
-  makeTitle.textContent = (cfg.ui && cfg.ui.makeTitle) ? cfg.ui.makeTitle + '（担当：' + (order.assignedToName || order.assignedTo || '') + '）' : '制作（担当）';
-  espressoLabelEl.textContent = (cfg.ui && cfg.ui.espressoLabel) || 'エスプレッソ注ぎ';
-  milkLabelEl.textContent = (cfg.ui && cfg.ui.milkLabel) || 'フームドミルク注ぎ';
-  latteArtLabelEl.textContent = (cfg.ui && cfg.ui.latteArtLabel) || 'ラテアート';
-
-  // per-order strokes deep copy or empty
-  artStrokes = (order.artStrokes && Array.isArray(order.artStrokes)) ? JSON.parse(JSON.stringify(order.artStrokes)) : [];
-  cardStrokes = (order.cardStrokes && Array.isArray(order.cardStrokes)) ? JSON.parse(JSON.stringify(order.cardStrokes)) : [];
-
-  savedArtDataUrlLocal = order.artDataUrl || null;
-  savedCardDataUrlLocal = order.cardDataUrl || null;
-  savedArtMeta = order.artMeta || null;
-  savedCardMeta = order.cardMeta || null;
-
-  const artBgColorToUse = (savedArtMeta && savedArtMeta.bg) || cfg.artBg || artBgColor.value;
-  const cardBgColorToUse = (savedCardMeta && savedCardMeta.bg) || cfg.cardBg || cardBgColor.value;
-  initArtCanvas(artBgColorToUse);
-  initCardCanvas(cardBgColorToUse);
-
-  // replay existing strokes onto artLayer & cardCanvas
-  replayStrokesOnArtLayer(artStrokes);
-  if (cardStrokes && cardStrokes.length) {
-    cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
-    cardCtx.fillStyle = cardBgColorToUse; cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-    replayStrokesOnCanvasImmediate(cardStrokes, cardCanvas, cardCtx, savedCardMeta);
-  }
-
-  currentArtStroke = null; currentCardStroke = null; artDrawing=false; cardDrawing=false;
-
-  saveArt.disabled = !(artStrokes && artStrokes.length); saveCard.disabled = !(cardStrokes && cardStrokes.length);
-  updateTaskStatus();
-
-  modalMakeLatte.style.display = 'flex';
-}
-
-/* replay helper for other canvases */
-function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
-  if (!strokes || !strokes.length) return;
-  for (const s of strokes){
-    ctx.save();
-    ctx.beginPath();
-    ctx.lineWidth = (s.width || 3) * ((canvasEl.width / (meta?.origWidth || canvasEl.width)));
-    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; ctx.strokeStyle = s.pen || (meta?.penDefault) || '#000'; } else { ctx.globalCompositeOperation='destination-out'; }
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p=pts[i]; const den = denormPoint(p, canvasEl); if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y); }
-    ctx.stroke(); ctx.closePath(); ctx.restore();
-  }
-}
-
-/* completeMake for staff (writes to Firestore if available) */
 completeMake.addEventListener('click', async ()=>{
   if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
   const artStrokesToSave = artStrokes || [];
@@ -1249,7 +1300,7 @@ completeMake.addEventListener('click', async ()=>{
   const artMetaToSave = savedArtMeta || (artStrokesToSave.length ? { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: artLayer.width*2, savedHeight: artLayer.height*2, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#fff', scale:2 } : null);
   const cardMetaToSave = savedCardMeta || (cardStrokesToSave.length ? { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: cardCanvas.width*2, savedHeight: cardCanvas.height*2, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000', scale:2 } : null);
 
-  // compose served image
+  // compose served image on tmp canvas using existing savedArtDataUrlLocal or strokes
   const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
   tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
   tctx.drawImage(latteCanvas, 450,300,300,300);
@@ -1258,7 +1309,7 @@ completeMake.addEventListener('click', async ()=>{
   } else if (artStrokesToSave.length){
     const artTmp = document.createElement('canvas'); artTmp.width=600; artTmp.height=600; const actx = artTmp.getContext('2d');
     actx.fillStyle = artMetaToSave?.bg || '#6b3b24'; actx.fillRect(0,0,artTmp.width,artTmp.height);
-    replayStrokesOnCanvasImmediate(artStrokesToSave, artTmp, actx, artMetaToSave);
+    renderStrokesToCanvasAndDraw(artStrokesToSave, artTmp, actx, artMetaToSave?.scale || 1, ()=>{});
     tctx.drawImage(artTmp, 440,120,320,320);
   }
   if (savedCardDataUrlLocal){
@@ -1266,7 +1317,7 @@ completeMake.addEventListener('click', async ()=>{
   } else if (cardStrokesToSave.length){
     const cardTmp = document.createElement('canvas'); cardTmp.width=520; cardTmp.height=240; const cctx = cardTmp.getContext('2d');
     cctx.fillStyle = cardMetaToSave?.bg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
-    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx, cardMetaToSave);
+    renderStrokesToCanvasAndDraw(cardStrokesToSave, cardTmp, cctx, cardMetaToSave?.scale || 1, ()=>{});
     tctx.drawImage(cardTmp, 430,700,340,160);
   }
   const servedDataUrl = tmp.toDataURL('image/png');
@@ -1285,19 +1336,9 @@ completeMake.addEventListener('click', async ()=>{
         cardDataUrl: savedCardDataUrlLocal || null
       });
     } else {
-      // local state update
-      const idx = state.orders.findIndex(x=>x.id===currentMakingOrderId);
-      if (idx>=0){
-        state.orders[idx].state='delivered';
-        state.orders[idx].deliveredAt = Date.now();
-        state.orders[idx].servedImageData = servedDataUrl;
-        state.orders[idx].artStrokes = artStrokesToSave;
-        state.orders[idx].cardStrokes = cardStrokesToSave;
-        state.orders[idx].artMeta = artMetaToSave || null;
-        state.orders[idx].cardMeta = cardMetaToSave || null;
-        state.orders[idx].artDataUrl = savedArtDataUrlLocal || null;
-        state.orders[idx].cardDataUrl = savedCardDataUrlLocal || null;
-      }
+      // local: find localOrders and mark removed or delivered
+      const idx = state.localOrders.findIndex(x=>x.id === currentMakingOrderId);
+      if (idx >= 0) state.localOrders.splice(idx,1);
     }
     modalMakeLatte.style.display = 'none';
     try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
@@ -1314,25 +1355,26 @@ completeMake.addEventListener('click', async ()=>{
   }
 });
 
-/* client overlay & updateClientOverlay */
+/* ---------- Client overlay handling ---------- */
 function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '数分そのままでお待ちください'; orderStatusOverlay.style.display = 'flex'; }
 function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
 
+/* updateClientOverlay uses state.orders (from firestore) and state.localOrders
+   Only show served content when delivered
+*/
 function updateClientOverlay(){
   if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){
     state.currentOrderIdForClient = null;
     return;
   }
   if (!state.currentOrderIdForClient) return;
-  const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
+
+  // prefer firestore order if present
+  const o = (state.orders || []).find(x=>x.id===state.currentOrderIdForClient) || state.localOrders.find(x=>x.id===state.currentOrderIdForClient);
   if (!o) return;
   if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
-  else if (o.state === 'inprogress'){
-    showClientStatus('現在調理中…');
-    if (state.audioUnlocked){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
-    else state.pendingPlayQueue.push({ type:'cook' });
-  }
-  else if (o.state === 'delivered'){
+  else if (o.state === 'inprogress'){ showClientStatus('現在調理中…'); if (state.audioUnlocked){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} } else state.pendingPlayQueue.push({ type:'cook' }); }
+  else if (o.state === 'delivered' || o.servedImageData){
     showClientServed(o);
     hideClientStatus();
     try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
@@ -1342,7 +1384,9 @@ function updateClientOverlay(){
   }
 }
 
-/* showClientServed: render art/card if clientId matches; also prepare servedSequence frames */
+/* showClientServed render art/card but only reveal strokes when order.clientId === local clientId
+   Also prepare servedSequence frames for pomodoro frame switching (preload)
+*/
 async function showClientServed(order){
   if (order.servedImageData){
     servedImage.src = order.servedImageData;
@@ -1357,7 +1401,7 @@ async function showClientServed(order){
   artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
   if (order.clientId === clientId){
     if (order.artStrokes && order.artStrokes.length){
-      replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, order.artMeta);
+      replayStrokesOnCanvasImmediateSafe(order.artStrokes, servedArtMini, artCtx, order.artMeta);
     } else if (order.artDataUrl){
       const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
     }
@@ -1369,7 +1413,7 @@ async function showClientServed(order){
   cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
   if (order.clientId === clientId){
     if (order.cardStrokes && order.cardStrokes.length){
-      replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini, order.cardMeta);
+      replayStrokesOnCanvasImmediateSafe(order.cardStrokes, servedCardMini, cardCtxMini, order.cardMeta);
     } else if (order.cardDataUrl){
       const img = new Image(); img.src = order.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
     }
@@ -1380,11 +1424,13 @@ async function showClientServed(order){
   servedSequence = frames.slice(); servedSequenceIndex = 0;
   if (servedSequence.length) servedImage.src = servedSequence[0];
 
+  // Set POMO.currentMenuKey for pomodoro interactions when modalEat open
   POMO.currentMenuKey = order.item || 'rate';
+  // show modal
   document.getElementById('modalEat').style.display = 'flex';
 }
 
-/* preload frames helper similar to previous implementation */
+/* preload frames with candidate patterns */
 async function preloadFrames(basePath, frameCount=6, lastRandom=false){
   const frames = [];
   for (let i=1;i<=frameCount;i++){
@@ -1394,6 +1440,7 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
       `${basePath}_${String(i).padStart(2,'0')}.png`,
       `${basePath}_${i}.png`
     ];
+    let found=false;
     for (const urlCandidate of candidates){
       const url = getAssetUrl(urlCandidate);
       try {
@@ -1401,20 +1448,23 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
         if (!res.ok) continue;
         const blob = await res.blob();
         frames.push(URL.createObjectURL(blob));
-        break;
+        found=true; break;
       } catch(e){ continue; }
+    }
+    if (!found){
+      // skip if not found
     }
   }
   return frames;
 }
 
-/* servedImage click opens Pomodoro (we removed long-press eat behavior) */
+/* ---------- servedImage interaction: open pomodoro ---------- */
 servedImage.addEventListener('click', ()=>{
   const currentMenu = POMO.currentMenuKey || 'rate';
   openPomodoroForMenu(currentMenu);
 });
 
-/* saveAll (client) */
+/* ---------- saveAll (client) ---------- */
 saveAllBtn.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
   t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
@@ -1428,25 +1478,31 @@ saveAllBtn.addEventListener('click', ()=>{
   mainImg.onerror = ()=> { alert('画像の読み込みに失敗しました'); };
 });
 
-/* homeFromEat: clears art data from Firestore for that order if client (preserve privacy) */
+/* ---------- homeFromEat: clear drawings on Firestore if client, and dismiss ---------- */
 homeFromEat.addEventListener('click', async ()=>{
   const curId = state.currentOrderIdForClient;
   if (curId){
-    try {
-      const o = state.orders.find(x => x.id === curId);
-      if (o && o.clientId === clientId && db){
-        await updateDoc(doc(db,'orders',curId), {
-          artStrokes: null,
-          cardStrokes: null,
-          artDataUrl: null,
-          cardDataUrl: null,
-          servedImageData: null,
-          artMeta: null,
-          cardMeta: null
-        });
+    if (db){
+      try {
+        const o = state.orders.find(x => x.id === curId);
+        if (o && o.clientId === clientId){
+          await updateDoc(doc(db,'orders',curId), {
+            artStrokes: null,
+            cardStrokes: null,
+            artDataUrl: null,
+            cardDataUrl: null,
+            servedImageData: null,
+            artMeta: null,
+            cardMeta: null
+          });
+        }
+      } catch(e){
+        console.warn('clear art data failed', e);
       }
-    } catch(e){
-      console.warn('clear art data failed', e);
+    } else {
+      // offline: remove localOrder if exists
+      const idx = state.localOrders.findIndex(x=>x.id === curId);
+      if (idx >= 0) state.localOrders.splice(idx,1);
     }
     dismissedOrders.add(curId);
     try { localStorage.setItem('reiji_dismissed_orders', JSON.stringify(Array.from(dismissedOrders))); } catch(e){}
@@ -1455,7 +1511,7 @@ homeFromEat.addEventListener('click', async ()=>{
   document.getElementById('modalEat').style.display = 'none';
 });
 
-/* J/E/C/K jukebox */
+/* ---------- jukebox ---------- */
 function buildJukebox(){
   const list = [
     { id:'J', img:'@zzcafe2800/reiji_cafe/main/J.png', audio: audioJ },
@@ -1475,20 +1531,26 @@ function buildJukebox(){
   }
 }
 
-/* updateOrderButtonState now uses Tokyo time and shows BOT if no human */
+/* ---------- Order button enabling: based on Japan time and any staff shift ---------- */
+function getJapanNow(){
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const japanNow = new Date(utc + (9*60*60*1000));
+  return japanNow;
+}
+
 function updateOrderButtonState(){
-  // human availability by Tokyo time
-  const nowTokyo = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShiftTokyo(s.shiftStart,s.shiftEnd));
-  if (anyAvailable){
+  const nowJapan = getJapanNow();
+  const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,nowJapan));
+  // allow order also if BOT is enabled (the Bot will take the order)
+  if (anyAvailable || BOT.isEnabled){
     orderBtn.classList.remove('disabled');
   } else {
-    // allow ordering by BOT even when no human staff (per request)
-    orderBtn.classList.remove('disabled');
+    orderBtn.classList.add('disabled');
   }
 }
 
-/* Sound overlay handling */
+/* ---------- Sound overlay ---------- */
 function showSoundOverlay(){ soundOverlay.style.display = 'flex'; }
 function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
 enableSoundBtn.addEventListener('click', ()=> {
@@ -1499,11 +1561,16 @@ enableSoundBtn.addEventListener('click', ()=> {
 });
 disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
 
-/* header BGM button opens URL */
 bgmBtn.addEventListener('click', ()=> window.open('https://x.gd/6C0VB', '_blank'));
 
-/* ------------- Pomodoro implementation (per earlier version, client-local) ------------- */
+/* ---------- Initialization ---------- */
+buildJukebox();
+buildMenu().catch(()=>{});
+initArtCanvas(); initCardCanvas();
+if (FIREBASE_AVAILABLE) startRealtime();
+showSoundOverlay();
 
+/* ---------- Pomodoro implementation (client-only per modal) ---------- */
 const POMO = {
   running: false,
   phase: 'idle',
@@ -1546,7 +1613,6 @@ function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
   const idx = Math.floor(from + (to - from) * ratio);
   return Math.min(fc, Math.max(1, idx));
 }
-
 function pickBreakFrame(menuKey){
   const menu = MENUS[menuKey];
   const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
@@ -1555,7 +1621,6 @@ function pickBreakFrame(menuKey){
   return choices[Math.floor(Math.random() * choices.length)];
 }
 
-/* setServedImageFrame tries candidate filenames and uses first that loads (async) */
 function setServedImageFrame(menuKey, frameIndex){
   const menu = MENUS[menuKey];
   if (!menu) return;
@@ -1584,12 +1649,7 @@ function setServedImageFrame(menuKey, frameIndex){
   tryCandidates();
 }
 
-function clearScheduledP3(){
-  if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers = [];
-  for(const t of POMO.scheduledP3Timers) clearTimeout(t);
-  POMO.scheduledP3Timers = [];
-  POMO.lastP3Index = -1;
-}
+function clearScheduledP3(){ if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers = []; for(const t of POMO.scheduledP3Timers) clearTimeout(t); POMO.scheduledP3Timers = []; POMO.lastP3Index = -1; }
 
 function scheduleBreakRandomSounds(){
   clearScheduledP3();
@@ -1611,9 +1671,9 @@ function scheduleBreakRandomSounds(){
 
 function rotatePomoMessage(){
   const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null);
-  if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; }
+  if (!phase){ document.getElementById('eatSoundInfo').textContent = '—'; return; }
   const pool = POMO_MESSAGES[phase] || [];
-  if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; }
+  if (!pool.length){ document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; }
   let idxs = pool.map((_,i)=>i);
   if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex);
   const idx = idxs[Math.floor(Math.random()*idxs.length)];
@@ -1641,8 +1701,10 @@ function startPomoTick(){
       } else if (POMO.phase === 'break'){
         clearScheduledP3();
         POMO.loopIndex++;
-        if (POMO.loopIndex >= POMO.loopTotal){ stopPomo(true); return; }
-        else {
+        if (POMO.loopIndex >= POMO.loopTotal){
+          stopPomo(true);
+          return;
+        } else {
           POMO.phase = 'work';
           POMO.remainingMs = (POMO.workMin * 60 * 1000);
           setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
@@ -1696,29 +1758,57 @@ function renderPomoUI(){
     const elapsed = Math.max(0, total - POMO.remainingMs);
     const pct = Math.min(100, Math.floor((elapsed / total) * 100));
     pomoProgressBar.style.width = `${pct}%`;
-  } else { pomoProgressBar.style.width = `0%`; }
-  pausePomoBtn.textContent = (POMO.phase === 'paused') ? '▶' : '⏸';
+  } else {
+    pomoProgressBar.style.width = `0%`;
+  }
+  if (POMO.phase === 'paused'){ pausePomoBtn.textContent = '▶'; } else { pausePomoBtn.textContent = '⏸'; }
 }
 
 function startPomo(){
   const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1')));
   const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25')));
   const bmin = Math.max(1, Math.min(200, parseInt(breakMinInput.value || '5')));
-  POMO.loopTotal = loops; POMO.loopIndex = 0; POMO.workMin = wmin; POMO.breakMin = bmin;
-  POMO.running = true; POMO.phase = 'work'; POMO.remainingMs = (wmin * 60 * 1000);
+  POMO.loopTotal = loops;
+  POMO.loopIndex = 0;
+  POMO.workMin = wmin;
+  POMO.breakMin = bmin;
+  POMO.running = true;
+  POMO.phase = 'work';
+  POMO.remainingMs = (wmin * 60 * 1000);
   POMO.currentMenuKey = POMO.currentMenuKey || 'rate';
-  const menu = MENUS[POMO.currentMenuKey] || MENUS['rate']; POMO.frameCount = menu.frameCount || 6;
+  const menu = MENUS[POMO.currentMenuKey] || MENUS['rate'];
+  POMO.frameCount = menu.frameCount || 6;
   audioPiroStart && audioPiroStart.play().catch(()=>{});
   setServedImageFrame(POMO.currentMenuKey, 2);
   clearScheduledP3();
   startPomoTick();
   renderPomoUI();
 }
-function togglePausePomo(){ if (!POMO.running) return; if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; audioPiroToggle && audioPiroToggle.play().catch(()=>{}); startPomoTick(); } else { POMO._prevPhase = POMO.phase; POMO.phase = 'paused'; stopPomoTick(); audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } renderPomoUI(); }
-function stopPomo(returnToSettings){ POMO.running=false; POMO.phase='idle'; POMO.remainingMs=0; clearScheduledP3(); stopPomoTick(); if (returnToSettings){ pomoSettings.style.display='block'; pomoRunning.style.display='none'; } renderPomoUI(); }
-function skipPomo(){ if (!POMO.running) return; if (POMO.phase === 'work'){ POMO.remainingMs = 0; } else if (POMO.phase === 'break'){ POMO.remainingMs = 0; } else if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; POMO.remainingMs = 0; } }
-
-/* UI for numeric up/down */
+function togglePausePomo(){
+  if (!POMO.running) return;
+  if (POMO.phase === 'paused'){
+    POMO.phase = POMO._prevPhase || 'work';
+    audioPiroToggle && audioPiroToggle.play().catch(()=>{});
+    startPomoTick();
+  } else {
+    POMO._prevPhase = POMO.phase;
+    POMO.phase = 'paused';
+    stopPomoTick();
+    audioPiroToggle && audioPiroToggle.play().catch(()=>{});
+  }
+  renderPomoUI();
+}
+function stopPomo(returnToSettings){
+  POMO.running = false; POMO.phase = 'idle'; POMO.remainingMs = 0; clearScheduledP3(); stopPomoTick();
+  if (returnToSettings){ pomoSettings.style.display = 'block'; pomoRunning.style.display = 'none'; }
+  renderPomoUI();
+}
+function skipPomo(){
+  if (!POMO.running) return;
+  if (POMO.phase === 'work'){ POMO.remainingMs = 0; }
+  else if (POMO.phase === 'break'){ POMO.remainingMs = 0; }
+  else if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; POMO.remainingMs = 0; }
+}
 function wireHoldButton(buttonEl, inputEl, delta, min, max){
   let timer = null; let holdStart = 0; let currentInterval = 500;
   function doStep(){ let v = parseInt(inputEl.value || '0'); v += delta; if (typeof min === 'number') v = Math.max(min, v); if (typeof max === 'number') v = Math.min(max, v); inputEl.value = v; updatePomoCountDisplay(); }
@@ -1737,220 +1827,133 @@ wireHoldButton(workUp, workMinInput, +1, 1, 200);
 wireHoldButton(workDown, workMinInput, -1, 1, 200);
 wireHoldButton(breakUp, breakMinInput, +1, 1, 200);
 wireHoldButton(breakDown, breakMinInput, -1, 1, 200);
-startPomoBtn.addEventListener('click', ()=>{ if (!POMO.running){ startPomo(); startPomoBtn.textContent='実行中'; }});
-stopPomoBtn.addEventListener('click', ()=>{ stopPomo(true); startPomoBtn.textContent='再生 ▶'; });
+startPomoBtn.addEventListener('click', (e)=>{ if (!POMO.running){ startPomo(); startPomoBtn.textContent = '実行中'; }});
+stopPomoBtn.addEventListener('click', ()=>{ stopPomo(true); startPomoBtn.textContent = '再生 ▶'; });
 pausePomoBtn.addEventListener('click', ()=>{ togglePausePomo(); });
 skipPomoBtn.addEventListener('click', ()=>{ skipPomo(); });
+function openPomodoroForMenu(menuKey){ POMO.currentMenuKey = menuKey || 'rate'; loopCountInput.value = POMO.loopTotal || 1; workMinInput.value = POMO.workMin || 25; breakMinInput.value = POMO.breakMin || 5; updatePomoCountDisplay(); pomoPanel.classList.add('show'); pomoPanel.style.display = 'block'; pomoSettings.style.display = POMO.running ? 'none' : 'block'; pomoRunning.style.display = POMO.running ? 'block' : 'none'; renderPomoUI(); }
+document.addEventListener('click', (e)=>{ if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){ if (!POMO.running) { pomoPanel.classList.remove('show'); pomoPanel.style.display='none'; } }});
+/* open pomodoro when clicking servedImage already wired above */
 
-function openPomodoroForMenu(menuKey){
-  POMO.currentMenuKey = menuKey || 'rate';
-  loopCountInput.value = POMO.loopTotal || 1;
-  workMinInput.value = POMO.workMin || 25;
-  breakMinInput.value = POMO.breakMin || 5;
-  updatePomoCountDisplay();
-  pomoPanel.classList.add('show'); pomoPanel.style.display='block';
-  pomoSettings.style.display = POMO.running ? 'none' : 'block';
-  pomoRunning.style.display = POMO.running ? 'block' : 'none';
-  renderPomoUI();
-}
-
-/* close pomodoro on outside click if not running */
-document.addEventListener('click', (e)=>{ if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){ if (!POMO.running) { pomoPanel.classList.remove('show'); pomoPanel.style.display='none'; } } });
-
-/* ---------------- BOT logic ----------------
-   - When no human staff on shift (Tokyo time), show BOT in shiftShort and allow ordering
-   - When an order is placed under BOT mode, UI shows BOT processing overlay and disables interactions
-   - BOT produces art by selecting random PNG from MENUS[menu].botArtUrls and generates a message card with a stylish font
-   - If Firestore is available we try to add the order (so it's visible), then update it to delivered (minimizing writes). If Firestore fails or offline, BOT processes locally only.
-*/
-
-/* helper to disable/enable main UI when BOT processing */
-function setBotProcessing(on, text='BOTが対応中です…'){
-  if (on){
-    botOverlayText.textContent = text;
-    botOverlay.classList.add('show');
-    botOverlay.style.display = 'flex';
-    // disable main interactive elements
-    orderBtn.disabled = true;
-    orderBtn.classList.add('disabled');
-    menuGrid.querySelectorAll('.menu-item').forEach(el=>el.style.pointerEvents='none');
-  } else {
-    botOverlay.classList.remove('show');
-    botOverlay.style.display = 'none';
-    orderBtn.disabled = false;
-    orderBtn.classList.remove('disabled');
-    menuGrid.querySelectorAll('.menu-item').forEach(el=>el.style.pointerEvents='auto');
-  }
-}
-
-/* Helper: load image from repo path (@ -> raw github) and return data URL */
-async function loadImageAsDataUrl(path){
-  const url = getAssetUrl(path);
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('fetch failed');
-    const blob = await res.blob();
-    return await new Promise((res2)=>{ const r = new FileReader(); r.onload = ()=> res2(r.result); r.readAsDataURL(blob); });
-  } catch(e){
-    console.warn('load image failed', path, e);
-    return null;
-  }
-}
-
-/* generate message card canvas with three lines:
-   line1: 固定 (e.g., "どうぞ")
-   line2: 固定 (e.g., "ごゆっくり～☕")
-   line3: 客の名前 + "さん"
-   Use Noto Serif JP bold (included in head) for a stylish look. Return dataURL.
-*/
-function generateCardImageWithText(name, width=520, height=240, bg='#fff2e6'){
-  const c = document.createElement('canvas'); c.width = width; c.height = height; const ctx = c.getContext('2d');
-  ctx.fillStyle = bg; ctx.fillRect(0,0,c.width,c.height);
-  // text style
-  const line1 = 'どうぞ';
-  const line2 = 'ごゆっくり～☕';
-  const line3 = name + 'さん';
-  ctx.fillStyle = '#000';
-  // use Noto Serif JP if available; fallback to serif
-  const fontBase = 'Noto Serif JP, serif';
-  // line1 big
-  ctx.font = `bold ${Math.floor(height*0.18)}px ${fontBase}`;
-  ctx.textAlign = 'center'; ctx.textBaseline='middle';
-  ctx.fillText(line1, c.width/2, c.height*0.25);
-  ctx.font = `bold ${Math.floor(height*0.14)}px ${fontBase}`;
-  ctx.fillText(line2, c.width/2, c.height*0.5);
-  ctx.font = `bold ${Math.floor(height*0.16)}px ${fontBase}`;
-  ctx.fillText(line3, c.width/2, c.height*0.78);
-  return c.toDataURL('image/png');
-}
-
-/* BOT flow when user orders while no human staff */
-async function processBotOrder(menuItem, customerName){
-  // Immediately show BOT overlay and disable interactions
-  setBotProcessing(true, 'BOTが対応中です…');
-  // create orderRecord (try Firestore addDoc, else local)
-  const createdAt = Date.now(), expiresAt = createdAt + 5*60*1000;
-  const orderObj = { name: customerName, item: menuItem.id, itemImageBase: menuItem.imageBase, state:'inprogress', createdAt, expiresAt, assignedTo:'BOT', assignedToName:'BOT', artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
-  let orderDocId = null;
-  let wroteToFirestore = false;
-  try {
-    if (db){
-      const ref = await addDoc(ordersCol, orderObj);
-      orderDocId = ref.id;
-      wroteToFirestore = true;
+/* ---------- BOT functionality (local fallback bot staff) ---------- */
+const BOT = {
+  isEnabled: true,
+  isActive: false,
+  // Called during initialization and whenever staff list changes
+  updateBotPresence: function(){
+    const nowJapan = getJapanNow();
+    const humanActive = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,nowJapan));
+    if (!humanActive){
+      BOT.isActive = true;
     } else {
-      orderObj.id = uid('o');
-      state.orders.push(orderObj);
-      orderDocId = orderObj.id;
+      BOT.isActive = false;
     }
-  } catch(e){
-    console.warn('BOT addDoc failed; will process locally', e);
-    orderObj.id = uid('o'); state.orders.push(orderObj); orderDocId = orderObj.id;
-  }
-
-  // Bot selects random art image for this menu (if botArtUrls exist)
-  const botArtList = (MENUS[menuItem.id] && MENUS[menuItem.id].botArtUrls) || [];
-  let chosenArtDataUrl = null;
-  if (botArtList.length){
-    const chosenPath = botArtList[Math.floor(Math.random()*botArtList.length)];
-    const dataUrl = await loadImageAsDataUrl(chosenPath);
-    if (dataUrl) chosenArtDataUrl = dataUrl;
-  }
-
-  // Bot generates card image with nice font
-  const cardDataUrl = generateCardImageWithText(customerName, 520, 240, MENUS[menuItem.id]?.cardBg || '#fff2e6');
-
-  // Compose served image (similar to staff flow)
-  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
-  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  // draw a placeholder latte image or first frame of menu frames
-  try {
-    const baseFrameUrl = getAssetUrl(menuItem.imageBase + '1.png');
-    const imgMain = new Image(); imgMain.crossOrigin='anonymous'; imgMain.src = baseFrameUrl;
-    await new Promise(r=>{ imgMain.onload=r; imgMain.onerror=r; });
-    tctx.drawImage(imgMain, 450,300,300,300);
-  } catch(e){
-    tctx.fillStyle = '#6b3b24'; tctx.fillRect(450,300,300,300);
-  }
-  if (chosenArtDataUrl){
-    const imgA = new Image(); imgA.src = chosenArtDataUrl; await new Promise(r=>{ imgA.onload=r; imgA.onerror=r; }); tctx.drawImage(imgA, 440,120,320,320);
-  }
-  if (cardDataUrl){
-    const imgC = new Image(); imgC.src = cardDataUrl; await new Promise(r=>{ imgC.onload=r; imgC.onerror=r; }); tctx.drawImage(imgC, 430,700,340,160);
-  }
-  const servedDataUrl = tmp.toDataURL('image/png');
-
-  // If wroteToFirestore earlier (order exists in Firestore), update it to delivered with minimal writes
-  if (wroteToFirestore && db){
+    renderShiftShort();
+  },
+  // handleOrder: returns Promise resolving { servedImageData, artDataUrl, cardDataUrl }
+  handleOrder: async function(order){
+    // Simulate processing time (short)
+    await new Promise(r => setTimeout(r, 1500 + Math.random()*2000));
+    // Produce served image: combine base item image + random bot art + generated card
+    const menuKey = order.item || 'rate';
+    const cfg = MENUS[menuKey] || MENUS['rate'];
+    // Compose final served image: base item frame1 + art overlay + card image
+    const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const tctx = tmp.getContext('2d');
+    tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
+    // draw base item (frame1)
     try {
-      await updateDoc(doc(db,'orders',orderDocId), {
-        state:'delivered',
-        deliveredAt: Date.now(),
-        servedImageData: servedDataUrl,
-        artDataUrl: chosenArtDataUrl || null,
-        cardDataUrl: cardDataUrl || null,
-        artMeta: null,
-        cardMeta: null
-      });
-    } catch(e){
-      console.warn('BOT updateDoc failed', e);
-      // fallback: put in local state
-      const idx = state.orders.findIndex(x=>x.id===orderDocId);
-      if (idx>=0){ state.orders[idx].state='delivered'; state.orders[idx].servedImageData = servedDataUrl; state.orders[idx].artDataUrl = chosenArtDataUrl || null; state.orders[idx].cardDataUrl = cardDataUrl || null; }
+      const baseImg = new Image(); baseImg.crossOrigin='anonymous'; baseImg.src = getAssetUrl(cfg.imageBase + '1.png');
+      await new Promise(r=>{ baseImg.onload=r; baseImg.onerror=r; });
+      tctx.drawImage(baseImg, 150,100,900,600);
+    } catch(e){ /* ignore */ }
+    // choose random bot art if available
+    let artDataUrl = null;
+    if (cfg.botArts && cfg.botArts.length){
+      const artPath = cfg.botArts[Math.floor(Math.random()*cfg.botArts.length)];
+      try {
+        const aimg = new Image(); aimg.crossOrigin='anonymous'; aimg.src = getAssetUrl(artPath);
+        await new Promise(r=>{ aimg.onload=r; aimg.onerror=r; });
+        // draw art into region
+        tctx.drawImage(aimg, 440,120,320,320);
+        artDataUrl = (function(){ const c=document.createElement('canvas'); c.width=320;c.height=320;const cc=c.getContext('2d'); cc.drawImage(aimg,0,0,320,320); return c.toDataURL('image/png'); })();
+      } catch(e){}
     }
-  } else {
-    // local only: update local state order to delivered
-    const idx = state.orders.findIndex(x=>x.id===orderDocId);
-    if (idx>=0){
-      state.orders[idx].state='delivered';
-      state.orders[idx].deliveredAt = Date.now();
-      state.orders[idx].servedImageData = servedDataUrl;
-      state.orders[idx].artDataUrl = chosenArtDataUrl || null;
-      state.orders[idx].cardDataUrl = cardDataUrl || null;
-    }
-  }
+    // generate card: create canvas, draw text lines including name
+    const cardCanvasTmp = document.createElement('canvas'); cardCanvasTmp.width = 520; cardCanvasTmp.height = 240; const cctx = cardCanvasTmp.getContext('2d');
+    cctx.fillStyle = cfg.cardBg || '#fff2e6'; cctx.fillRect(0,0,cardCanvasTmp.width,cardCanvasTmp.height);
+    // Draw stylish text: 3 lines: fixed line1, fixed line2, name + さん
+    cctx.fillStyle = '#222'; cctx.textAlign='center';
+    // Use loaded Google Font; set font size according to canvas
+    const name = order.name || 'お客様';
+    cctx.font = '28px "Noto Serif JP", serif';
+    cctx.fillText('どうぞ', cardCanvasTmp.width/2, 60);
+    cctx.font = '22px "Noto Serif JP", serif';
+    cctx.fillText('ごゆっくり～☕', cardCanvasTmp.width/2, 110);
+    cctx.font = '26px "Noto Serif JP", serif';
+    cctx.fillText(name + ' さん', cardCanvasTmp.width/2, 170);
+    const cardDataUrl = cardCanvasTmp.toDataURL('image/png');
+    tctx.drawImage(cardCanvasTmp, 430,700,340,160);
+    const servedImageData = tmp.toDataURL('image/png');
 
-  // After bot processing, hide overlay and show served modal
-  setBotProcessing(false);
-  // show client served if this is the client's order
-  if (state.currentOrderIdForClient === orderDocId || !state.currentOrderIdForClient){
-    // if client expects this order, show it
-    const o = state.orders.find(x=>x.id===orderDocId);
-    if (o){
-      showClientServed(o);
-    } else {
-      // fallback: create a transient object to show
-      showClientServed({
-        item: menuItem.id,
-        artDataUrl: chosenArtDataUrl,
-        cardDataUrl: cardDataUrl,
-        servedImageData: servedDataUrl,
-        artMeta: null,
-        cardMeta: null,
-        clientId
-      });
-    }
+    // Return served assets
+    return { servedImageData, artDataUrl, cardDataUrl };
   }
-  // Remove delivered order from order list display is automatic because renderOrderLists ignores delivered
+};
+
+/* BOT should update presence whenever staff list updates */
+const origRenderShiftShort = renderShiftShort;
+renderShiftShort = function(){
+  // call BOT update first to set BOT.isActive
+  BOT.updateBotPresence();
+  // original behavior now sees BOT.isActive
+  origRenderShiftShort();
+};
+
+/* ---------- Menu addition notification helper ---------- */
+function notifyMenuAdded(){
+  // play tyaimu.mp3 only for staff currently viewing staffFull (client-side)
+  // if state.currentUser.role === 'staff' and staffFull visible
+  if (state.currentUser && state.currentUser.role === 'staff' && staffFull.classList.contains('show')){
+    if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' });
+    else { try{ audioTyaimu.currentTime = 0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
+  }
 }
 
-/* -----------------------------------------
-   Initialization and boot
-   ----------------------------------------- */
+/* ---------- Utility: disable UI while BOT handling ---------- */
+function disableUIWhileBotHandling(flag){
+  if (flag){
+    // overlay, grey out order button & menu interactions
+    orderBtn.classList.add('disabled');
+    // further disable clicks on modal etc by showing status overlay
+    showClientStatus('BOTが対応中…画面は操作できません');
+  } else {
+    orderBtn.classList.remove('disabled');
+    hideClientStatus();
+  }
+}
 
+/* ---------- Menu change simulation - for demo (not required) ---------- */
+/* For external usage, call addMenu(key, config) to add menu dynamically and trigger notifyMenuAdded */
+window.addMenu = function(key, config){
+  if (!key || !config) return;
+  MENUS[key] = config;
+  buildMenu().catch(()=>{});
+  // notify handled in buildMenu via prevMenuCount
+};
+
+/* ---------- Misc helpers ---------- */
+function preloadImage(url){ return new Promise((res,rej)=>{ const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>res(i); i.onerror=()=>rej(); i.src=url; }); }
+
+/* ---------- Initial boot: minor tasks ---------- */
 buildJukebox();
 buildMenu().catch(()=>{});
-initArtCanvas(artBgColor.value);
-initCardCanvas(cardBgColor.value);
-startRealtime();
+initArtCanvas(); initCardCanvas();
+if (FIREBASE_AVAILABLE) startRealtime();
 showSoundOverlay();
-
-/* initial UI states */
-renderShiftShort();
-updateOrderButtonState();
 
 /* End of script */
 </script>
+
 
   
   <script>
