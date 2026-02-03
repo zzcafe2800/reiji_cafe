@@ -406,36 +406,48 @@
 </div>
 
 <script type="module">
-/*
-  完全版スクリプト（BOT / Pomodoro / fixes / minimized Firebase writes where possible）
-  - 既存の Firestore 集約を維持
-  - BOT は Firestore の有無により「ローカルのみ」または「書き込み（最小）」で動作
-  - いくつかのバグを修正（tyaimu 再生除去、erase 背景消去回避、名前キャンセル、Tokyo 時刻判定）
-*/
-
-/* Firebase imports */
+/* ===== Firebase imports ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* Firebase config (unchanged) */
+/* ===== Firebase config（新サーバー） ===== */
 const firebaseConfig = {
-  apiKey: "AIzaSyCNm1bmsVG4uZIJaL-bwbIcLCghzJ-ejvM",
-  authDomain: "reiji-cafr.firebaseapp.com",
-  projectId: "reiji-cafr",
-  storageBucket: "reiji-cafr.firebasestorage.app",
-  messagingSenderId: "18020287382",
-  appId: "1:18020287382:web:1a87e6378598697ea3d3b7",
-  measurementId: "G-F35S7FGW9M"
+  apiKey: "AIzaSyBJe7_PGeOEkCyC1NxaTMc5bjelQwv2OaU",
+  authDomain: "insyoku-f9aee.firebaseapp.com",
+  projectId: "insyoku-f9aee",
+  storageBucket: "insyoku-f9aee.firebasestorage.app",
+  messagingSenderId: "887841835344",
+  appId: "1:887841835344:web:249470b39af256b8a34455",
+  measurementId: "G-QET0N3KP2L"
 };
+
+/* ===== 初期化 ===== */
 let app, auth, db;
+
 try {
-  app = initializeApp(firebaseConfig);
+  app  = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
-  signInAnonymously(auth).catch(e=>console.warn('anonymous sign-in failed', e));
+  db   = getFirestore(app);
+
+  // 匿名ログイン
+  signInAnonymously(auth).catch(e=>{
+    console.warn("anonymous sign-in failed", e);
+  });
+
 } catch(e){
-  console.warn('Firebase init failed - offline mode', e);
+  console.warn("Firebase init failed - offline mode", e);
   db = null;
 }
 
