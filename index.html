@@ -1866,35 +1866,96 @@ cover.addEventListener("animationend", () => {
   cover.classList.add("finished");
 });
 </script>
-<!-- BGMコントロールUI -->
-<div id="bgmControl" style="position:fixed;top:8px;left:8px;display:flex;align-items:center;gap:6px;z-index:9999;font-size:18px;">
-  <button id="bgmMuteBtn" title="ミュート解除/ミュート" style="padding:4px;">🔊</button>
-  <button id="bgmLoopBtn" title="ループ" style="padding:4px;">🔁</button>
-  <button id="bgmNextBtn" title="次の曲" style="padding:4px;">再生/次</button>
+
+
+
+
+
+<!-- BGM コントロール UI -->
+<style>
+#bgmControl{
+  position:fixed;
+  top:10px;
+  left:10px;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(8px);
+  border-radius:16px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.15);
+  font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
+  color:#444;
+}
+
+#bgmControl button{
+  border:none;
+  background:#fff;
+  border-radius:12px;
+  padding:6px 10px;
+  font-size:16px;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+  transition:transform 0.1s, box-shadow 0.1s;
+}
+#bgmControl button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+#bgmTime{
+  font-size:14px;
+  min-width:95px;
+  text-align:center;
+}
+
+#bgmTitle{
+  font-size:14px;
+  max-width:180px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  opacity:0.85;
+}
+
+#bgmVolume{
+  width:90px;
+}
+</style>
+
+<div id="bgmControl">
+  <button id="bgmPlayBtn" title="再生 / 次の曲">▶</button>
+  <button id="bgmLoopBtn" title="ループ">🔁</button>
+
+  <div id="bgmTime">00:00 / 00:00</div>
+  <div id="bgmTitle">---</div>
+
+  <input id="bgmVolume" type="range" min="0" max="100" value="50">
 </div>
 
 <script>
+/* ===== 曲リスト（表示名をここで設定） ===== */
 const audioList = [
-  "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/sie.mp3",
-  "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/rara.mp3",
-    "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/riri.mp3",
-    "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/ruru.mp3",
-    "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/rere.mp3",
-  "https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/roro.mp3"
+  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/sie.mp3",  title:"静かなカフェの朝" },
+  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/rara.mp3", title:"ゆるり午後の時間" },
+  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/riri.mp3", title:"月明かりのテーブル" },
+  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/ruru.mp3", title:"夜更けの読書席" },
+  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/rere.mp3", title:"雨音ブレンド" },
+  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/roro.mp3", title:"最後の一杯" }
 ];
 
-// 状態管理
+/* ===== 状態 ===== */
 let currentTrackIndex = 0;
-let isMuted = false;
 let isLoop = false;
 
-// Audioオブジェクト
-let audio = new Audio();
-audio.src = audioList[currentTrackIndex];
+/* ===== Audio ===== */
+const audio = new Audio();
+audio.volume = 0.75; // 初期50%（最大1.5の半分）
 audio.loop = false;
-audio.volume = 1;
 
-// シャッフル関数
+/* ===== シャッフル ===== */
 function shuffleArray(array){
   for(let i=array.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -1904,55 +1965,74 @@ function shuffleArray(array){
 }
 let shuffledList = shuffleArray([...audioList]);
 
-// 曲再生
+/* ===== UI取得 ===== */
+const playBtn  = document.getElementById("bgmPlayBtn");
+const loopBtn  = document.getElementById("bgmLoopBtn");
+const timeEl   = document.getElementById("bgmTime");
+const titleEl  = document.getElementById("bgmTitle");
+const volumeEl = document.getElementById("bgmVolume");
+
+/* ===== 再生 ===== */
 function playTrack(index){
   currentTrackIndex = index;
-  audio.src = shuffledList[currentTrackIndex];
+  audio.src = shuffledList[currentTrackIndex].url;
+  titleEl.textContent = shuffledList[currentTrackIndex].title;
   audio.play();
+  playBtn.textContent = "⏭";
 }
 
-// 次の曲
+/* ===== 次の曲 ===== */
 function nextTrack(){
   currentTrackIndex++;
   if(currentTrackIndex >= shuffledList.length){
-    shuffledList = shuffleArray([...audioList]); // 全曲再シャッフル
+    shuffledList = shuffleArray([...audioList]);
     currentTrackIndex = 0;
   }
   playTrack(currentTrackIndex);
 }
 
-// ループボタン
-const loopBtn = document.getElementById('bgmLoopBtn');
-loopBtn.addEventListener('click',()=>{
+/* ===== 時間表示 ===== */
+function formatTime(sec){
+  if(isNaN(sec)) return "00:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+audio.addEventListener("timeupdate",()=>{
+  timeEl.textContent =
+    `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+});
+
+/* ===== ボタン ===== */
+playBtn.addEventListener("click",()=>{
+  if(audio.paused){
+    playTrack(currentTrackIndex);
+  }else{
+    nextTrack();
+  }
+});
+
+loopBtn.addEventListener("click",()=>{
   isLoop = !isLoop;
   audio.loop = isLoop;
-  loopBtn.style.opacity = isLoop ? 1 : 0.5;
+  loopBtn.style.opacity = isLoop ? "1" : "0.4";
 });
 
-// ミュートボタン
-const muteBtn = document.getElementById('bgmMuteBtn');
-muteBtn.addEventListener('click',()=>{
-  isMuted = !isMuted;
-  audio.muted = isMuted;
-  muteBtn.textContent = isMuted ? '🔇' : '🔊';
+/* ===== 音量バー（0〜100 → 0〜1.5） ===== */
+volumeEl.addEventListener("input",()=>{
+  audio.volume = (volumeEl.value / 100) * 1.5;
 });
 
-// 次曲ボタン
-document.getElementById('bgmNextBtn').addEventListener('click', nextTrack);
-
-// 曲終了時
-audio.addEventListener('ended', ()=>{
+/* ===== 曲終了 ===== */
+audio.addEventListener("ended",()=>{
   if(!isLoop) nextTrack();
 });
 
-// 初回自動再生（ユーザー操作後でないとブラウザにブロックされる場合がある）
-document.body.addEventListener('click',{once:true},()=>audio.play());
+/* ===== 初回ユーザー操作後に再生 ===== */
+document.body.addEventListener("click",{once:true},()=>{
+  playTrack(0);
+});
 </script>
-
-
-
-
-
 
 
 
