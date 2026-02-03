@@ -300,7 +300,7 @@
 
       <div style="flex:1;min-width:300px;">
         <div style="background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
-          <strong id="latteArtLabel">ラテアート（似顔絵など）</strong>
+          <strong id="latteArtLabel">アート（似顔絵など）</strong>
           <div style="margin-top:8px;">
             <div class="art-area" id="artArea">
               <canvas id="artBg" width="240" height="240"></canvas>
@@ -367,7 +367,7 @@
           <div id="pomodoroPanel" aria-hidden="true">
             <div id="pomoSettings">
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
-                <div>ループ数</div><div id="pomoCountDisplay">1 / 1</div>
+                <div>ポロドーモタイマー</div><div id="pomoCountDisplay">1 / 1</div>
               </div>
               <div class="pomo-row">
                 <div class="pomo-label">ループ数</div>
@@ -412,7 +412,7 @@
                   <button id="skipPomoBtn">⏭</button>
                 </div>
               </div>
-              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">作業開始で画像は2番フレームから変化します</div>
+              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">作業してお皿の底を見てみよう</div>
             </div>
 
           </div>
@@ -608,6 +608,7 @@ const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3
 const p3Urls = [
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_2.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_4.mp3'),
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_3.mp3')
 ];
 const p3Pool = p3Urls.map(url => new Audio(url));
