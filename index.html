@@ -1436,9 +1436,9 @@ function setServedImageFrame(menuKey, frameIndex){
   if (!menu) return;
   const base = menu.imageBase;
   const candidates = [
-    `${base}${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}${String(frameIndex).padStart(2,'')}.png`,
     `${base}${frameIndex}.png`,
-    `${base}_${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}_${String(frameIndex).padStart(2,'')}.png`,
     `${base}_${frameIndex}.png`
   ];
   // We try candidates in order; use first that fetch succeeds by checking existence with Image
