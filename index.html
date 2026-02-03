@@ -1470,9 +1470,9 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
   const frames = [];
   for (let i=1;i<=frameCount;i++){
     const candidates = [
-      `${basePath}${String(i).padStart(2,'0')}.png`,
+      `${basePath}${String(i).padStart(2,'')}.png`,
       `${basePath}${i}.png`,
-      `${basePath}_${String(i).padStart(2,'0')}.png`,
+      `${basePath}_${String(i).padStart(2,'')}.png`,
       `${basePath}_${i}.png`
     ];
     let pushed=false;
