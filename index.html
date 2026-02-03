@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム（ポロドーモ統合版）</title>
+<title>仮想飲食システム</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
@@ -698,7 +698,7 @@ setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
 function renderShiftShort(){
   const now = new Date();
   const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!active.length) shiftShort.textContent = 'シフト：現在対応できる店員がおり���せん';
+  if (!active.length) shiftShort.textContent = 'シフト：現在対応できる店員がおりません';
   else shiftShort.textContent = 'シフト：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
 }
 function renderShiftList(){
