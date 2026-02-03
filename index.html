@@ -899,9 +899,9 @@ function setServedImageFrame(menuKey, frameIndex){
   const base = menu.imageBase;
   // attempt: base + (frameIndex) + .png
   const candidates = [
-    `${base}${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}${String(frameIndex).padStart(6,'')}.png`,
     `${base}${frameIndex}.png`,
-    `${base}_${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}_${String(frameIndex).padStart(6,'')}.png`,
     `${base}_${frameIndex}.png`
   ];
   let chosen = candidates.find(c => c); // we'll just use first since getAssetUrl will point to raw; in practice ensure files exist
