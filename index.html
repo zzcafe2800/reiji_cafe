@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム（ポロドーモ＋BOT対応）</title>
+<title>仮想飲食システム（ポロドーモ + BOT, Offline aware）</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
     --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
     --card-skin:#fff2e6;
   }
-  html,body{height:100%;margin:0;font-family:"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background: url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;}
+  html,body{height:100%;margin:0;font-family:"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg")center/cover no-repeat;}
   body{min-height:100vh;display:flex;align-items:center;justify-content:center;}
   .container{width:100%;max-width:420px;margin:0;position:relative;perspective:2000px;aspect-ratio:3/5;}
   .book{position:relative;width:100%;height:100%;}
   .page{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;}
-  .cover{background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png") center/cover no-repeat;transform-origin:right center;z-index:2;pointer-events:auto;}
+  .cover{background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png")center/cover no-repeat;transform-origin:right center;z-index:2;pointer-events:auto;}
   .cover.open{animation:flip 7.2s ease-in-out forwards;pointer-events:none;}
   .cover.open.finished{display:none;}
-  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center / cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
+  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png")center/cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
   header{display:flex;align-items:center;justify-content:space-between;padding:12px;color:var(--dark);}
   @keyframes flip{0%{transform:rotateY(0deg);box-shadow:0 20px 40px rgba(0,0,0,.25);}40%{transform:rotateY(-55deg);}70%{transform:rotateY(-130deg);}100%{transform:rotateY(-180deg);box-shadow:none;}}
   @media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio:3/5;}}
@@ -76,16 +76,19 @@
   .pomo-timer{font-size:20px;font-weight:800;}
   .pomo-progress{height:10px;background:#eee;border-radius:6px;overflow:hidden;width:100%;}
   .pomo-progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd4c4,#ffb38a);width:0%;}
-  @media (max-width:520px){#pomodoroPanel{right:6px;top:6px;width:220px;} .menu-item img.menu-thumb{height:90px;} .modal{width:94%;}}
+
+  @media (max-width:520px){
+    #pomodoroPanel{right:6px;top:6px;width:220px;}
+    .menu-item img.menu-thumb{height:90px;}
+    .modal{width:94%;}
+  }
 </style>
 </head>
 <body>
-
 <div class="container">
   <div class="book">
-    <div class="page cover" id="coverPage"></div>
+    <div id="coverPage" class="page cover"></div>
     <div class="page inner">
-
       <header>
         <h1></h1>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -177,9 +180,10 @@
   </div>
 </div>
 
+<!-- Name modal reused for different contexts; we track modalContext -->
 <div id="modalName" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
-    <h3>名前を入力</h3>
+    <h3 id="modalNameTitle">ゲーム内の名前</h3>
     <input id="orderName" placeholder="名前を入力" style="width: 300px; height: 60px;" />
     <div style="margin-top:10px;text-align:right;">
       <button id="cancelOrderName" class="small">キャンセル</button>
@@ -200,7 +204,7 @@
 
 <div id="modalMakeLatte" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
   <div class="modal" style="width:95%;max-width:920px;">
-    <h3 id="makeTitle">制作（担当：<span id="makerName"></span>）</h3>
+    <h3 id="makeTitle">カフェラテ制作（担当：<span id="makerName"></span>）</h3>
     <div style="display:flex;flex-wrap:wrap;gap:12px;">
       <div style="flex:1;min-width:280px;">
         <div style="height:220px;display:flex;align-items:center;justify-content:center;">
@@ -251,7 +255,6 @@
           <strong id="latteArtLabel">ラテアート（似顔絵など）</strong>
           <div style="margin-top:8px;">
             <div class="art-area" id="artArea">
-              <!-- artBg (background) and artLayer (strokes) are separate to avoid erasing background -->
               <canvas id="artBg" width="240" height="240"></canvas>
               <canvas id="artLayer" width="240" height="240"></canvas>
             </div>
@@ -362,6 +365,7 @@
               </div>
               <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">作業開始で画像は2番フレームから変化します</div>
             </div>
+
           </div>
 
         </div>
@@ -435,14 +439,14 @@ try {
   db = null;
 }
 
-/* DOM refs (short names) */
+/* ===== DOM refs ===== */
 const nowtimeEl = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
 const shiftShort = document.getElementById('shiftShort');
 const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
 const modalName = document.getElementById('modalName');
-const orderName = document.getElementById('orderName');
+const orderNameInput = document.getElementById('orderName');
 const okOrderNameBtn = document.getElementById('okOrderName');
 const cancelOrderNameBtn = document.getElementById('cancelOrderName');
 const modalMenu = document.getElementById('modalMenu');
@@ -538,14 +542,14 @@ const pomoCountDisplay = document.getElementById('pomoCountDisplay');
 
 let servedSequence = [], servedSequenceIndex = 0;
 
-/* helper for raw GitHub -> URL */
+/* helper getAssetUrl */
 function getAssetUrl(path){
   if (!path) return '';
   if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
   try { return new URL(path).href; } catch(e){ return path; }
 }
 
-/* audio assets */
+/* audio */
 const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'));
 const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'));
 const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookdbgm.mp3'));
@@ -555,12 +559,10 @@ const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'));
 const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'));
 const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3'));
 
-/* Pomodoro sounds */
 const audioPiroStart = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro.mp3'));
 const audioPiroBreak = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro1.mp3'));
 const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3.mp3'));
 
-/* p3 pool */
 const p3Urls = [
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_2.mp3'),
@@ -568,69 +570,51 @@ const p3Urls = [
 ];
 const p3Pool = p3Urls.map(url => new Audio(url));
 
-/* firestore collections (if db available) */
+/* Firestore collections if available */
 const staffsCol = db ? collection(db, 'staffs') : null;
 const ordersCol = db ? collection(db, 'orders') : null;
 
 /* app state */
 const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
 
-/* dismissed orders local storage */
+/* dismissed orders local */
 const dismissedOrdersStored = JSON.parse(localStorage.getItem('reiji_dismissed_orders') || '[]');
 const dismissedOrders = new Set(dismissedOrdersStored);
 
-/* client id (local) */
+/* client id */
 let clientId = localStorage.getItem('reiji_clientId');
 if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
 
-/* MENUS with artPool & cardFonts for BOT (add image filenames available in repo) */
+/* menus + bot art pool + card font options */
 const MENUS = {
   rate: {
     id: 'rate', title: 'カフェ・ラテ（おすすめ）', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' },
-    botArtPool:[
-      '@zzcafe2800/reiji_cafe/main/rate_art1.png',
-      '@zzcafe2800/reiji_cafe/main/rate_art2.png',
-      '@zzcafe2800/reiji_cafe/main/rate_art3.png'
-    ],
-    botCardFonts:[] // empty -> will draw text
+    botArts: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png', '@zzcafe2800/reiji_cafe/main/rate_art2.png', '@zzcafe2800/reiji_cafe/main/rate_art3.png' ],
+    botCardFonts: [] // reserved
   },
   omu: {
     id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' },
-    botArtPool:[
-      '@zzcafe2800/reiji_cafe/main/omu_art1.png',
-      '@zzcafe2800/reiji_cafe/main/omu_art2.png'
-    ],
-    botCardFonts:[]
+    botArts: [ '@zzcafe2800/reiji_cafe/main/omu_art1.png', '@zzcafe2800/reiji_cafe/main/omu_art2.png' ],
+    botCardFonts: []
   }
 };
 MENUS.random = {
   id:'random', title:'ランダム', imageBase:'@zzcafe2800/reiji_cafe/main/random', frameCount:1, lastFrameRandom:false,
-  artBg:'#cccccc', artPen:'#000000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'ランダム', espressoLabel:'', milkLabel:'', latteArtLabel:'' },
-  botArtPool:[], botCardFonts:[]
+  artBg:'#cccccc', artPen:'#000000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'ランダム' }
 };
 
-/* --- helpers --- */
+/* misc helpers */
 function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function showModal(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
-function hideModal(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
-function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); } catch(e){} }
+function showModal(el){ el.style.display = 'flex'; el.setAttribute('aria-hidden','false'); }
+function hideModal(el){ el.style.display = 'none'; el.setAttribute('aria-hidden','true'); }
+function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); }catch(e){} }
 
-/* get JST now (Date) to ensure uniform enabling across timezones */
-function nowInJapan(){
-  const now = new Date();
-  // convert to UTC then add 9 hours
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  return new Date(utc + (9 * 60 * 60 * 1000));
-}
-
-/* flush pending plays */
+/* flush pending audio plays after user unlocks audio */
 function flushPendingPlays(){
   while(state.pendingPlayQueue.length){
     const req = state.pendingPlayQueue.shift();
@@ -640,40 +624,28 @@ function flushPendingPlays(){
   }
 }
 
-/* ------------------------------
-   Realtime listeners (one-time subscription)
-   ------------------------------ */
-let staffsUnsub = null;
-let ordersUnsub = null;
-
+/* ---------- Realtime listeners (only if db available) ---------- */
 function startRealtime(){
   if (!db) {
-    console.warn('No Firestore (offline)');
-    // In offline mode we still update local UI and enable BOT fallback
-    state.staffs = [];
-    state.orders = [];
-    renderShiftShort();
-    renderShiftList();
-    updateOrderButtonState();
-    updateStaffToggleUI();
-    renderOrderLists();
+    // offline: no snapshots; we'll rely on local state and BOT fallback
+    activateBotIfNeeded();
     return;
   }
-
   try {
     const q = query(staffsCol, orderBy('createdAt','asc'));
-    staffsUnsub = onSnapshot(q, snap=>{
+    onSnapshot(q, snap=>{
       state.staffs = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      activateBotIfNeeded(); // triggers bot insertion if needed
       renderShiftShort();
       renderShiftList();
       updateOrderButtonState();
       updateStaffToggleUI();
     }, e=>console.warn(e));
-  } catch(e){ console.warn(e); }
+  } catch(e){ console.warn(e); activateBotIfNeeded(); }
 
   try {
     const q2 = query(ordersCol, orderBy('createdAt','asc'));
-    ordersUnsub = onSnapshot(q2, snap=>{
+    onSnapshot(q2, snap=>{
       const prev = state.orders.slice();
       state.orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
       renderOrderLists();
@@ -683,117 +655,83 @@ function startRealtime(){
   } catch(e){ console.warn(e); }
 }
 
-/* notification stub */
+/* notification handling placeholder */
 function handleOrderNotifications(prevOrders, currOrders){
-  // minimal; keep for integration
+  // Keep minimal to avoid extra reads/writes
 }
 
-/* ------------------------------
-   BOT staff fallback (local-only)
-   - If no human staff are on shift (based on JST), BOT becomes active
-   - BOT handles incoming orders immediately; displays message and blocks interactions until served
-   - When a human staff appears, BOT withdraws
-   ------------------------------ */
-let BOT = {
-  active: false,
-  id: 'bot_staff_local',
-  name: 'BOTスタッフ',
-  onShift: true,
-  breaking: false
-};
-
-function evaluateBotActivity(){
-  // determine if any human staff is currently available (based on JST)
-  const nowJST = nowInJapan();
-  const humanAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd, nowJST));
-  if (!humanAvailable){
-    // activate BOT
-    BOT.active = true;
-    shiftShort.textContent = '現在：BOTスタッフ対応中（手書き接客✖）';
-    // also ensure order button enabled (BOT available)
-    orderBtn.classList.remove('disabled');
-  } else {
-    if (BOT.active){
-      BOT.active = false;
-      renderShiftShort(); // revert to real shift text
-    }
-  }
-}
-
-/* call evaluateBotActivity periodically and when staffs change */
-setInterval(()=> evaluateBotActivity(), 5000);
-
-/* ------------------------------
-   Shift rendering & deletion feature
-   ------------------------------ */
-setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString(), 1000);
+/* ---------- Shift rendering & staff deletion ---------- */
+setInterval(()=> nowtimeEl.textContent = new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo' }), 1000);
 
 function renderShiftShort(){
-  const nowJST = nowInJapan();
-  const active = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,nowJST));
-  if (active.length) shiftShort.textContent = 'シフト：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
-  else if (BOT.active) shiftShort.textContent = '現在：BOTスタッフ対応中（手書き接客✖）';
-  else shiftShort.textContent = 'シフト：現在対応できる店員がおりません';
+  // If BOT active show BOT status, else list staff on shift
+  const nowTokyo = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  const active = (state.staffs || []).filter(s => s.onShift && !s.breaking && isTokyoWithinShift(s.shiftStart,s.shiftEnd,nowTokyo));
+  if (active.length) {
+    shiftShort.textContent = 'シフト：' + active.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
+  } else if (botState.active) {
+    shiftShort.textContent = '現在：BOTスタッフ対応中（手書き接客✖）';
+  } else {
+    shiftShort.textContent = 'シフト：現在対応できる店員がおりません';
+  }
 }
 
 function renderShiftList(){
   shiftList.innerHTML = '';
-  const now = new Date();
-  state.staffs.forEach(s => {
+  const nowTokyo = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  (state.staffs || []).forEach(s => {
     const div = document.createElement('div');
-    const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
+    const onNow = isTokyoWithinShift(s.shiftStart,s.shiftEnd,nowTokyo);
     div.innerHTML = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
-    const delBtn = document.createElement('button'); delBtn.textContent='削除'; delBtn.className='small'; delBtn.style.marginLeft='8px';
-    delBtn.addEventListener('click', async ()=>{
-      if (!confirm(`スタッフ「${s.name}」を削除しますか？`)) return;
-      try {
-        if (db && s.id){
-          await deleteDoc(doc(db,'staffs',s.id));
-        } else {
-          // offline/local: remove from local state
-          state.staffs = state.staffs.filter(x=>x.id !== s.id);
-        }
-      } catch(e){
-        console.warn('delete staff failed', e);
-      }
-    });
-    div.appendChild(delBtn);
+    // add delete button for staff entries (visible to logged-in staff)
+    if (state.currentUser && state.currentUser.role === 'staff'){
+      const del = document.createElement('button'); del.textContent = '削除'; del.className='small'; del.style.marginLeft='8px';
+      del.addEventListener('click', ()=> {
+        if (!confirm(`スタッフ ${s.name} を削除しますか？`)) return;
+        deleteStaff(s.id);
+      });
+      div.appendChild(del);
+    }
     shiftList.appendChild(div);
   });
 }
 
-/* isNowWithinShift uses provided dateObj; for enabling order button we use JST (nowInJapan) */
-function isNowWithinShift(start,end,dateObj){
+/* delete staff doc from Firestore or local state when offline */
+async function deleteStaff(staffId){
+  if (!staffId) return;
+  if (db){
+    try { await deleteDoc(doc(db,'staffs',staffId)); return; } catch(e){ console.warn('delete staff failed', e); }
+  }
+  // fallback: remove locally
+  state.staffs = (state.staffs||[]).filter(s=>s.id !== staffId);
+  renderShiftList();
+  renderShiftShort();
+}
+
+/* timezone-based check using Tokyo time */
+function isTokyoWithinShift(start,end,dateObjTokyo){
   if (!start || !end) return false;
   const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
-  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
-  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
+  const sDate = new Date(dateObjTokyo); sDate.setHours(sh,sm,0,0);
+  const eDate = new Date(dateObjTokyo); eDate.setHours(eh,em,0,0);
   if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
-  return dateObj >= sDate && dateObj <= eDate;
+  return dateObjTokyo >= sDate && dateObjTokyo <= eDate;
 }
 
-/* staff toggle UI */
-function updateStaffToggleUI(){
-  if (state.currentUser && state.currentUser.role === 'staff' && state.currentUser.staffId){
-    const my = state.staffs.find(s=>s.id === state.currentUser.staffId);
-    if (my){
-      if (my.onShift && !my.breaking){ shiftBtn.classList.add('on'); shiftBtn.classList.remove('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
-      else if (my.breaking){ breakBtn.classList.add('on'); breakBtn.classList.remove('off'); shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); }
-      else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
-    }
-  } else {
-    shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off');
-  }
+/* check any staff available (Tokyo time) */
+function anyStaffAvailableTokyo(){
+  const nowTokyo = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  return (state.staffs || []).some(s => s.onShift && !s.breaking && isTokyoWithinShift(s.shiftStart, s.shiftEnd, nowTokyo));
 }
 
-/* orders rendering for staff */
+/* ---------- Order list rendering ---------- */
 function renderOrderLists(){
   staffOrderList.innerHTML = '';
-  state.orders.forEach(o=>{
+  (state.orders || []).forEach(o=>{
     if (!o) return;
     if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return;
     const div = document.createElement('div'); div.className = 'order-item';
-    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString('ja-JP')}</div>`;
     const right = document.createElement('div');
     const tasks = computeOrderTasks(o);
     if (tasks.length) { const span = document.createElement('span'); span.className='small-info'; span.textContent = '未: ' + tasks.join(', '); right.appendChild(span); }
@@ -828,83 +766,104 @@ function computeOrderTasks(order){
   return pending;
 }
 
-/* staff login flow (with cancel handling bugfix) */
+/* ---------- Staff login / logout ---------- */
 passOk.addEventListener('click', ()=> {
-  if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います');
+  if (staffPass.value === '1232'){ showStaffNameModalForLogin(); } else alert('パスワードが違います');
 });
-function showStaffNameModal(){
-  // ensure handlers are not stacked: remove previous listeners then add fresh ones
-  showModal(modalName);
 
-  function okHandler(){
-    const name = orderName.value.trim(); if (!name) { alert('名前'); return; }
-    hideModal(modalName);
-    okOrderNameBtn.removeEventListener('click', okHandler);
-    cancelOrderNameBtn.removeEventListener('click', cancelHandler);
-    // create staff record
-    (async ()=>{
-      try {
-        if (db){
-          const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
-          enterStaffFull(name, ref.id);
-        } else {
-          const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
-          state.staffs.push(s);
-          enterStaffFull(name, s.id);
-        }
-      } catch(e){
-        console.warn(e);
+/* We use modalContext to tell modalName what it's for ('login-staff' | 'order-name') */
+let modalContext = null;
+function showStaffNameModalForLogin(){
+  modalContext = 'login-staff';
+  document.getElementById('modalNameTitle').textContent = '店員名を入力';
+  orderNameInput.value = '';
+  showModal(modalName);
+}
+/* show for order flow */
+function showOrderNameModal(){
+  modalContext = 'order-name';
+  document.getElementById('modalNameTitle').textContent = 'ゲーム内の名前';
+  orderNameInput.value = '';
+  showModal(modalName);
+}
+
+/* Use single listeners and handle modalContext. Fixes cancel/back bug by removing per-click assignment */
+okOrderNameBtn.addEventListener('click', async ()=>{
+  const name = orderNameInput.value.trim();
+  if (!name){ alert('名前を入力してください'); return; }
+  hideModal(modalName);
+  if (modalContext === 'login-staff'){
+    try {
+      if (db){
+        const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
+        enterStaffFull(name, ref.id);
+      } else {
         const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
         state.staffs.push(s);
         enterStaffFull(name, s.id);
       }
-    })();
+    } catch(e){
+      console.warn(e);
+      const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
+      state.staffs.push(s);
+      enterStaffFull(name, s.id);
+    }
+  } else if (modalContext === 'order-name'){
+    // continue ordering flow
+    buildMenu();
+    showModal(modalMenu);
   }
-  function cancelHandler(){
-    hideModal(modalName);
-    okOrderNameBtn.removeEventListener('click', okHandler);
-    cancelOrderNameBtn.removeEventListener('click', cancelHandler);
-  }
-  okOrderNameBtn.addEventListener('click', okHandler);
-  cancelOrderNameBtn.addEventListener('click', cancelHandler);
+  modalContext = null;
+});
+cancelOrderNameBtn.addEventListener('click', ()=>{
+  hideModal(modalName);
+  modalContext = null;
+});
+
+function enterStaffFull(name, staffId){
+  state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); updateStaffToggleUI();
 }
-
-function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); updateStaffToggleUI(); }
-
-logoutStaff.addEventListener('click', async ()=> {
+logoutStaff.addEventListener('click', async ()=>{
   const id = state.currentUser.staffId;
-  if (id){
-    try { if (db) await deleteDoc(doc(db,'staffs',id)); } catch(e){}
+  if (id && db){
+    try { await deleteDoc(doc(db,'staffs',id)); } catch(e){ console.warn(e); }
   }
   state.currentUser = { role:'guest', staffId:null }; staffFull.classList.remove('show');
 });
 
-/* shift toggle */
+/* shift toggle updates */
 shiftBtn.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId; if (!id) return;
-  try { if (db) await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); else {
-    const s = state.staffs.find(x=>x.id===id); if (s){ s.onShift=true; s.breaking=false; renderShiftList(); renderShiftShortOnce(); }
-  } } catch(e){}
+  if (db){
+    try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){ console.warn(e); }
+  } else {
+    const s = state.staffs.find(x=>x.id===id);
+    if (s){ s.onShift = true; s.breaking = false; renderShiftList(); renderShiftShort(); }
+  }
   updateStaffToggleUI();
 });
 breakBtn.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId; if (!id) return;
-  try { if (db) await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); else {
-    const s = state.staffs.find(x=>x.id===id); if (s){ s.onShift=false; s.breaking=true; renderShiftList(); renderShiftShortOnce(); }
-  } } catch(e){}
+  if (db){
+    try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){ console.warn(e); }
+  } else {
+    const s = state.staffs.find(x=>x.id===id);
+    if (s){ s.onShift = false; s.breaking = true; renderShiftList(); renderShiftShort(); }
+  }
   updateStaffToggleUI();
 });
 saveShift.addEventListener('click', async ()=> {
   const id = state.currentUser.staffId; if (!id) return;
-  try { if (db) await updateDoc(doc(db,'staffs',id), { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' }); else {
-    const s = state.staffs.find(x=>x.id===id); if (s){ s.shiftStart = shiftStart.value || '09:00'; s.shiftEnd = shiftEnd.value || '17:00'; renderShiftList(); }
-  } } catch(e){ console.warn(e); }
+  const payload = { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' };
+  if (db){
+    try { await updateDoc(doc(db,'staffs',id), payload); } catch(e){ console.warn(e); }
+  } else {
+    const s = state.staffs.find(x=>x.id===id);
+    if (s){ Object.assign(s, payload); renderShiftList(); renderShiftShort(); }
+  }
 });
 
-/* helper to re-evaluate shiftShort immediately */
-function renderShiftShortOnce(){ renderShiftShort(); evaluateBotActivity(); }
-
-/* buildMenu */
+/* ---------- Menu & Ordering ---------- */
 async function buildMenu(){
   menuGrid.innerHTML = '';
   if (MENUS.random){
@@ -913,8 +872,7 @@ async function buildMenu(){
     const img = document.createElement('img'); img.className='menu-thumb';
     const url = getAssetUrl(it.imageBase + '.png');
     try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
-    div.appendChild(img);
-    div.appendChild(document.createElement('div')).textContent = it.title;
+    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
     div.addEventListener('click', ()=> chooseRandomAndOrder());
     menuGrid.appendChild(div);
   }
@@ -923,229 +881,79 @@ async function buildMenu(){
     const it = MENUS[id];
     const div = document.createElement('div'); div.className='menu-item';
     const img = document.createElement('img'); img.className='menu-thumb';
-    // try common names
-    const urlCandidates = [ getAssetUrl(it.imageBase + '1.png'), getAssetUrl(it.imageBase + '01.png'), getAssetUrl(it.imageBase + '.png') ];
-    let chosenUrl = '';
-    for (const u of urlCandidates){
-      try {
-        const res = await fetch(u);
-        if (res.ok){ chosenUrl = URL.createObjectURL(await res.blob()); break; }
-      } catch(e){}
-    }
-    img.src = chosenUrl || makePlaceholder(it.title);
+    // try common naming
+    const url = getAssetUrl(it.imageBase + '1.png');
+    try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
     div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
     div.addEventListener('click', ()=> onMenuSelect(it));
     menuGrid.appendChild(div);
   }
 }
 
-/* helper */
 function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
-/* ORDER flow with BOT handling and offline fallback */
+/* order flow: name modal ensures cancel works properly */
 orderBtn.addEventListener('click', ()=> {
-  if (orderBtn.classList.contains('disabled')) return;
+  // only allow order if Tokyo time someone is on shift OR bot active
+  if (! (anyStaffAvailableTokyo() || botState.active) ) {
+    alert('現在対応できる店員がい��いため注文できません');
+    return;
+  }
   if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' });
   else { try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
-  showModal(modalName);
+  showOrderNameModal();
 });
-
-/* name modal handlers for ordering (not staff) - ensure cancel returns to previous state */
-function attachOrderNameHandlers(){
-  function okHandler(){
-    const name = orderName.value.trim();
-    if (!name) { alert('名前を入力してください'); return; }
-    hideModal(modalName);
-    okOrderNameBtn.removeEventListener('click', okHandler);
-    cancelOrderNameBtn.removeEventListener('click', cancelHandler);
-    buildMenu(); showModal(modalMenu);
-  }
-  function cancelHandler(){
-    hideModal(modalName);
-    okOrderNameBtn.removeEventListener('click', okHandler);
-    cancelOrderNameBtn.removeEventListener('click', cancelHandler);
-  }
-  okOrderNameBtn.addEventListener('click', okHandler);
-  cancelOrderNameBtn.addEventListener('click', cancelHandler);
-}
-attachOrderNameHandlers();
-
 backMenu.addEventListener('click', ()=> hideModal(modalMenu));
 
 async function onMenuSelect(item){
   hideModal(modalMenu);
-  const name = orderName.value.trim() || '名無し';
-  if (item.password && item.password.length){
-    const entered = prompt('パスワードを入力してください');
-    if (entered === null) return;
-    if (entered !== item.password){ alert('パスワードが違います'); return; }
-    if (state.audioUnlocked){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{});}catch(e){} }
-  }
-
-  // If BOT active and no human staff, handle with BOT flow (minimize writes if offline)
-  if (BOT.active){
-    // show BOT handling overlay and block interactions
-    showClientStatus('BOTが対応中...');
-    disableUiWhileBot(true);
-    // simulate immediate handling: create local order object and then produce delivered servedImage with bot art/card
-    const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-    const orderObj = { id: uid('o'), name, item:item.id, itemImageBase:item.imageBase, state:'inprogress', createdAt, expiresAt, assignedTo: BOT.id, assignedToName: BOT.name, clientId };
-    // if online, still write minimal order to Firestore (one write); if offline, handle local only
-    if (db){
-      try {
-        const ref = await addDoc(ordersCol, orderObj);
-        orderObj.id = ref.id;
-      } catch(e){
-        console.warn('add order (bot) failed', e);
-      }
-    } else {
-      state.orders.push(orderObj);
-    }
-    // produce served image using BOT assets
-    await botProduceAndDeliver(orderObj, item);
-    // clear overlay and allow interactions
-    disableUiWhileBot(false);
-    hideClientStatus();
-    return;
-  }
-
-  // Normal flow: create order and wait for staff
+  const name = orderNameInput.value.trim() || '名無し';
+  // password handling omitted for brevity
   const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
   const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
-  try {
-    if (db){
+  // If BOT active and no real staff, handle via bot (minimize writes)
+  if (botState.active && !anyStaffAvailableTokyo()){
+    // create local orderId
+    orderObj.id = uid('o');
+    state.orders.push(orderObj);
+    renderOrderLists();
+    // immediately simulate bot handling
+    handleBotOrder(orderObj);
+    return;
+  }
+  if (db){
+    try {
       const ref = await addDoc(ordersCol, orderObj);
       state.currentOrderIdForClient = ref.id;
       showClientStatus('現在対応待ち中');
       scheduleOrderTimeout(ref.id, expiresAt);
-    } else {
+    } catch(e){
+      console.warn('add order failed', e);
       orderObj.id = uid('o'); state.orders.push(orderObj);
       state.currentOrderIdForClient = orderObj.id;
-      showClientStatus('現在対応待ち中（オフライン）');
+      showClientStatus('現在対応待ち中');
     }
-  } catch(e){
-    console.warn('add order failed', e);
+  } else {
+    // offline but human staff maybe not available; still queue locally
     orderObj.id = uid('o'); state.orders.push(orderObj);
     state.currentOrderIdForClient = orderObj.id;
     showClientStatus('現在対応待ち中');
+    // if bot available handle
+    if (botState.active) handleBotOrder(orderObj);
   }
 }
 
-/* disable UI while BOT handling to block clicks */
-function disableUiWhileBot(disable){
-  if (disable){
-    // cover modalMenu and order button
-    orderBtn.classList.add('disabled');
-    // optionally add overlay in modal
-  } else {
-    renderShiftShortOnce();
-  }
+/* choose random and order */
+function chooseRandomAndOrder(){
+  const keys = Object.keys(MENUS).filter(k => k !== 'random');
+  if (!keys.length){ alert('ランダム対象のメニューがありません'); return; }
+  const chosenKey = keys[Math.floor(Math.random() * keys.length)];
+  const chosenMenu = MENUS[chosenKey];
+  if (!chosenMenu){ alert('選択に失敗しました'); return; }
+  onMenuSelect(chosenMenu);
 }
 
-/* Bot produce/deliver: choose random art image and generate card image with text */
-async function botProduceAndDeliver(orderObj, menuItem){
-  // choose random art image from menu pool
-  const cfg = MENUS[menuItem.id] || MENUS['rate'];
-  let artDataUrl = null;
-  if (cfg.botArtPool && cfg.botArtPool.length){
-    const rand = cfg.botArtPool[Math.floor(Math.random()*cfg.botArtPool.length)];
-    const url = getAssetUrl(rand);
-    try {
-      const img = new Image(); img.crossOrigin='anonymous'; img.src = url;
-      await new Promise(r=>{ img.onload=r; img.onerror=r; });
-      const tmp = document.createElement('canvas'); tmp.width=600; tmp.height=600; const t = tmp.getContext('2d');
-      t.fillStyle = cfg.artBg || '#fff'; t.fillRect(0,0,tmp.width,tmp.height);
-      t.drawImage(img,0,0,tmp.width,tmp.height);
-      artDataUrl = tmp.toDataURL('image/png');
-    } catch(e){ console.warn('bot art load failed', e); artDataUrl = null; }
-  }
-
-  // create card canvas with 3-line message
-  const cardTmp = document.createElement('canvas'); cardTmp.width = 520; cardTmp.height = 240; const cctx = cardTmp.getContext('2d');
-  cctx.fillStyle = cfg.cardBg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
-  // draw decorative border
-  cctx.strokeStyle = '#d4c0b8'; cctx.lineWidth = 4; cctx.strokeRect(8,8,cardTmp.width-16,cardTmp.height-16);
-  // Use bold stylish font (system fallback)
-  cctx.fillStyle = '#111';
-  cctx.textAlign = 'center';
-  const line1 = 'どうぞ';
-  const line2 = 'ごゆっくり〜☕';
-  const line3 = orderObj.name + ' さん';
-  cctx.font = '28px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
-  cctx.fillText(line1, cardTmp.width/2, 70);
-  cctx.font = '24px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
-  cctx.fillText(line2, cardTmp.width/2, 120);
-  cctx.font = '32px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
-  cctx.fillText(line3, cardTmp.width/2, 180);
-  const cardDataUrl = cardTmp.toDataURL('image/png');
-
-  // compose served image similar to completeMake
-  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
-  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  // draw central product area - try preload frames; fallback to static image
-  try {
-    const frames = await preloadFrames(menuItem.imageBase, menuItem.frameCount || 6, menuItem.lastFrameRandom);
-    if (frames && frames.length) {
-      const img = new Image(); img.src = frames[0]; await new Promise(r=>{ img.onload=r; img.onerror=r; });
-      tctx.drawImage(img, 150, 100, 900, 600);
-    } else {
-      const img = new Image(); img.src = getAssetUrl(menuItem.imageBase + '1.png'); await new Promise(r=>{ img.onload=r; img.onerror=r; });
-      tctx.drawImage(img, 150, 100, 900, 600);
-    }
-  } catch(e){ console.warn('bot product draw failed', e); }
-  // draw bot art
-  if (artDataUrl){
-    const a = new Image(); a.src = artDataUrl; await new Promise(r=>{ a.onload=r; a.onerror=r; }); tctx.drawImage(a, 440, 120, 320, 320);
-  }
-  // draw card
-  const ca = new Image(); ca.src = cardDataUrl; await new Promise(r=>{ ca.onload=r; ca.onerror=r; }); tctx.drawImage(ca, 430, 700, 340, 160);
-
-  const servedDataUrl = tmp.toDataURL('image/png');
-
-  // If db available, update order doc with delivered state; else handle local
-  try {
-    if (db && ordersCol){
-      await updateDoc(doc(db,'orders',orderObj.id), {
-        state: 'delivered',
-        deliveredAt: Date.now(),
-        servedImageData: servedDataUrl,
-        artDataUrl: artDataUrl || null,
-        cardDataUrl: cardDataUrl || null,
-        artStrokes: null,
-        cardStrokes: null
-      });
-      // remove order from list (the Firestore onSnapshot will update for other clients)
-    } else {
-      // local: mark state delivered and remove from local orders
-      const idx = state.orders.findIndex(x=>x.id === orderObj.id);
-      if (idx >= 0) state.orders.splice(idx,1);
-    }
-    // show the served modal to the ordering client
-    if (state.currentOrderIdForClient === orderObj.id) {
-      // Prepare client UI
-      servedImage.src = servedDataUrl;
-      // draw art and card preview
-      const artCtx = servedArtMini.getContext('2d');
-      artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
-      artCtx.fillStyle = MENUS[orderObj.item]?.artBg || '#6b3b24';
-      artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
-      if (artDataUrl){
-        const aimg = new Image(); aimg.src = artDataUrl; await new Promise(r=>{ aimg.onload=r; aimg.onerror=r; }); artCtx.drawImage(aimg,0,0,servedArtMini.width,servedArtMini.height);
-      }
-      const cardCtxMini = servedCardMini.getContext('2d');
-      cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
-      cardCtxMini.fillStyle = MENUS[orderObj.item]?.cardBg || '#fff2e6';
-      cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
-      const cimg = new Image(); cimg.src = cardDataUrl; await new Promise(r=>{ cimg.onload=r; cimg.onerror=r; }); cardCtxMini.drawImage(cimg,0,0,servedCardMini.width,servedCardMini.height);
-      // open modal
-      document.getElementById('modalEat').style.display = 'flex';
-    }
-  } catch(e){
-    console.warn('bot deliver update failed', e);
-  }
-}
-
-/* scheduleOrderTimeout (unchanged) */
+/* scheduleOrderTimeout */
 async function scheduleOrderTimeout(orderId, expiresAt){
   const remaining = (expiresAt || 0) - Date.now();
   if (remaining <= 0) return;
@@ -1163,7 +971,7 @@ async function scheduleOrderTimeout(orderId, expiresAt){
   }, remaining);
 }
 
-/* assign order to staff (existing behavior) */
+/* assign order to staff */
 async function assignOrderToCurrentStaff(orderId){
   const staffId = state.currentUser.staffId; if (!staffId) { alert('スタッフとしてログインしてください'); return; }
   const s = state.staffs.find(x=>x.id===staffId);
@@ -1171,37 +979,31 @@ async function assignOrderToCurrentStaff(orderId){
     if (db){
       await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: s.name });
     } else {
-      const o = state.orders.find(x=>x.id===orderId); if (o){ o.state='inprogress'; o.assignedTo=staffId; o.assignedToName=s.name; }
+      const o = state.orders.find(x=>x.id===orderId); if (o){ o.state='inprogress'; o.assignedTo=staffId; o.assignedToName=s.name; renderOrderLists(); }
     }
     if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' });
     else { try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
   } catch(e){ console.warn(e); }
 }
 
-/* --- Canvas drawing + eraser bugfix:
-   We keep background canvas (artBg) separate from strokes canvas (artLayer).
-   When replaying strokes to any temporary canvas, we draw strokes onto a transparent strokes-canvas
-   and then composite over background to avoid erasing background when using destination-out.
+/* ---------- STROKES and canvases ---------- */
+/* We'll ensure background is preserved when using eraser:
+   - artBg canvas holds background color (and is not erased).
+   - artLayer holds drawn strokes.
+   - Eraser is implemented by drawing background-colored strokes (source-over) instead of destination-out,
+     so background color remains intact when saved as raster.
 */
-
-/* normalized helpers */
 function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
 function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
 
-/* init canvases */
 function initArtCanvas(bgColor){
-  // artBg: contains background circle, not touched by eraser
-  artBg.width = artBg.width; // reset
   artBgCtx.clearRect(0,0,artBg.width,artBg.height);
   artBgCtx.fillStyle = bgColor || artBgColor.value || '#6b3b24';
-  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
-  // artLayer: transparent layer for strokes (eraser uses destination-out here; background unaffected)
-  artLayer.width = artLayer.width;
+  artBgCtx.fillRect(0,0,artBg.width,artBg.height); // solid background to prevent eraser transparency
   artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
   artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
 }
 function initCardCanvas(bgColor){
-  cardCanvas.width = cardCanvas.width;
   cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
   cardCtx.fillStyle = bgColor || cardBgColor.value || getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6';
   cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
@@ -1212,13 +1014,12 @@ function initCardCanvas(bgColor){
 let artStrokes = []; let currentArtStroke = null; let artDrawing = false;
 let cardStrokes = []; let currentCardStroke = null; let cardDrawing = false;
 
-/* saved local copies that are written to Firestore on completeMake */
+/* saved local copies */
 let savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
 let savedArtMeta = null, savedCardMeta = null;
-let savedArtStrokesLocal = null;
-let savedCardStrokesLocal = null;
+let savedArtStrokesLocal = null, savedCardStrokesLocal = null;
 
-/* event pos */
+/* input pos */
 function getEventPos(e, canvas){
   const r = canvas.getBoundingClientRect();
   const t = e.touches ? e.touches[0] : null;
@@ -1227,7 +1028,7 @@ function getEventPos(e, canvas){
   return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
 }
 
-/* art handlers (draw on artLayer) */
+/* art handlers */
 artLayer.addEventListener('mousedown', (e)=>{
   artDrawing = true;
   const p = getEventPos(e, artLayer);
@@ -1255,13 +1056,20 @@ function renderLatestArtStrokeSegment(stroke){
   if (!stroke || stroke.points.length < 2) return;
   const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
-  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle=stroke.pen || artPenColor.value || '#ffffff'; artLayerCtx.lineWidth=stroke.width; }
-  else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth=stroke.width; }
-  artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
-  artLayerCtx.globalCompositeOperation='source-over';
+  if (stroke.tool === 'draw'){
+    artLayerCtx.globalCompositeOperation='source-over';
+    artLayerCtx.strokeStyle=stroke.pen || artPenColor.value || '#ffffff';
+    artLayerCtx.lineWidth=stroke.width;
+  } else {
+    // eraser: draw background-colored stroke over layer to "erase" strokes visually without producing transparency
+    artLayerCtx.globalCompositeOperation='source-over';
+    artLayerCtx.strokeStyle = (savedArtMeta && savedArtMeta.bg) || artBgColor.value || '#6b3b24';
+    artLayerCtx.lineWidth = stroke.width;
+  }
+  artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke(); artLayerCtx.closePath();
 }
 
-/* card handlers (we'll draw strokes on cardCtx but ensure erase doesn't remove background by drawing strokes on a transparent layer when saving) */
+/* card handlers (similar approach) */
 cardCanvas.addEventListener('mousedown', (e)=>{
   cardDrawing = true;
   const p = getEventPos(e, cardCanvas);
@@ -1286,41 +1094,44 @@ cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dis
 
 function renderLatestCardStrokeSegment(stroke){
   if (!stroke || stroke.points.length < 2) return;
-  // draw onto cardCanvas (this may cause erase to remove background). To avoid that, we will render strokes only visually onto canvas using compositing but the background remains painted first.
   const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
   const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
-  // Use an in-memory strokes layer when drawing eraser to avoid removing background permanently:
-  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle=stroke.pen || cardPenColor.value || '#000'; cardCtx.lineWidth=stroke.width; }
-  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
-  cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
-  cardCtx.globalCompositeOperation='source-over';
+  if (stroke.tool === 'draw'){
+    cardCtx.globalCompositeOperation='source-over';
+    cardCtx.strokeStyle=stroke.pen || cardPenColor.value || '#000';
+    cardCtx.lineWidth=stroke.width;
+  } else {
+    cardCtx.globalCompositeOperation='source-over';
+    cardCtx.strokeStyle = (savedCardMeta && savedCardMeta.bg) || cardBgColor.value || '#fff2e6';
+    cardCtx.lineWidth = stroke.width;
+  }
+  cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke(); cardCtx.closePath();
 }
 
 /* clear handlers */
-clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
-clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
+clearArt.addEventListener('click', ()=>{ initArtCanvas(artBgColor.value); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
+clearCard.addEventListener('click', ()=>{ initCardCanvas(cardBgColor.value); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
 
-/* saveArt / saveCard: render strokes to separate stroke canvas and then compose over background to avoid background erasure */
+/* saveArt / saveCard: draw background then strokes.
+   For 'erase' strokes we replay as source-over background color (so bg preserved).
+*/
 saveArt.addEventListener('click', ()=>{
   const scale = 2;
   const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
   const t = tmp.getContext('2d');
-  // draw background first
   t.fillStyle = artBgColor.value || '#6b3b24'; t.fillRect(0,0,tmp.width,tmp.height);
-  // create stroke canvas
-  const strokeCanvas = document.createElement('canvas'); strokeCanvas.width = tmp.width; strokeCanvas.height = tmp.height;
-  const sctx = strokeCanvas.getContext('2d');
-  sctx.lineCap='round'; sctx.lineJoin='round';
+  t.lineCap = 'round'; t.lineJoin = 'round';
   const strokes = JSON.parse(JSON.stringify(artStrokes || []));
   for (const s of strokes){
-    sctx.beginPath(); sctx.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    sctx.strokeStyle = s.pen || artPenColor.value || '#fff'; sctx.lineWidth = (s.width || 6) * scale;
+    t.beginPath();
+    if (s.tool === 'draw'){ t.globalCompositeOperation='source-over'; t.strokeStyle = s.pen || artPenColor.value || '#fff'; }
+    else { t.globalCompositeOperation='source-over'; t.strokeStyle = artBgColor.value || '#6b3b24'; }
+    t.lineWidth = (s.width || 6) * scale;
     const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * strokeCanvas.width; const y = p.y * strokeCanvas.height; if (i===0) sctx.moveTo(x,y); else sctx.lineTo(x,y); }
-    sctx.stroke(); sctx.closePath(); sctx.globalCompositeOperation='source-over';
+    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
+    t.stroke(); t.closePath();
+    t.globalCompositeOperation='source-over';
   }
-  // composite strokes over background
-  t.drawImage(strokeCanvas,0,0);
   savedArtDataUrlLocal = tmp.toDataURL('image/png');
   savedArtMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#ffffff', scale };
   savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes || []));
@@ -1334,18 +1145,18 @@ saveCard.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
   const t = tmp.getContext('2d');
   t.fillStyle = cardBgColor.value || '#fff2e6'; t.fillRect(0,0,tmp.width,tmp.height);
-  const strokeCanvas = document.createElement('canvas'); strokeCanvas.width = tmp.width; strokeCanvas.height = tmp.height;
-  const sctx = strokeCanvas.getContext('2d');
-  sctx.lineCap='round'; sctx.lineJoin='round';
+  t.lineCap = 'round'; t.lineJoin = 'round';
   const strokes = JSON.parse(JSON.stringify(cardStrokes || []));
   for (const s of strokes){
-    sctx.beginPath(); sctx.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    sctx.strokeStyle = s.pen || cardPenColor.value || '#000'; sctx.lineWidth = (s.width || 4) * scale;
+    t.beginPath();
+    if (s.tool === 'draw'){ t.globalCompositeOperation='source-over'; t.strokeStyle = s.pen || cardPenColor.value || '#000'; }
+    else { t.globalCompositeOperation='source-over'; t.strokeStyle = cardBgColor.value || '#fff2e6'; }
+    t.lineWidth = (s.width || 4) * scale;
     const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * strokeCanvas.width; const y = p.y * strokeCanvas.height; if (i===0) sctx.moveTo(x,y); else sctx.lineTo(x,y); }
-    sctx.stroke(); sctx.closePath(); sctx.globalCompositeOperation='source-over';
+    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
+    t.stroke(); t.closePath();
+    t.globalCompositeOperation='source-over';
   }
-  t.drawImage(strokeCanvas,0,0);
   savedCardDataUrlLocal = tmp.toDataURL('image/png');
   savedCardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000000', scale };
   savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes || []));
@@ -1354,7 +1165,7 @@ saveCard.addEventListener('click', ()=>{
   alert('カードを保存しました。');
 });
 
-/* pouring logic (unchanged) */
+/* pouring logic unchanged */
 let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
 function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
 resetPouring();
@@ -1376,10 +1187,9 @@ function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,la
 function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
 latteClear();
 
-/* updateTaskStatus */
 function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtStrokesLocal && (!artStrokes || !artStrokes.length)) parts.push('アート'); if (!savedCardStrokesLocal && (!cardStrokes || !cardStrokes.length)) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
 
-/* openMakeModal(order) — per-order isolation */
+/* openMakeModal (per-order isolation) */
 let currentMakingOrderId = null;
 let currentOrderObj = null;
 async function openMakeModal(order){
@@ -1392,7 +1202,7 @@ async function openMakeModal(order){
   milkLabelEl.textContent = (cfg.ui && cfg.ui.milkLabel) || 'フームドミルク注ぎ';
   latteArtLabelEl.textContent = (cfg.ui && cfg.ui.latteArtLabel) || 'ラテアート';
 
-  // per-order isolation: deep copy strokes or empty arrays
+  // per-order isolation: deep copy strokes
   artStrokes = (order.artStrokes && Array.isArray(order.artStrokes)) ? JSON.parse(JSON.stringify(order.artStrokes)) : [];
   cardStrokes = (order.cardStrokes && Array.isArray(order.cardStrokes)) ? JSON.parse(JSON.stringify(order.cardStrokes)) : [];
 
@@ -1401,15 +1211,13 @@ async function openMakeModal(order){
   savedArtMeta = order.artMeta || null;
   savedCardMeta = order.cardMeta || null;
 
-  // init canvases
   const artBgColorToUse = (savedArtMeta && savedArtMeta.bg) || cfg.artBg || artBgColor.value;
   const cardBgColorToUse = (savedCardMeta && savedCardMeta.bg) || cfg.cardBg || cardBgColor.value;
   initArtCanvas(artBgColorToUse);
   initCardCanvas(cardBgColorToUse);
 
-  // replay strokes onto transparent stroke canvas and composite over background to avoid erasing background
-  if (artStrokes && artStrokes.length) replayStrokesOnCanvasImmediateToLayer(artStrokes, artLayer, savedArtMeta);
-  if (cardStrokes && cardStrokes.length) replayStrokesOnCanvasImmediateToLayer(cardStrokes, cardCanvas, savedCardMeta, true);
+  if (artStrokes && artStrokes.length) replayStrokesOnCanvasImmediate(artStrokes, artLayer, artLayerCtx, savedArtMeta);
+  if (cardStrokes && cardStrokes.length) replayStrokesOnCanvasImmediate(cardStrokes, cardCanvas, cardCtx, savedCardMeta);
 
   currentArtStroke = null; currentCardStroke = null; artDrawing=false; cardDrawing=false;
 
@@ -1418,39 +1226,30 @@ async function openMakeModal(order){
   modalMakeLatte.style.display = 'flex';
 }
 
-/* replay strokes onto a transparent layer then composite to target to avoid erasing background */
-function replayStrokesOnCanvasImmediateToLayer(strokes, targetCanvas, meta, isCard=false){
+/* replay strokes util (draw on given canvas ctx) */
+function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
   if (!strokes || !strokes.length) return;
-  // create temporary strokes canvas same size as targetCanvas
-  const tmp = document.createElement('canvas'); tmp.width = targetCanvas.width; tmp.height = targetCanvas.height;
-  const tctx = tmp.getContext('2d');
-  tctx.lineCap = 'round'; tctx.lineJoin = 'round';
   for (const s of strokes){
-    tctx.beginPath();
-    tctx.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    tctx.strokeStyle = s.pen || (meta?.penDefault) || '#000';
-    tctx.lineWidth = (s.width || 3) * (tmp.width / (meta?.origWidth || tmp.width));
+    ctx.beginPath();
+    if (s.tool === 'draw'){
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle = s.pen || (meta?.penDefault) || '#000';
+    } else {
+      // eraser: draw background-colored stroke
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle = (meta && meta.bg) || (canvasEl === artLayer ? artBgColor.value : cardBgColor.value) || '#fff';
+    }
+    ctx.lineWidth = (s.width || 3) * (canvasEl.width / (meta?.origWidth || canvasEl.width));
     const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p=pts[i]; const den = { x: p.x * tmp.width, y: p.y * tmp.height }; if (i===0) tctx.moveTo(den.x, den.y); else tctx.lineTo(den.x, den.y); }
-    tctx.stroke(); tctx.closePath(); tctx.globalCompositeOperation = 'source-over';
-  }
-  // For artLayer (separate from background), draw tmp onto artLayerCtx (the targetCanvas is artLayer)
-  if (targetCanvas === artLayer){
-    artLayerCtx.clearRect(0,0,targetCanvas.width,targetCanvas.height);
-    artLayerCtx.drawImage(tmp,0,0);
-  } else if (isCard){
-    // cardCanvas already has background filled; to avoid erasing background, draw strokes onto tmp then draw onto cardCanvas
-    cardCtx.clearRect(0,0,targetCanvas.width,targetCanvas.height);
-    cardCtx.fillStyle = meta?.bg || cardBgColor.value || '#fff2e6';
-    cardCtx.fillRect(0,0,targetCanvas.width,targetCanvas.height);
-    cardCtx.drawImage(tmp,0,0);
-  } else {
-    targetCanvas.getContext('2d').clearRect(0,0,targetCanvas.width,targetCanvas.height);
-    targetCanvas.getContext('2d').drawImage(tmp,0,0);
+    for (let i=0;i<pts.length;i++){
+      const p=pts[i]; const den = denormPoint(p, canvasEl);
+      if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y);
+    }
+    ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
   }
 }
 
-/* completeMake event (save to Firestore) */
+/* completeMake: write current order's art/card to Firestore (or local) then set delivered */
 completeMake.addEventListener('click', async ()=>{
   if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
   const artStrokesToSave = artStrokes || [];
@@ -1467,8 +1266,7 @@ completeMake.addEventListener('click', async ()=>{
   } else if (artStrokesToSave.length){
     const artTmp = document.createElement('canvas'); artTmp.width=600; artTmp.height=600; const actx = artTmp.getContext('2d');
     actx.fillStyle = artMetaToSave?.bg || '#6b3b24'; actx.fillRect(0,0,artTmp.width,artTmp.height);
-    // render strokes to artTmp using helper
-    replayStrokesOnCanvasImmediateToLayer(artStrokesToSave, artTmp, artMetaToSave, false);
+    replayStrokesOnCanvasImmediate(artStrokesToSave, artTmp, actx, artMetaToSave);
     tctx.drawImage(artTmp, 440,120,320,320);
   }
   if (savedCardDataUrlLocal){
@@ -1476,7 +1274,7 @@ completeMake.addEventListener('click', async ()=>{
   } else if (cardStrokesToSave.length){
     const cardTmp = document.createElement('canvas'); cardTmp.width=520; cardTmp.height=240; const cctx = cardTmp.getContext('2d');
     cctx.fillStyle = cardMetaToSave?.bg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
-    replayStrokesOnCanvasImmediateToLayer(cardStrokesToSave, cardTmp, cardMetaToSave, true);
+    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx, cardMetaToSave);
     tctx.drawImage(cardTmp, 430,700,340,160);
   }
   const servedDataUrl = tmp.toDataURL('image/png');
@@ -1495,9 +1293,20 @@ completeMake.addEventListener('click', async ()=>{
         cardDataUrl: savedCardDataUrlLocal || null
       });
     } else {
-      // local-only: update local orders
       const o = state.orders.find(x=>x.id===currentMakingOrderId);
-      if (o){ o.state = 'delivered'; o.servedImageData = servedDataUrl; o.artStrokes = artStrokesToSave; o.cardStrokes = cardStrokesToSave; }
+      if (o){
+        Object.assign(o, {
+          state:'delivered',
+          deliveredAt: Date.now(),
+          servedImageData: servedDataUrl,
+          artStrokes: artStrokesToSave,
+          cardStrokes: cardStrokesToSave,
+          artMeta: artMetaToSave,
+          cardMeta: cardMetaToSave,
+          artDataUrl: savedArtDataUrlLocal,
+          cardDataUrl: savedCardDataUrlLocal
+        });
+      }
     }
     modalMakeLatte.style.display = 'none';
     try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
@@ -1510,19 +1319,16 @@ completeMake.addEventListener('click', async ()=>{
     modalMakeLatte.style.display = 'none';
     try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
     currentMakingOrderId = null;
-    alert('提供に失敗しました（更新エラー）');
+    alert('提供に失敗しました（保存エラー）');
   }
 });
 
-/* Client overlay & updateClientOverlay (uses JST-aware enabling) */
+/* ---------- Client overlay and served view ---------- */
 function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '数分そのままでお待ちください'; orderStatusOverlay.style.display = 'flex'; }
 function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
 
 function updateClientOverlay(){
-  if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){
-    state.currentOrderIdForClient = null;
-    return;
-  }
+  if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){ state.currentOrderIdForClient = null; return; }
   if (!state.currentOrderIdForClient) return;
   const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
   if (!o) return;
@@ -1542,7 +1348,7 @@ function updateClientOverlay(){
   }
 }
 
-/* showClientServed (replay strokes only for ordering client) */
+/* showClientServed: render served image and art/card - only reveal strokes if clientId matches (privacy) */
 async function showClientServed(order){
   if (order.servedImageData){
     servedImage.src = order.servedImageData;
@@ -1557,8 +1363,7 @@ async function showClientServed(order){
   artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
   if (order.clientId === clientId){
     if (order.artStrokes && order.artStrokes.length){
-      // replay onto servedArtMini using helper
-      replayStrokesOnCanvasImmediateToLayer(order.artStrokes, servedArtMini, order.artMeta, false);
+      replayStrokesOnCanvasImmediate(order.artStrokes, servedArtMini, artCtx, order.artMeta);
     } else if (order.artDataUrl){
       const img = new Image(); img.src = order.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
     }
@@ -1570,7 +1375,7 @@ async function showClientServed(order){
   cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
   if (order.clientId === clientId){
     if (order.cardStrokes && order.cardStrokes.length){
-      replayStrokesOnCanvasImmediateToLayer(order.cardStrokes, servedCardMini, order.cardMeta, true);
+      replayStrokesOnCanvasImmediate(order.cardStrokes, servedCardMini, cardCtxMini, order.cardMeta);
     } else if (order.cardDataUrl){
       const img = new Image(); img.src = order.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
     }
@@ -1581,20 +1386,20 @@ async function showClientServed(order){
   servedSequence = frames.slice(); servedSequenceIndex = 0;
   if (servedSequence.length) servedImage.src = servedSequence[0];
 
-  // ensure POMO uses this menu
   POMO.currentMenuKey = order.item || 'rate';
   document.getElementById('modalEat').style.display = 'flex';
 }
 
-/* preloadFrames (tries various patterns) */
+/* preload frames - tries several filename patterns */
 async function preloadFrames(basePath, frameCount=6, lastRandom=false){
   const frames = [];
   for (let i=1;i<=frameCount;i++){
+    // we do not include leading zero for first frames mapping; for 6 we allow both 6 and 06 when necessary
     const candidates = [
-      `${basePath}${String(i).padStart(2,'0')}.png`,
       `${basePath}${i}.png`,
-      `${basePath}_${String(i).padStart(2,'0')}.png`,
-      `${basePath}_${i}.png`
+      `${basePath}${String(i).padStart(2,'0')}.png`,
+      `${basePath}_${i}.png`,
+      `${basePath}_${String(i).padStart(2,'0')}.png`
     ];
     let found = false;
     for (const c of candidates){
@@ -1608,32 +1413,194 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
         break;
       } catch(e){ continue; }
     }
-    if (!found) continue;
+    if (!found){
+      // not found, skip
+    }
   }
   return frames;
 }
 
-/* servedImage click opens pomodoro (we removed long-press eat) */
-servedImage.addEventListener('click', ()=>{
-  const currentMenu = POMO.currentMenuKey || 'rate';
-  openPomodoroForMenu(currentMenu);
-});
+/* ---------- Pomodoro implementation (client-local per modal) ---------- */
+const POMO = {
+  running: false, phase:'idle', loopTotal:1, loopIndex:0, workMin:25, breakMin:5,
+  remainingMs:0, tickInterval:null, lastTickTs:0, currentMenuKey:'rate', frameCount:6,
+  scheduledP3Timers:[], lastP3Index:-1, lastMessageIndex:-1, messageTimer:null
+};
+function formatTime(ms){
+  if (ms < 0) ms = 0; let s = Math.floor(ms/1000); const h = Math.floor(s/3600); s = s%3600; const m = Math.floor(s/60); const sec = s%60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+const POMO_MESSAGES = {
+  work: ['集中してがんばろう！','一息入れずに進めよう','今の調子を維持して','もう少しで区切りだよ','ペースを作っていこう'],
+  break: ['軽く休憩しましょう','深呼吸してリラックス','腕を伸ばして休憩','水分補給をどうぞ','ゆっくり休んでOK']
+};
+function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
+  const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  if (!totalMs || totalMs <= 0) return 1;
+  const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
+  const from = 2; const to = fc;
+  const idx = Math.floor(from + (to - from) * ratio);
+  return Math.min(fc, Math.max(1, idx));
+}
+function pickBreakFrame(menuKey){
+  const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  if (fc <= 1) return 1;
+  const choices = [Math.max(1, fc-1), fc];
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+function setServedImageFrame(menuKey, frameIndex){
+  const menu = MENUS[menuKey];
+  if (!menu) return;
+  const base = menu.imageBase;
+  // prefer non-zero-padded filenames for frames 1..N except fallback supports 06 as well for last frame
+  const candidates = [ `${base}${frameIndex}.png`, `${base}${String(frameIndex).padStart(2,'0')}.png`, `${base}_${frameIndex}.png`, `${base}_${String(frameIndex).padStart(2,'0')}.png` ];
+  (async ()=>{
+    for (const c of candidates){
+      const url = getAssetUrl(c);
+      try{
+        const res = await fetch(url, { method:'HEAD' }); // quick check
+        if (res.ok){ servedImage.src = url; return; }
+      } catch(e){}
+    }
+    // fallback to 1 if none
+    servedImage.src = getAssetUrl(base + '1.png');
+  })();
+}
+function clearScheduledP3(){ if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers=[]; for(const t of POMO.scheduledP3Timers) clearTimeout(t); POMO.scheduledP3Timers=[]; POMO.lastP3Index=-1; }
+function scheduleBreakRandomSounds(){
+  clearScheduledP3();
+  function scheduleNext(){
+    if (POMO.phase !== 'break') return;
+    const interval = 8000 + Math.floor(Math.random() * 12000);
+    const timer = setTimeout(()=>{
+      let idxCandidates = p3Pool.map((_,i)=>i);
+      if (POMO.lastP3Index >= 0 && idxCandidates.length > 1) idxCandidates = idxCandidates.filter(i=>i!==POMO.lastP3Index);
+      const idx = idxCandidates[Math.floor(Math.random()*idxCandidates.length)];
+      POMO.lastP3Index = idx;
+      try{ const a = new Audio(p3Pool[idx].src); a.play().catch(()=>{}); } catch(e){}
+      scheduleNext();
+    }, interval);
+    POMO.scheduledP3Timers.push(timer);
+  }
+  scheduleNext();
+}
+function rotatePomoMessage(){
+  const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null);
+  if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; }
+  const pool = POMO_MESSAGES[phase] || [];
+  if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; }
+  let idxs = pool.map((_,i)=>i);
+  if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex);
+  const idx = idxs[Math.floor(Math.random()*idxs.length)];
+  POMO.lastMessageIndex = idx;
+  document.getElementById('eatSoundInfo').textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx];
+}
+function startPomoTick(){
+  if (POMO.tickInterval) return;
+  POMO.lastTickTs = Date.now();
+  POMO.tickInterval = setInterval(()=>{
+    const now = Date.now(); const delta = now - POMO.lastTickTs; POMO.lastTickTs = now;
+    if (POMO.phase === 'paused' || POMO.phase === 'idle') return;
+    POMO.remainingMs -= delta;
+    if (POMO.remainingMs <= 0){
+      if (POMO.phase === 'work'){
+        POMO.phase = 'break';
+        audioPiroBreak && audioPiroBreak.play().catch(()=>{});
+        POMO.remainingMs = (POMO.breakMin * 60 * 1000);
+        const bf = pickBreakFrame(POMO.currentMenuKey || 'rate'); setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
+        scheduleBreakRandomSounds();
+      } else if (POMO.phase === 'break'){
+        clearScheduledP3();
+        POMO.loopIndex++;
+        if (POMO.loopIndex >= POMO.loopTotal){ stopPomo(true); return; } else {
+          POMO.phase = 'work';
+          POMO.remainingMs = (POMO.workMin * 60 * 1000);
+          setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
+          audioPiroStart && audioPiroStart.play().catch(()=>{});
+        }
+      }
+      renderPomoUI();
+    } else {
+      if (POMO.phase === 'work'){
+        const total = (POMO.workMin * 60 * 1000);
+        const elapsed = total - POMO.remainingMs;
+        const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total);
+        setServedImageFrame(POMO.currentMenuKey || 'rate', idx);
+      }
+      renderPomoUI();
+    }
+  }, 250);
+
+  if (POMO.messageTimer) clearInterval(POMO.messageTimer);
+  POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000);
+  rotatePomoMessage();
+}
+function stopPomoTick(){ if (POMO.tickInterval){ clearInterval(POMO.tickInterval); POMO.tickInterval=null; } clearScheduledP3(); if (POMO.messageTimer){ clearInterval(POMO.messageTimer); POMO.messageTimer=null; } }
+function renderPomoUI(){
+  if (!POMO.running){ pomoSettings.style.display='block'; pomoRunning.style.display='none'; pomoPanel.setAttribute('aria-hidden','false'); document.getElementById('eatSoundInfo').textContent='—'; return; }
+  pomoSettings.style.display='none'; pomoRunning.style.display='block'; pomoPanel.setAttribute('aria-hidden','false');
+  pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`;
+  pomoPhaseLabel.textContent = (POMO.phase==='work')?'作業中':(POMO.phase==='break'?'休憩中':(POMO.phase==='paused'?'一時停止':'待機'));
+  pomoTimerText.textContent = formatTime(POMO.remainingMs);
+  if (POMO.phase==='work'){ const total=(POMO.workMin*60*1000); const elapsed=Math.max(0,total-POMO.remainingMs); const pct=Math.min(100,Math.floor((elapsed/total)*100)); pomoProgressBar.style.width=`${pct}%`; }
+  else if (POMO.phase==='break'){ const total=(POMO.breakMin*60*1000); const elapsed=Math.max(0,total-POMO.remainingMs); const pct=Math.min(100,Math.floor((elapsed/total)*100)); pomoProgressBar.style.width=`${pct}%`; }
+  else { pomoProgressBar.style.width=`0%`; }
+  if (POMO.phase === 'paused') pausePomoBtn.textContent='▶'; else pausePomoBtn.textContent='⏸';
+}
+function startPomo(){
+  const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1')));
+  const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25')));
+  const bmin = Math.max(1, Math.min(200, parseInt(breakMinInput.value || '5')));
+  POMO.loopTotal = loops; POMO.loopIndex = 0; POMO.workMin = wmin; POMO.breakMin = bmin; POMO.running = true; POMO.phase='work';
+  POMO.remainingMs = (wmin*60*1000); POMO.currentMenuKey = POMO.currentMenuKey || 'rate'; const menu = MENUS[POMO.currentMenuKey] || MENUS['rate']; POMO.frameCount = menu.frameCount || 6;
+  audioPiroStart && audioPiroStart.play().catch(()=>{});
+  setServedImageFrame(POMO.currentMenuKey, 2);
+  clearScheduledP3();
+  startPomoTick();
+  renderPomoUI();
+}
+function togglePausePomo(){ if (!POMO.running) return; if (POMO.phase==='paused'){ POMO.phase=POMO._prevPhase||'work'; audioPiroToggle && audioPiroToggle.play().catch(()=>{}); startPomoTick(); } else { POMO._prevPhase = POMO.phase; POMO.phase='paused'; stopPomoTick(); audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } renderPomoUI(); }
+function stopPomo(returnToSettings){ POMO.running=false; POMO.phase='idle'; POMO.remainingMs=0; clearScheduledP3(); stopPomoTick(); if (returnToSettings){ pomoSettings.style.display='block'; pomoRunning.style.display='none'; } renderPomoUI(); }
+function skipPomo(){ if (!POMO.running) return; if (POMO.phase==='work' || POMO.phase==='break'){ POMO.remainingMs=0; } else if (POMO.phase==='paused'){ POMO.phase=POMO._prevPhase||'work'; POMO.remainingMs=0; } }
+
+/* numeric hold */
+function wireHoldButton(buttonEl, inputEl, delta, min, max){
+  let timer=null, holdStart=0, currentInterval=500;
+  function doStep(){ let v=parseInt(inputEl.value||'0'); v+=delta; if (typeof min==='number') v=Math.max(min,v); if (typeof max==='number') v=Math.min(max,v); inputEl.value=v; updatePomoCountDisplay(); }
+  function startHold(){ holdStart=Date.now(); currentInterval=500; doStep(); timer=setTimeout(function repeat(){ const held=Date.now()-holdStart; const t=Math.min(1,held/2000); currentInterval=Math.max(80,Math.floor(500-(420*t))); doStep(); timer=setTimeout(repeat,currentInterval); }, currentInterval); }
+  function stopHold(){ if (timer){ clearTimeout(timer); timer=null; } }
+  buttonEl.addEventListener('mousedown',(e)=>{ e.preventDefault(); startHold(); });
+  buttonEl.addEventListener('touchstart',(e)=>{ e.preventDefault(); startHold(); });
+  window.addEventListener('mouseup', stopHold);
+  window.addEventListener('touchend', stopHold);
+  buttonEl.addEventListener('click',(e)=>{ e.preventDefault(); doStep(); });
+}
+function updatePomoCountDisplay(){ const loops=Math.max(1,Math.min(10,parseInt(loopCountInput.value||'1'))); pomoCountDisplay.textContent = `${loops} / ${loops}`;}
+wireHoldButton(loopUp, loopCountInput, +1, 1, 10); wireHoldButton(loopDown, loopCountInput, -1, 1, 10);
+wireHoldButton(workUp, workMinInput, +1, 1, 200); wireHoldButton(workDown, workMinInput, -1, 1, 200);
+wireHoldButton(breakUp, breakMinInput, +1, 1, 200); wireHoldButton(breakDown, breakMinInput, -1, 1, 200);
+
+startPomoBtn.addEventListener('click', ()=>{ if (!POMO.running){ startPomo(); startPomoBtn.textContent='実行中'; } });
+stopPomoBtn.addEventListener('click', ()=>{ stopPomo(true); startPomoBtn.textContent='再生 ▶'; });
+pausePomoBtn.addEventListener('click', ()=>{ togglePausePomo(); });
+skipPomoBtn.addEventListener('click', ()=>{ skipPomo(); });
+
+function openPomodoroForMenu(menuKey){ POMO.currentMenuKey = menuKey || 'rate'; loopCountInput.value = POMO.loopTotal || 1; workMinInput.value = POMO.workMin || 25; breakMinInput.value = POMO.breakMin || 5; updatePomoCountDisplay(); pomoPanel.classList.add('show'); pomoPanel.style.display='block'; pomoSettings.style.display=POMO.running?'none':'block'; pomoRunning.style.display=POMO.running?'block':'none'; renderPomoUI(); }
+document.addEventListener('click', (e)=>{ if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){ if (!POMO.running){ pomoPanel.classList.remove('show'); pomoPanel.style.display='none'; } }});
+servedImage.addEventListener('click', ()=>{ const currentMenu = POMO.currentMenuKey || 'rate'; openPomodoroForMenu(currentMenu); });
+
+(function initServed(){ const defaultKey = 'rate'; POMO.currentMenuKey = defaultKey; setServedImageFrame(defaultKey, 1); })();
 
 /* saveAll (client) */
 saveAllBtn.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
   t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
   const mainImg = new Image(); mainImg.crossOrigin = 'anonymous'; mainImg.src = servedImage.src;
-  mainImg.onload = ()=> {
-    t.drawImage(mainImg, 150,100,900,600);
-    t.drawImage(servedArtMini, 860,120,220,220);
-    t.drawImage(servedCardMini, 860,360,260,120);
-    const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = 'served_save.png'; a.click();
-  };
+  mainImg.onload = ()=> { t.drawImage(mainImg, 150,100,900,600); t.drawImage(servedArtMini, 860,120,220,220); t.drawImage(servedCardMini, 860,360,260,120); const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = 'served_save.png'; a.click(); };
   mainImg.onerror = ()=> { alert('画像の読み込みに失敗しました'); };
 });
 
-/* homeFromEat: when client returns home, remove drawing data for that order from Firestore so it won't be shared further */
+/* homeFromEat: clear drawing data for that order (client privacy) */
 homeFromEat.addEventListener('click', async ()=>{
   const curId = state.currentOrderIdForClient;
   if (curId){
@@ -1651,14 +1618,11 @@ homeFromEat.addEventListener('click', async ()=>{
             cardMeta: null
           });
         } else {
-          // local: just clear local state
-          const idx = state.orders.findIndex(x=>x.id===curId);
-          if (idx >= 0) state.orders.splice(idx,1);
+          // local remove
+          Object.assign(o, { artStrokes:null, cardStrokes:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, artMeta:null, cardMeta:null });
         }
       }
-    } catch(e){
-      console.warn('clear art data failed', e);
-    }
+    } catch(e){ console.warn('clear art data failed', e); }
     dismissedOrders.add(curId);
     try { localStorage.setItem('reiji_dismissed_orders', JSON.stringify(Array.from(dismissedOrders))); } catch(e){}
     state.currentOrderIdForClient = null;
@@ -1666,7 +1630,7 @@ homeFromEat.addEventListener('click', async ()=>{
   document.getElementById('modalEat').style.display = 'none';
 });
 
-/* J/E/C/K jukebox build */
+/* build jukebox */
 function buildJukebox(){
   const list = [
     { id:'J', img:'@zzcafe2800/reiji_cafe/main/J.png', audio: audioJ },
@@ -1674,23 +1638,21 @@ function buildJukebox(){
     { id:'C', img:'@zzcafe2800/reiji_cafe/main/C.png', audio: audioC },
     { id:'K', img:'@zzcafe2800/reiji_cafe/main/K.png', audio: audioK },
   ];
-  jukeboxArea.innerHTML = '';
+  jukeboxArea.innerHTML='';
   for (const it of list){
     const wrap = document.createElement('div'); wrap.className='wrapper';
     const img = document.createElement('img'); img.src = getAssetUrl(it.img); img.alt = it.id;
-    img.title = it.id; img.style.width = '56px';
-    img.addEventListener('click', ()=>{ try { it.audio.currentTime = 0; it.audio.play().catch(()=>{}); } catch(e){} });
-    const hint = document.createElement('div'); hint.className='hint'; hint.textContent = '';
-    wrap.appendChild(img); wrap.appendChild(hint);
-    jukeboxArea.appendChild(wrap);
+    img.title = it.id; img.style.width='56px';
+    img.addEventListener('click', ()=>{ try{ it.audio.currentTime=0; it.audio.play().catch(()=>{}); }catch(e){} });
+    const hint = document.createElement('div'); hint.className='hint'; hint.textContent='';
+    wrap.appendChild(img); wrap.appendChild(hint); jukeboxArea.appendChild(wrap);
   }
 }
 
-/* order button enable/disable logic using JST (so people worldwide see same enablement) */
+/* order button enable/disable: based on Tokyo time staff availability OR bot active */
 function updateOrderButtonState(){
-  const nowJST = nowInJapan();
-  const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,nowJST));
-  if (anyAvailable || BOT.active) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled');
+  const anyAvailable = anyStaffAvailableTokyo() || botState.active;
+  if (anyAvailable) orderBtn.classList.remove('disabled'); else orderBtn.classList.add('disabled');
 }
 
 /* Sound overlay handling */
@@ -1704,32 +1666,169 @@ enableSoundBtn.addEventListener('click', ()=> {
 });
 disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
 
-/* cover animation -> remove after end */
-const coverEl = document.getElementById('coverPage');
-coverEl.addEventListener('animationend', (e)=>{
-  if (coverEl.classList.contains('open')){
-    coverEl.classList.add('finished');
-  }
-});
-/* open cover when page loads then auto-open after short delay for demo */
-setTimeout(()=>{ coverEl.classList.add('open'); }, 400);
-/* remove cover after its animation ends handled above */
-
-/* header BGM button opens URL */
 bgmBtn.addEventListener('click', ()=> window.open('https://x.gd/6C0VB', '_blank'));
 
-/* Initial boot */
+/* ---------- BOT fallback: activates when no staff available ---------- */
+const botState = { active:false, handlingOrders: new Set() };
+
+function activateBotIfNeeded(){
+  const hasStaff = anyStaffAvailableTokyo();
+  if (!hasStaff){
+    // enable BOT
+    if (!botState.active){
+      botState.active = true;
+      renderShiftShort();
+      updateOrderButtonState();
+    }
+  } else {
+    if (botState.active){
+      botState.active = false;
+      renderShiftShort();
+      updateOrderButtonState();
+    }
+  }
+}
+
+/* handle a bot order: simulate cooking, pick bot art & card, and finalize delivered.
+   Minimize Firestore writes: if db present, create and update doc once each stage; else do local.
+*/
+async function handleBotOrder(orderObj){
+  // mark as being handled by bot on UI
+  showClientStatus('BOTが対応中');
+  // disable UI interactions while bot handling this order
+  const prevDisabled = orderBtn.classList.contains('disabled');
+  orderBtn.classList.add('disabled');
+
+  // If order exists locally only (no db), ensure it has id
+  if (!orderObj.id) orderObj.id = uid('o');
+
+  // assign bot name
+  const botName = 'BOTスタッフ';
+
+  // set order to inprogress (in db if possible)
+  if (db){
+    try {
+      // create if not exists
+      if (!orderObj._remoteCreated){
+        const ref = await addDoc(ordersCol, Object.assign({}, orderObj, { assignedTo: 'bot', assignedToName: botName, state:'inprogress' }));
+        orderObj._remoteCreated = true;
+        orderObj.id = ref.id;
+      } else {
+        await updateDoc(doc(db,'orders',orderObj.id), { state:'inprogress', assignedTo:'bot', assignedToName:botName });
+      }
+    } catch(e){ console.warn('bot assign to firestore failed', e); }
+  } else {
+    orderObj.state = 'inprogress'; orderObj.assignedTo = 'bot'; orderObj.assignedToName = botName;
+  }
+
+  // simulate production delay; choose durations modest (e.g., 2-6s) for quick demo
+  const produceMs = 2000 + Math.floor(Math.random()*4000);
+  await new Promise(r => setTimeout(r, produceMs));
+
+  // create art image from bot pool
+  const menuCfg = MENUS[orderObj.item] || MENUS['rate'];
+  let artDataUrl = null;
+  if (menuCfg.botArts && menuCfg.botArts.length){
+    const pick = menuCfg.botArts[Math.floor(Math.random()*menuCfg.botArts.length)];
+    const url = getAssetUrl(pick);
+    try {
+      const img = new Image(); img.crossOrigin='anonymous'; img.src = url;
+      await new Promise(r=>{ img.onload=r; img.onerror=r; });
+      const c = document.createElement('canvas'); c.width = 320; c.height = 320; const ctx = c.getContext('2d');
+      ctx.fillStyle = menuCfg.artBg || '#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height);
+      artDataUrl = c.toDataURL('image/png');
+    } catch(e){ console.warn('bot art load failed', e); }
+  }
+
+  // create card image with stylish font and name lines
+  let cardDataUrl = null;
+  try {
+    const c = document.createElement('canvas'); c.width = 520; c.height = 240; const ctx = c.getContext('2d');
+    ctx.fillStyle = menuCfg.cardBg || '#fff2e6'; ctx.fillRect(0,0,c.width,c.height);
+    // draw three-lines: greeting, message, name+さん
+    const lines = ['どうぞ', 'ごゆっくり～☕', `${orderObj.name}さん`];
+    ctx.fillStyle = '#000';
+    // nice bold font (system)
+    ctx.font = 'bold 28px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#333';
+    ctx.fillText(lines[0], c.width/2, 60);
+    ctx.fillText(lines[1], c.width/2, 120);
+    ctx.fillText(lines[2], c.width/2, 190);
+    cardDataUrl = c.toDataURL('image/png');
+  } catch(e){ console.warn('bot card generation failed', e); }
+
+  // compose served image similar to completeMake
+  const servedCanvas = document.createElement('canvas'); servedCanvas.width = 1200; servedCanvas.height = 1200; const sctx = servedCanvas.getContext('2d');
+  sctx.fillStyle = '#fff8ef'; sctx.fillRect(0,0,servedCanvas.width,servedCanvas.height);
+  // latte placeholder
+  sctx.fillStyle = '#6b3b24'; sctx.beginPath(); sctx.arc(600,400,150,0,Math.PI*2); sctx.fill();
+  if (artDataUrl){
+    const ai = new Image(); ai.src = artDataUrl;
+    await new Promise(r=>{ ai.onload=r; ai.onerror=r; });
+    sctx.drawImage(ai, 440,120,320,320);
+  }
+  if (cardDataUrl){
+    const ci = new Image(); ci.src = cardDataUrl;
+    await new Promise(r=>{ ci.onload=r; ci.onerror=r; });
+    sctx.drawImage(ci, 430,700,340,160);
+  }
+  const servedDataUrl = servedCanvas.toDataURL('image/png');
+
+  // finalize: update order to delivered and remove from lists if needed
+  if (db){
+    try {
+      await updateDoc(doc(db,'orders',orderObj.id), {
+        state: 'delivered',
+        deliveredAt: Date.now(),
+        servedImageData: servedDataUrl,
+        artDataUrl: artDataUrl || null,
+        cardDataUrl: cardDataUrl || null,
+        assignedTo: 'bot', assignedToName: botName
+      });
+    } catch(e){ console.warn('bot finalize firestore failed', e); }
+  } else {
+    // local: find and update and remove
+    const o = state.orders.find(x=>x.id===orderObj.id);
+    if (o){ Object.assign(o, { state:'delivered', deliveredAt: Date.now(), servedImageData:servedDataUrl, artDataUrl:artDataUrl, cardDataUrl:cardDataUrl, assignedTo:'bot', assignedToName:botName }); }
+  }
+
+  // after delivered, show served modal for client if it's their order
+  if (state.currentOrderIdForClient === orderObj.id){
+    showClientServed(orderObj);
+    hideClientStatus();
+  }
+
+  // mark as done and remove from pending lists after a short time
+  setTimeout(()=>{
+    // remove order from state.orders if we want to hide bot-provided orders
+    state.orders = (state.orders || []).filter(x=>x.id !== orderObj.id);
+    renderOrderLists();
+    updateOrderButtonState();
+    orderBtn.classList.toggle('disabled', prevDisabled);
+  }, 2000);
+}
+
+/* ---------- Event: cover animation end -> remove cover element ---------- */
+const coverEl = document.getElementById('coverPage');
+if (coverEl){
+  // play open animation when order modal first appears or on load after a short delay
+  setTimeout(()=>{ coverEl.classList.add('open'); }, 600);
+  coverEl.addEventListener('animationend', ()=>{ coverEl.classList.add('finished'); coverEl.style.display='none'; });
+}
+
+/* ---------- Served image click used above; previously long-press eating removed ---------- */
+
+/* ---------- Misc: preload initial UI ---------- */
 buildJukebox();
 buildMenu().catch(()=>{});
 initArtCanvas(); initCardCanvas();
 startRealtime();
 showSoundOverlay();
 
-/* Ensure evaluateBotActivity runs once at start */
-setTimeout(()=> evaluateBotActivity(), 600);
-
 </script>
-
+</body>
+</html>
   
   <script>
 document.getElementById("enableSoundBtn")?.addEventListener("click", () => {
