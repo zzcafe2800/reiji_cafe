@@ -435,13 +435,25 @@
   - Firestore の読み書きを最小限にする（BOTモードは可能な限りローカル処理）
 */
 
-/* Firebase imports & init (try/catch fallback) */
+<script type="module">
+/* ===== Firebase imports ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-const firebaseConfigNew = {
+/* ===== Firebase config（新サーバー） ===== */
+const firebaseConfig = {
   apiKey: "AIzaSyBJe7_PGeOEkCyC1NxaTMc5bjelQwv2OaU",
   authDomain: "insyoku-f9aee.firebaseapp.com",
   projectId: "insyoku-f9aee",
@@ -451,18 +463,28 @@ const firebaseConfigNew = {
   measurementId: "G-QET0N3KP2L"
 };
 
-let app, analytics, auth, db;
-let FIREBASE_AVAILABLE = true;
+/* ===== 初期化 ===== */
+let app, auth, db;
+
 try {
-  app = initializeApp(firebaseConfigNew);
-  analytics = getAnalytics(app);
+  app  = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
-  signInAnonymously(auth).catch(e=>console.warn('anonymous sign-in failed', e));
+  db   = getFirestore(app);
+
+  // 匿名ログイン
+  signInAnonymously(auth).catch(e=>{
+    console.warn("anonymous sign-in failed", e);
+  });
+
 } catch(e){
-  console.warn('Firebase init failed - offline mode', e);
-  app = null; analytics = null; auth = null; db = null; FIREBASE_AVAILABLE = false;
+  console.warn("Firebase init failed - offline mode", e);
+  db = null;
 }
+
+/* ===== ここから下で db / auth を今まで通り使える ===== */
+// 例:
+// const colRef = collection(db, "orders");
+
 
 /* DOM refs (short names reused) */
 const nowtimeEl = document.getElementById('nowtime');
