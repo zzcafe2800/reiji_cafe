@@ -892,7 +892,7 @@ async function scheduleOrderTimeout(orderId, expiresAt){
         if (snap.exists()){
           const o = snap.data();
           if (o.state === 'waiting'){
-            await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がない���め現在注文を取り消しになります' });
+            await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
           }
         }
       } else {
@@ -1597,6 +1597,7 @@ renderShiftShort();
 updateOrderButtonState();
 
 </script>
+
 
 
 
