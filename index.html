@@ -2841,86 +2841,111 @@ document.body.addEventListener("click",{once:true},()=>{
 
 
 
+<style>
+/* ===== ボタン沈み演出（全ボタン共通） ===== */
+button {
+  transition:
+    transform 0.08s ease,
+    box-shadow 0.08s ease,
+    filter 0.08s ease;
+}
+
+button.__pressing {
+  transform: translateY(2px) scale(0.98);
+  box-shadow:
+    inset 0 3px 6px rgba(0,0,0,0.35),
+    0 1px 0 rgba(255,255,255,0.4);
+  filter: brightness(0.95);
+}
+</style>
 
 <script>
 /* ===============================
-   全ボタン共通 SE 制御
-   hover → kati.mp3（1回）
-   click → cli.mp3
-================================ */
+   全ボタン共通：SE & 押下挙動
+   =============================== */
+(function(){
 
-/* --- 音声準備 --- */
-const hoverSE = new Audio("kati.mp3");
-const clickSE = new Audio("cli.mp3");
+  /* --- 音声 --- */
+  const hoverSE = new Audio("kati.mp3");
+  const clickSE = new Audio("cli.mp3");
 
-/* 音の重なり防止（自然に） */
-hoverSE.preload = "auto";
-clickSE.preload = "auto";
+  hoverSE.preload = "auto";
+  clickSE.preload = "auto";
 
-/* --- hover判定用 WeakMap --- */
-/* ボタンごとに「今エイム中か」を管理 */
-const hoverState = new WeakMap();
+  hoverSE.volume = 0.8;
+  clickSE.volume = 0.9;
 
-/* --- hover 再生関数 --- */
-function playHoverSE(button) {
-  if (hoverState.get(button)) return; // すでに鳴らした
-  hoverState.set(button, true);
+  /* --- hover再生管理用 --- */
+  const hoverPlayed = new WeakSet();
 
-  try {
-    hoverSE.currentTime = 0;
-    hoverSE.play();
-  } catch (e) {}
-}
+  /* --- iOS / autoplay 対策 --- */
+  let audioUnlocked = false;
+  const unlockAudio = () => {
+    if (audioUnlocked) return;
+    hoverSE.play().then(() => {
+      hoverSE.pause();
+      hoverSE.currentTime = 0;
+      clickSE.play().then(() => {
+        clickSE.pause();
+        clickSE.currentTime = 0;
+        audioUnlocked = true;
+      }).catch(()=>{});
+    }).catch(()=>{});
+  };
 
-/* --- hover解除 --- */
-function resetHoverState(button) {
-  hoverState.set(button, false);
-}
+  document.addEventListener("pointerdown", unlockAudio, { once:true });
 
-/* --- click 再生関数 --- */
-function playClickSE() {
-  try {
-    clickSE.currentTime = 0;
-    clickSE.play();
-  } catch (e) {}
-}
+  /* --- イベント委譲：すべてのbuttonに対応 --- */
+  document.addEventListener("pointerover", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
 
-/* ===============================
-   イベント委譲（全ボタン対応）
-================================ */
+    if (!hoverPlayed.has(btn)) {
+      try {
+        hoverSE.currentTime = 0;
+        hoverSE.play();
+      } catch(e){}
+      hoverPlayed.add(btn);
+    }
+  });
 
-/* hover */
-document.addEventListener("mouseover", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn) return;
-  playHoverSE(btn);
-});
+  document.addEventListener("pointerout", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    hoverPlayed.delete(btn);
+  });
 
-document.addEventListener("mouseout", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn) return;
+  /* --- 押下演出 --- */
+  document.addEventListener("pointerdown", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    btn.classList.add("__pressing");
+  });
 
-  /* 本当にボタン外に出たかチェック */
-  if (!btn.contains(e.relatedTarget)) {
-    resetHoverState(btn);
-  }
-});
+  document.addEventListener("pointerup", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    btn.classList.remove("__pressing");
+  });
 
-/* click */
-document.addEventListener("click", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn) return;
-  playClickSE();
-});
+  document.addEventListener("pointercancel", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    btn.classList.remove("__pressing");
+  });
 
-/* ===============================
-   初期化：既存ボタンにも状態付与
-================================ */
-document.querySelectorAll("button").forEach(btn => {
-  hoverState.set(btn, false);
-});
+  /* --- クリック音 --- */
+  document.addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    try {
+      clickSE.currentTime = 0;
+      clickSE.play();
+    } catch(e){}
+  });
+
+})();
 </script>
-
 
 
 
