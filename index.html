@@ -608,34 +608,7 @@
   </div>
 </div>
 
-<script>
-/* ===== タイマーをドラッグ可能に ===== */
-(function(){
-  const el = document.getElementById("pomodoroPanel");
-  let offsetX=0, offsetY=0, drag=false;
 
-  el.addEventListener("mousedown",e=>{
-    drag=true;
-    offsetX=e.offsetX;
-    offsetY=e.offsetY;
-    el.style.cursor="grabbing";
-  });
-
-  document.addEventListener("mousemove",e=>{
-    if(!drag) return;
-    el.style.left=(e.pageX-offsetX)+"px";
-    el.style.top=(e.pageY-offsetY)+"px";
-    el.style.right="auto";
-    el.style.bottom="auto";
-    el.style.position="absolute";
-  });
-
-  document.addEventListener("mouseup",()=>{
-    drag=false;
-    el.style.cursor="grab";
-  });
-})();
-</script>
 
 
 
