@@ -1740,7 +1740,7 @@ function roundRect(ctx, x, y, w, h, r){
 /* ----------------- BOT removal / human arrival reaction ----------------- */
 /* If a human staff enters (via realtime), BOT should withdraw automatically; handled by renderShiftShort which sets state._botActive false if humans present */
 
-/* ----------------- Utility: fetch order by id (search state first) ----------------- */
+/* ----------------- Utility: fetch order by id (search state first) ----------------- 
 async function fetchOrderById(id){
   const s = state.orders.find(x=>x.id===id);
   if (s) return s;
@@ -1750,7 +1750,7 @@ async function fetchOrderById(id){
     if (snap.exists()) return { id: snap.id, ...snap.data() };
   } catch(e){ console.warn(e); }
   return null;
-}
+}*/
 
 /* ----------------- Cover open animation removal logic ----------------- */
 const coverPage = document.getElementById('coverPage');
