@@ -2829,67 +2829,213 @@ document.body.addEventListener("click",{once:true},()=>{
 
 
   
-<script type="module">
-/* ===== Order / Reorder Toggle (Shared) ===== */
+<script>
+/*
+ スタッフ画面(staffFull)から「注文ボタン (offlineOrderBtn)」と「再注文ボタン (orderBtn)」を
+ 交互に表示させるためのワンファイルスクリプトです。
 
-/* Firestore 前提：すでに db がある前提 */
-const orderBtn = document.getElementById("orderBtn");               // 注文
-const offlineOrderBtn = document.getElementById("offlineOrderBtn"); // 再注文
-const toggleBtn = document.getElementById("orderToggleBtn");
+ 要件を満たすポイント:
+ - offlineOrderBtn が「注文ボタン」
+ - orderBtn が 「再注文ボタン」
+ - 初期状態は「再注文ボタン(orderBtn)が非表示」
+ - staff 用の切替ボタンを設置（id: staffFullToggle）。押すたびに表示されるボタンを切替。
+ - 切替は繰り返し可能
+ - 状態は localStorage に保存し、同オリジン内のタブ間は BroadcastChannel / storage event で同期
+ - ボタンに現在の表示/非表示が分かる小さなラベルを追加
+ - 既存 DOM に該当 id の要素があればそれを使い、なければ簡易的なボタンを自動作成（テスト用）
+*/
 
-if (!orderBtn || !offlineOrderBtn || !toggleBtn || !db) {
-  console.warn("order toggle init skipped");
-  return;
-}
+(function () {
+  const VKEY = 'staffFull_visibleButton_v1';
+  const CHANNEL_NAME = 'staffFull_btn_visibility_v1';
+  const OFFLINE_ID = 'offlineOrderBtn'; // 注文ボタン
+  const REORDER_ID = 'orderBtn';        // 再注文ボタン
+  const STAFF_TOGGLE_ID = 'staffFullToggle';
 
-/* ===== Firestore doc ===== */
-const toggleRef = doc(db, "ui", "orderToggle");
+  // ユーティリティ: 要素を取得、なければ null
+  function $(id) { return document.getElementById(id); }
 
-/* ===== 表示制御 ===== */
-function applyMode(mode){
-  const isOrder = mode === "order";
+  // バッジをボタン内に表示/更新する (表示中 / 非表示)
+  function setBadge(btn, text) {
+    if (!btn) return;
+    let badge = btn.querySelector('.staff-visibility-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'staff-visibility-badge';
+      // 簡易スタイル（インラインで追加）
+      badge.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:12px;font-size:12px;vertical-align:middle;';
+      btn.appendChild(badge);
+    }
+    badge.textContent = text;
+    if (text === '表示中') {
+      badge.style.background = '#2b8a3e'; // 緑
+      badge.style.color = '#fff';
+    } else {
+      badge.style.background = '#aaa';
+      badge.style.color = '#222';
+    }
+  }
 
-  orderBtn.style.display = isOrder ? "flex" : "none";
-  offlineOrderBtn.style.display = isOrder ? "none" : "flex";
+  // ボタンの表示/非表示を適用する
+  function applyVisibility(visibleId, broadcast = false) {
+    const offlineBtn = $(OFFLINE_ID);
+    const reorderBtn = $(REORDER_ID);
 
-  toggleBtn.textContent = isOrder
-    ? "注文ボタン表示中（押すと再注文）"
-    : "再注文ボタン表示中（押すと注文）";
+    if (offlineBtn) offlineBtn.style.display = (visibleId === OFFLINE_ID) ? '' : 'none';
+    if (reorderBtn) reorderBtn.style.display = (visibleId === REORDER_ID) ? '' : 'none';
 
-  toggleBtn.classList.toggle("on", isOrder);
-  toggleBtn.classList.toggle("off", !isOrder);
-}
+    // バッジ更新
+    setBadge(offlineBtn, visibleId === OFFLINE_ID ? '表示中' : '非表示');
+    setBadge(reorderBtn, visibleId === REORDER_ID ? '表示中' : '非表示');
 
-/* ===== 初期化（なければ作る） ===== */
-(async ()=>{
-  const snap = await getDoc(toggleRef);
-  if (!snap.exists()) {
-    await updateDoc(toggleRef, { mode: "order" }).catch(async()=>{
-      // create
-      await setDoc(toggleRef, { mode: "order" });
+    // スタッフ切替ボタンの表示ラベルを更新
+    const staffBtn = $(STAFF_TOGGLE_ID);
+    if (staffBtn) {
+      const labelVisible = (visibleId === OFFLINE_ID) ? '注文ボタン 表示中' : '再注文ボタン 表示中';
+      staffBtn.textContent = 'スタッフ切替 — ' + labelVisible + '（クリックで切替）';
+      // 付属で小さな状態表示を付ける
+      staffBtn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid #ccc;margin:6px;background:#fff;cursor:pointer;';
+    }
+
+    // localStorage に保存（他タブに伝わるように）
+    try {
+      localStorage.setItem(VKEY, visibleId);
+    } catch (e) {
+      // 無視
+    }
+
+    // BroadcastChannel による通知
+    if (broadcast && typeof BroadcastChannel !== 'undefined') {
+      try {
+        const bc = new BroadcastChannel(CHANNEL_NAME);
+        bc.postMessage({ visible: visibleId });
+        bc.close();
+      } catch (e) {}
+    }
+  }
+
+  // 現在の可視ボタン取得（localStorage 優先、なければ初期: offlineOrderBtn）
+  function getStoredVisible() {
+    try {
+      const v = localStorage.getItem(VKEY);
+      if (v === OFFLINE_ID || v === REORDER_ID) return v;
+    } catch (e) {}
+    // 初期は再注文ボタンの非表示 => offlineOrderBtn を表示
+    return OFFLINE_ID;
+  }
+
+  // 切替操作: 現在の表示を反転
+  function toggleVisible() {
+    const current = getStoredVisible();
+    const next = (current === OFFLINE_ID) ? REORDER_ID : OFFLINE_ID;
+    applyVisibility(next, true);
+  }
+
+  // staffFull 用の切替ボタンを DOM に設置（既にある場合はスキップ）
+  function ensureStaffToggleButton() {
+    if ($(STAFF_TOGGLE_ID)) return;
+    const btn = document.createElement('button');
+    btn.id = STAFF_TOGGLE_ID;
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', 'false');
+    // 初期テキストは後で applyVisibility で上書き
+    btn.textContent = 'スタッフ切替 — 読み込み中...';
+    // 置き場所: body の最上部に挿入（必要なら staffFull 側で別の場所へ移動しても可）
+    document.addEventListener('DOMContentLoaded', () => {
+      // staffFull ページ用に body の先頭に置く
+      document.body.insertBefore(btn, document.body.firstChild);
+    });
+    // event
+    btn.addEventListener('click', () => {
+      toggleVisible();
     });
   }
+
+  // BroadcastChannel と storage event で他タブと同期
+  function setupCrossTabSync() {
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        const bc = new BroadcastChannel(CHANNEL_NAME);
+        bc.addEventListener('message', (ev) => {
+          const visible = ev.data && ev.data.visible;
+          if (visible === OFFLINE_ID || visible === REORDER_ID) {
+            applyVisibility(visible, false);
+          }
+        });
+      } catch (e) {}
+    }
+
+    // storage event fallback (他タブで localStorage が更新されたとき)
+    window.addEventListener('storage', (ev) => {
+      if (ev.key === VKEY && (ev.newValue === OFFLINE_ID || ev.newValue === REORDER_ID)) {
+        applyVisibility(ev.newValue, false);
+      }
+    });
+  }
+
+  // 存在しない場合のみテスト用に簡易ボタンを生成（本番では既存のボタン要素を用意してください）
+  function ensureActionButtonsExistForTesting() {
+    // 既にあるならスキップ
+    const body = document.body;
+    if (!body) return;
+    if (!$(OFFLINE_ID) || !$(REORDER_ID)) {
+      // ラッパーを作って目立つように配置（テスト用）
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'position:fixed;right:12px;bottom:12px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.95);box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:99999;';
+      wrap.id = 'staffFull_actionBtnsWrapper';
+      if (!$(OFFLINE_ID)) {
+        const b1 = document.createElement('button');
+        b1.id = OFFLINE_ID;
+        b1.textContent = '注文 (offlineOrderBtn)';
+        b1.style.marginRight = '8px';
+        wrap.appendChild(b1);
+      } else {
+        wrap.appendChild($(OFFLINE_ID));
+      }
+      if (!$(REORDER_ID)) {
+        const b2 = document.createElement('button');
+        b2.id = REORDER_ID;
+        b2.textContent = '再注文 (orderBtn)';
+        wrap.appendChild(b2);
+      } else {
+        wrap.appendChild($(REORDER_ID));
+      }
+      // 只今の見た目を分かりやすくするために body に追加（既に別の配置なら不要）
+      document.addEventListener('DOMContentLoaded', () => {
+        if (!$(wrap.id)) document.body.appendChild(wrap);
+      });
+    }
+  }
+
+  // 初期化
+  function init() {
+    // まず staff ボタンを確保
+    ensureStaffToggleButton();
+
+    // テスト環境向けにアクションボタンが無ければ自動作成（無ければ自動作成するが、実際のページでは既存要素を使う）
+    ensureActionButtonsExistForTesting();
+
+    // クロスタブ同期
+    setupCrossTabSync();
+
+    // DOM が整ったら表示状態を適用
+    document.addEventListener('DOMContentLoaded', () => {
+      const initial = getStoredVisible();
+      applyVisibility(initial, false);
+    });
+  }
+
+  // 実行
+  init();
+
+  // Expose a debug API on window (任意) — staffFull から必要なら直接呼べる
+  window.staffFullVisibility = {
+    toggle: toggleVisible,
+    set: (id) => { if (id === OFFLINE_ID || id === REORDER_ID) applyVisibility(id, true); },
+    get: getStoredVisible
+  };
 })();
-
-/* ===== 共有状態を監視 ===== */
-onSnapshot(toggleRef, (snap)=>{
-  if (!snap.exists()) return;
-  applyMode(snap.data().mode);
-});
-
-/* ===== staff 操作 ===== */
-toggleBtn.addEventListener("click", async ()=>{
-  const snap = await getDoc(toggleRef);
-  const current = snap.data()?.mode || "order";
-  const next = current === "order" ? "reorder" : "order";
-
-  await updateDoc(toggleRef, { mode: next });
-});
-
-/* ===== 初期状態：再注文ボタン非表示 ===== */
-applyMode("order");
 </script>
-
 
 
   
