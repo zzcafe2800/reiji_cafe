@@ -2828,227 +2828,247 @@ document.body.addEventListener("click",{once:true},()=>{
  -->
 
 
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>注文/再注文 切替デモ</title>
-<style>
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; padding:16px; }
-  #controls { margin-bottom: 16px; }
-  button { padding: 10px 16px; font-size: 16px; margin-right:8px; }
-  #staffFull { margin-top: 18px; padding:12px; border:1px solid #ddd; border-radius:8px; background:#fafafa; width:fit-content; }
-  #staffIndicator { margin-bottom:8px; font-weight:600; }
-  #toggleBtn { background:#eee; border:1px solid #ccc; cursor:pointer; user-select:none; }
-  #toggleBtn.active { background:#d0f0d0; border-color:#6cbe6c; }
-  #progress { margin-top:8px; font-size:13px; color:#555; }
-</style>
-<body>
-
-<div id="controls">
-  <!-- offlineOrderBtn = 注文ボタン -->
-  <button id="offlineOrderBtn" aria-pressed="true">注文</button>
-
-  <!-- orderBtn = 再注文ボタン（初期は非表示） -->
-  <button id="orderBtn" aria-pressed="false" style="display:none">再注文</button>
-</div>
-
-<!-- スタッフ画面領域（スタッフのみ表示する想定） -->
-<div id="staffFull" aria-hidden="false">
-  <!-- スタッフ用に現在どちらが表示されているか分かる表示 -->
-  <div id="staffIndicator">現在: 注文</div>
-
-  <!-- 長押しで切り替えるボタン（5秒）。ボタン内に「表示中」などは書かない。 -->
-  <button id="toggleBtn" title="このボタンを5秒長押しで切り替えます">長押しで切替（5秒）</button>
-
-  <!-- 長押しの経過表示（任意） -->
-  <div id="progress" aria-hidden="true" style="display:none">
-    長押し中: <span id="seconds">0.0</span>s
-  </div>
-</div>
-
 <script>
 /*
- - offlineOrderBtn: 注文ボタン
- - orderBtn: 再注文ボタン
- - staffFull: スタッフ専用領域（実運用ではスタッフ画面のみにレンダリングしてください）
- - toggleBtn: 長押しで切り替えるボタン（5秒長押し）
- - 初期：orderBtn（再注文）は非表示（offlineOrderBtnが表示）
- - 状態はlocalStorageに保存（ブラウザ間の永続化）。全クライアントで同期したい場合はサーバ側実装が必要。
+ staff-only 長押し（5秒）で 注文ボタン (offlineOrderBtn) と 再注文ボタン (orderBtn) を交互表示する機能
+ - 初期状態: 再注文ボタン(orderBtn) を非表示にする（offlineOrderBtn を表示）
+ - staff 画面の要素 id="staffFull" が存在する場合のみ、右上に「・」だけの長押しボタンを表示
+ - 長押し5秒で切替（クリックでは切替られない）
+ - 状態は BroadcastChannel + localStorage で同一オリジン内のタブ間で同期（完全なクロスデバイス共有はサーバ側が必要）
+ - 必要なら外部から window.orderToggle.setState / .toggleState / .getState で操作可能
 */
 
+/* 即時実行で名前空間を汚さないように */
 (function () {
-  const OFFLINE_ID = 'offlineOrderBtn';
-  const ORDER_ID   = 'orderBtn';
-  const TOGGLE_ID  = 'toggleBtn';
-  const INDICATOR_ID = 'staffIndicator';
-  const PROGRESS_ID = 'progress';
-  const SECONDS_ID = 'seconds';
-  const STORAGE_KEY = 'visibleOrderButton'; // 'offline' | 'order'
+  const OFFLINE_ID = 'offlineOrderBtn'; // 注文ボタン
+  const REORDER_ID = 'orderBtn';        // 再注文ボタン
+  const STORAGE_KEY = 'shared_order_button_state_v1'; // 'offline' または 'reorder'
+  const BC_NAME = 'shared_order_button_channel_v1';
+  const LONG_PRESS_MS = 5000;
 
-  const LONG_PRESS_MS = 5000; // 5秒
+  // 現在の状態キャッシュ（'offline' | 'reorder'）
+  let state = null;
 
+  // ボタン要素参照（ページ上にあることが前提）
   const offlineBtn = document.getElementById(OFFLINE_ID);
-  const orderBtn = document.getElementById(ORDER_ID);
-  const toggleBtn = document.getElementById(TOGGLE_ID);
-  const indicator = document.getElementById(INDICATOR_ID);
-  const progressDiv = document.getElementById(PROGRESS_ID);
-  const secondsSpan = document.getElementById(SECONDS_ID);
-  const staffFull = document.getElementById('staffFull');
+  const reorderBtn = document.getElementById(REORDER_ID);
 
-  // ここで isStaff を制御できます。実運用では staffFull ブロック自体をサーバ側で表示/非表示にすることが望ましい。
-  // スタッフ専用にする場合は false にすると staffFull 部分が非表示になります。
-  const isStaff = true; // スタッフなら true、スタッフでなければ false（必要に応じて変更）
+  // staffFull 要素を探す（staff 画面判定）
+  const staffContainer = document.getElementById('staffFull');
 
-  if (!isStaff) {
-    if (staffFull) staffFull.style.display = 'none';
+  // BroadcastChannel（利用可なら）および storage イベント同期
+  let bc = null;
+  try {
+    if ('BroadcastChannel' in window) bc = new BroadcastChannel(BC_NAME);
+  } catch (e) {
+    bc = null;
   }
-
-  // 状態の読み書き（localStorage）
-  function readState() {
-    try {
-      const v = localStorage.getItem(STORAGE_KEY);
-      if (v === 'offline' || v === 'order') return v;
-    } catch (e) {}
-    // 初期は再注文（orderBtn）を非表示 → 表示中は 'offline'
-    return 'offline';
-  }
-  function writeState(state) {
-    try {
-      localStorage.setItem(STORAGE_KEY, state);
-    } catch (e) {}
-  }
-
-  // UI更新
-  function applyState(state) {
-    if (state === 'offline') {
-      offlineBtn.style.display = '';
-      offlineBtn.setAttribute('aria-pressed', 'true');
-      orderBtn.style.display = 'none';
-      orderBtn.setAttribute('aria-pressed', 'false');
-      if (indicator) indicator.textContent = '現在: 注文';
-    } else {
-      offlineBtn.style.display = 'none';
-      offlineBtn.setAttribute('aria-pressed', 'false');
-      orderBtn.style.display = '';
-      orderBtn.setAttribute('aria-pressed', 'true');
-      if (indicator) indicator.textContent = '現在: 再注文';
-    }
-  }
-
-  // 切り替え
-  function toggleState() {
-    const current = readState();
-    const next = current === 'offline' ? 'order' : 'offline';
-    writeState(next);
-    applyState(next);
-    flashToggleButton();
-  }
-
-  // 切替成功時にトグルボタンに短いフィードバック
-  function flashToggleButton() {
-    if (!toggleBtn) return;
-    toggleBtn.classList.add('active');
-    setTimeout(() => toggleBtn.classList.remove('active'), 700);
-  }
-
-  // 長押し実装（pointer ベースで mouse/touch をまとめる）
-  function makeLongPress(element, durationMs, onLongPress, opts = {}) {
-    let pressTimer = null;
-    let startTime = 0;
-    let rafId = null;
-
-    const showProgress = !!opts.progress;
-    function startPress(ev) {
-      if (pressTimer != null) return;
-      ev.preventDefault && ev.preventDefault();
-      startTime = performance.now();
-      if (showProgress) {
-        progressDiv.style.display = '';
-        secondsSpan.textContent = '0.0';
+  if (bc) {
+    bc.onmessage = (ev) => {
+      if (ev.data && (ev.data === 'offline' || ev.data === 'reorder')) {
+        applyState(ev.data, { remote: true });
       }
-      pressTimer = setTimeout(() => {
-        cleanup();
-        onLongPress();
-      }, durationMs);
-
-      // raf-based progress update
-      function update() {
-        const elapsed = performance.now() - startTime;
-        const sec = Math.min(elapsed / 1000, durationMs / 1000);
-        if (showProgress) secondsSpan.textContent = sec.toFixed(1);
-        rafId = requestAnimationFrame(update);
-      }
-      rafId = requestAnimationFrame(update);
-    }
-
-    function cancelPress() {
-      if (pressTimer != null) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-      if (rafId != null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-      if (showProgress) {
-        progressDiv.style.display = 'none';
-      }
-    }
-
-    function cleanup() {
-      cancelPress();
-    }
-
-    // pointer events
-    element.addEventListener('pointerdown', startPress);
-    element.addEventListener('pointerup', cancelPress);
-    element.addEventListener('pointercancel', cancelPress);
-    element.addEventListener('pointerleave', cancelPress);
-
-    // prevent context menu long-press on mobile
-    element.addEventListener('contextmenu', (e) => e.preventDefault());
-
-    return { cleanup };
+    };
   }
-
-  // 初期適用
-  applyState(readState());
-
-  // スタッフ用長押しボタンを有効化
-  if (toggleBtn) {
-    makeLongPress(toggleBtn, LONG_PRESS_MS, () => {
-      toggleState();
-    }, { progress: true });
-  }
-
-  // キーボード操作でも切替できるように（アクセシビリティ）
-  toggleBtn.addEventListener('keydown', (e) => {
-    // Enter または Space で長押しの代替として即時切替
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleState();
-    }
-  });
-
-  // もし別タブで状態が変わったら反映（localStorage の storage イベント）
   window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY) {
-      const newVal = e.newValue;
-      if (newVal === 'offline' || newVal === 'order') {
-        applyState(newVal);
-      }
+    if (e.key === STORAGE_KEY && (e.newValue === 'offline' || e.newValue === 'reorder')) {
+      applyState(e.newValue, { remote: true });
     }
   });
 
-  // 動作確認用：offline/order ボタン押下での挙動（例）
-  offlineBtn.addEventListener('click', () => {
-    alert('「注文」ボタンがクリックされました。実際の注文処理をここに実装してください。');
-  });
-  orderBtn.addEventListener('click', () => {
-    alert('「再注文」ボタンがクリックされました。実際の再注文処理をここに実装してください。');
-  });
+  // 初期状態: 再注文ボタンを非表示（offline 表示）
+  function readInitialState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'offline' || saved === 'reorder') return saved;
+    return 'offline'; // デフォルト
+  }
+
+  // 表示を反映する関数
+  function applyState(newState, opts = {}) {
+    if (newState !== 'offline' && newState !== 'reorder') return;
+    state = newState;
+
+    // 要素が見つかれば表示/非表示を切り替え
+    if (offlineBtn) {
+      offlineBtn.style.display = (state === 'offline') ? '' : 'none';
+      offlineBtn.setAttribute('aria-hidden', state === 'offline' ? 'false' : 'true');
+    }
+    if (reorderBtn) {
+      reorderBtn.style.display = (state === 'reorder') ? '' : 'none';
+      reorderBtn.setAttribute('aria-hidden', state === 'reorder' ? 'false' : 'true');
+    }
+
+    // staff ボタンの色（状態がわかるように）
+    updateStaffToggleVisual();
+
+    // 保存 & ブロードキャスト（発生元でなければ行わない）
+    if (!opts.remote) {
+      try { localStorage.setItem(STORAGE_KEY, state); } catch (e) { /* ignore */ }
+      if (bc) try { bc.postMessage(state); } catch (e) { /* ignore */ }
+    }
+  }
+
+  // 外部 API 用
+  function toggleState() {
+    const next = (state === 'offline') ? 'reorder' : 'offline';
+    applyState(next);
+  }
+  function setState(s) {
+    if (s !== 'offline' && s !== 'reorder') return;
+    applyState(s);
+  }
+  function getState() { return state; }
+
+  // staff 用トグルボタンを作る（staffFull があるときのみ）
+  let staffToggleBtn = null;
+  function createStaffToggle() {
+    if (!staffContainer) return;
+
+    // スタイルを注入（1つだけ）
+    if (!document.getElementById('order-toggle-styles')) {
+      const css = `
+#staffToggleBtn {
+  position: fixed;
+  right: 12px;
+  top: 12px;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 50%;
+  background: #ddd;
+  color: #222;
+  font-weight: bold;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 9999;
+  user-select: none;
+  -webkit-user-select: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: background-color 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#staffToggleBtn.hold { transform: scale(0.98); }
+#staffToggleBtn .progress {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(rgba(0,0,0,0.12) 0deg, rgba(0,0,0,0.12) 360deg);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+#staffToggleBtn.holding .progress { opacity: 1; }
+#staffToggleBtn[data-state="offline"] { background: #2ecc71; /* 緑 = 注文表示 */ color: white; }
+#staffToggleBtn[data-state="reorder"] { background: #3498db; /* 青 = 再注文表示 */ color: white; }
+`;
+      const s = document.createElement('style');
+      s.id = 'order-toggle-styles';
+      s.textContent = css;
+      document.head.appendChild(s);
+    }
+
+    // ボタン要素
+    staffToggleBtn = document.createElement('button');
+    staffToggleBtn.id = 'staffToggleBtn';
+    staffToggleBtn.type = 'button';
+    staffToggleBtn.innerHTML = '<span>・</span><span class="progress" aria-hidden="true"></span>';
+    // aria-label は長押し案内（表示内テキスト不要という指示があったので button 中身は「・」だけに）
+    staffToggleBtn.setAttribute('aria-label', '長押し（5秒）で注文/再注文ボタンの切り替え');
+    staffToggleBtn.setAttribute('title', '長押し（5秒）で切替');
+    // 初期 state 表示
+    staffToggleBtn.dataset.state = state || readInitialState();
+
+    // 長押し処理（pointer イベントでマウス/タッチ両対応）
+    let timer = null;
+    let startTime = 0;
+    function startHold(e) {
+      // only primary button for pointerdown
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      staffToggleBtn.classList.add('holding', 'hold');
+      startTime = Date.now();
+      // create a CSS-based progress by animating conic gradient using a setInterval
+      const progressEl = staffToggleBtn.querySelector('.progress');
+      let elapsed = 0;
+      const step = 50;
+      timer = setInterval(() => {
+        elapsed = Date.now() - startTime;
+        const pct = Math.min(1, elapsed / LONG_PRESS_MS);
+        // update conic-gradient angle
+        const deg = Math.round(360 * pct);
+        progressEl.style.background = `conic-gradient(rgba(255,255,255,0.35) ${deg}deg, transparent ${deg}deg)`;
+        if (elapsed >= LONG_PRESS_MS) {
+          clearInterval(timer);
+          timer = null;
+          staffToggleBtn.classList.remove('hold');
+          staffToggleBtn.classList.remove('holding');
+          // トグル実行
+          toggleState();
+        }
+      }, step);
+    }
+    function cancelHold() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+      staffToggleBtn.classList.remove('hold');
+      staffToggleBtn.classList.remove('holding');
+      const progressEl = staffToggleBtn.querySelector('.progress');
+      if (progressEl) progressEl.style.background = '';
+    }
+
+    staffToggleBtn.addEventListener('pointerdown', startHold, { passive: false });
+    // pointerup/cancel/leave で中止もしくは完了後のクリーンアップ
+    ['pointerup', 'pointercancel', 'pointerleave', 'pointerout'].forEach(evt =>
+      staffToggleBtn.addEventListener(evt, cancelHold)
+    );
+
+    // tab キーなどキーボード操作は無効に（長押しに限定したい）
+    staffToggleBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+
+    document.body.appendChild(staffToggleBtn);
+
+    // 初回描画のため visual 更新
+    updateStaffToggleVisual();
+  }
+
+  function updateStaffToggleVisual() {
+    if (!staffToggleBtn) return;
+    const s = state || readInitialState();
+    staffToggleBtn.dataset.state = s;
+    staffToggleBtn.setAttribute('aria-pressed', 'false');
+    staffToggleBtn.setAttribute('aria-label', s === 'offline' ? '今：注文ボタン表示' : '今：再注文ボタン表示');
+    staffToggleBtn.title = s === 'offline' ? '現在：注文ボタン表示（長押しで切替）' : '現在：再注文ボタン表示（長押しで切替）';
+  }
+
+  // 初期化実行
+  (function init() {
+    // 初期状態読み込み・反映
+    const initial = readInitialState();
+    applyState(initial);
+
+    // staff toggle があるなら作成
+    if (staffContainer) {
+      createStaffToggle();
+    }
+
+    // デバッグ用: 見つからないボタンがある場合は console.warn
+    if (!offlineBtn) console.warn(`[order-toggle] 要素が見つかりません: id="${OFFLINE_ID}"`);
+    if (!reorderBtn) console.warn(`[order-toggle] 要素が見つかりません: id="${REORDER_ID}"`);
+  })();
+
+  // 外部からの操作用 API を公開
+  window.orderToggle = {
+    getState,
+    setState,
+    toggleState,
+    // staff ボタンがあるかを外部で確認したい場合
+    hasStaffToggle: () => !!staffToggleBtn
+  };
 
 })();
 </script>
