@@ -334,6 +334,7 @@
 
 
 
+<!-- 既存の modalEat をこれに丸ごと置き換え -->
 <div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <style>
     /* ===== 全体背景 ===== */
@@ -346,6 +347,7 @@
       box-shadow:0 12px 30px rgba(0,0,0,0.25);
     }
 
+    /* タイトル目立たせない */
     #modalEat h3{
       font-size:14px;
       color:#fff;
@@ -354,6 +356,7 @@
       font-weight:500;
     }
 
+    /* ===== 写真フォルダー風 ===== */
     .photo-folder{
       background:#f6efe7;
       border-radius:12px;
@@ -361,6 +364,7 @@
       box-shadow: inset 0 2px 4px rgba(0,0,0,.1);
     }
 
+    /* 写真立て */
     .photo-frame{
       background:#fff;
       border:10px solid #e8dccd;
@@ -372,6 +376,7 @@
       transform:rotate(-1deg);
     }
 
+    /* ===== メイン表示 ===== */
     #eatMainWrap{
       width:100%;
       height:520px;
@@ -391,6 +396,7 @@
       border-radius:8px;
     }
 
+    /* ===== コメント吹き出し ===== */
     #eatSoundInfo{
       font-weight:600;
       padding:.6em .9em;
@@ -409,6 +415,7 @@
       border-top-color:#fff;
     }
 
+    /* ===== 木目ボタン ===== */
     .wood-btn{
       background:linear-gradient(#c9a57a,#a67c52);
       color:#fff;
@@ -422,6 +429,7 @@
 
     .wood-btn.small{ font-size:12px; }
 
+    /* ===== サイドカード ===== */
     .side-card{
       background:rgba(255,255,255,.92);
       border-radius:12px;
@@ -429,6 +437,7 @@
       box-shadow:0 4px 12px rgba(0,0,0,.15);
     }
 
+    /* ===== アート＆カードを写真配置風に ===== */
     .photo-stack{
       display:flex;
       gap:8px;
@@ -445,52 +454,32 @@
       box-shadow:0 4px 10px rgba(0,0,0,.2);
     }
 
-    /* ===== タイマー（サイズ最適化） ===== */
+    /* ===== タイマー：レトロ時計 ===== */
     #pomodoroPanel{
       position:absolute;
-      right:8px;
       bottom:8px;
+      right:8px;
+      width:230px;
       background:#fff7e9;
       border-radius:14px;
-      padding:8px;
+      padding:10px;
       box-shadow:0 8px 18px rgba(0,0,0,.3);
-      display:inline-block;
-      width:fit-content;
-    }
-
-    /* 非表示（ミニ表示） */
-    #pomodoroPanel.minimized{
-      padding:6px 8px;
-    }
-
-    .pomo-mini{
-      display:none;
-      align-items:center;
-      gap:6px;
-    }
-
-    #pomodoroPanel.minimized .pomo-mini{
-      display:flex;
-    }
-
-    #pomodoroPanel.minimized #pomoSettings,
-    #pomodoroPanel.minimized #pomoRunning{
-      display:none !important;
+      cursor:grab;
     }
 
     .pomo-timer{
       font-family:monospace;
-      font-size:22px;
+      font-size:26px;
       text-align:center;
       background:#222;
       color:#7cff7c;
-      padding:6px 10px;
+      padding:6px;
       border-radius:6px;
       letter-spacing:2px;
-      white-space:nowrap;
     }
 
     .pomo-controls button{
+      flex:1;
       background:#c9a57a;
       border:none;
       color:#fff;
@@ -499,8 +488,10 @@
       cursor:pointer;
     }
 
+    /* 縦画面対応 */
     @media(max-width:700px){
       #eatMainWrap{height:420px;}
+      #pomodoroPanel{width:200px;}
     }
   </style>
 
@@ -508,6 +499,7 @@
     <h3>飲食</h3>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <!-- ===== メイン表示 ===== -->
       <div style="flex:1;min-width:420px;" class="photo-folder">
         <div class="photo-frame">
           <div id="eatMainWrap">
@@ -517,28 +509,20 @@
               長押しで音を鳴らし、離すと次へ
             </div>
 
-            <!-- ===== タイマー ===== -->
+            <!-- ===== タイマー（既存機能維持） ===== -->
             <div id="pomodoroPanel" aria-hidden="true">
-
-              <!-- ミニ表示 -->
-              <div class="pomo-mini">
-                <div class="pomo-timer" id="pomoMiniTime">00:00</div>
-                <button id="pomoShowBtn" class="wood-btn small">＋</button>
-              </div>
-
-              <!-- 設定 -->
               <div id="pomoSettings">
                 <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
                   <div>タイマー</div>
-                  <button id="pomoHideBtn" class="wood-btn small">−</button>
+                  <div id="pomoCountDisplay">1 / 1</div>
                 </div>
 
                 <div class="pomo-row">
                   <div>ループ</div>
                   <div class="pomo-number">
-                    <button id="loopDown">-</button>
-                    <input id="loopCount" type="number" value="1"/>
-                    <button id="loopUp">+</button>
+                    <button class="pomo-btn" id="loopDown">-</button>
+                    <input id="loopCount" type="number" value="1" min="1" max="10"/>
+                    <button class="pomo-btn" id="loopUp">+</button>
                   </div>
                 </div>
 
@@ -560,12 +544,11 @@
                   </div>
                 </div>
 
-                <div style="text-align:right;margin-top:6px;">
+                <div style="text-align:right;margin-top:8px;">
                   <button id="startPomoBtn" class="wood-btn">再生 ▶</button>
                 </div>
               </div>
 
-              <!-- 実行中 -->
               <div id="pomoRunning" style="display:none;">
                 <div id="pomoLoopCounter">1 / 1</div>
                 <div id="pomoPhaseLabel">作業中</div>
@@ -581,11 +564,11 @@
                   タイマーを使って完食しよう！
                 </div>
               </div>
-
             </div>
           </div>
         </div>
 
+        <!-- コメント -->
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <div id="eatSoundInfo">
             ↑ 作業やゲームなどする必要があります（クリック）
@@ -597,8 +580,10 @@
         </div>
       </div>
 
+      <!-- ===== サイド ===== -->
       <div style="width:320px;">
         <div class="side-card">
+
           <div class="photo-stack">
             <div class="mini-frame">
               <canvas id="servedArtMini" width="220" height="220"></canvas>
@@ -612,8 +597,11 @@
           </div>
 
           <div style="margin-top:8px;text-align:right;">
-            <button id="homeFromEat" class="wood-btn small">ホームへ</button>
+            <button id="homeFromEat" class="wood-btn small">
+              ホームへ
+            </button>
           </div>
+
         </div>
       </div>
     </div>
@@ -621,25 +609,34 @@
 </div>
 
 <script>
-/* ===== タイマー表示切り替え（最小追加） ===== */
+/* ===== タイマーをドラッグ可能に ===== */
 (function(){
-  const panel = document.getElementById("pomodoroPanel");
-  const hideBtn = document.getElementById("pomoHideBtn");
-  const showBtn = document.getElementById("pomoShowBtn");
-  const miniTime = document.getElementById("pomoMiniTime");
-  const mainTime = document.getElementById("pomoTimerText");
+  const el = document.getElementById("pomodoroPanel");
+  let offsetX=0, offsetY=0, drag=false;
 
-  hideBtn.onclick = ()=>panel.classList.add("minimized");
-  showBtn.onclick = ()=>panel.classList.remove("minimized");
+  el.addEventListener("mousedown",e=>{
+    drag=true;
+    offsetX=e.offsetX;
+    offsetY=e.offsetY;
+    el.style.cursor="grabbing";
+  });
 
-  /* カウントダウン表示同期 */
-  setInterval(()=>{
-    if(mainTime && miniTime){
-      miniTime.textContent = mainTime.textContent.slice(0,5);
-    }
-  },500);
+  document.addEventListener("mousemove",e=>{
+    if(!drag) return;
+    el.style.left=(e.pageX-offsetX)+"px";
+    el.style.top=(e.pageY-offsetY)+"px";
+    el.style.right="auto";
+    el.style.bottom="auto";
+    el.style.position="absolute";
+  });
+
+  document.addEventListener("mouseup",()=>{
+    drag=false;
+    el.style.cursor="grab";
+  });
 })();
 </script>
+
 
 
 
