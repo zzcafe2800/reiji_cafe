@@ -2813,67 +2813,6 @@ button:active {
 }
 </style>
 
-<script>
-/* ===============================
-   全ボタン共通 SE 制御
-================================ */
-
-(function () {
-  const HOVER_SE = new Audio("kati.mp3");
-  const CLICK_SE = new Audio("cli.mp3");
-
-  HOVER_SE.preload = "auto";
-  CLICK_SE.preload = "auto";
-
-  let hoverPlayed = new WeakMap();
-
-  function resetAudio(audio) {
-    audio.pause();
-    audio.currentTime = 0;
-  }
-
-  function unlockAudio() {
-    HOVER_SE.play().then(() => resetAudio(HOVER_SE)).catch(()=>{});
-    CLICK_SE.play().then(() => resetAudio(CLICK_SE)).catch(()=>{});
-    document.removeEventListener("pointerdown", unlockAudio);
-  }
-
-  document.addEventListener("pointerdown", unlockAudio, { once: true });
-
-  document.addEventListener("pointerenter", function (e) {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-
-    btn.classList.add("_aimed");
-
-    if (!hoverPlayed.get(btn)) {
-      resetAudio(HOVER_SE);
-      HOVER_SE.play().catch(()=>{});
-      hoverPlayed.set(btn, true);
-    }
-  }, true);
-
-  document.addEventListener("pointerleave", function (e) {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-
-    btn.classList.remove("_aimed");
-    hoverPlayed.delete(btn);
-  }, true);
-
-  document.addEventListener("click", function (e) {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-
-    resetAudio(CLICK_SE);
-    CLICK_SE.play().catch(()=>{});
-  });
-})();
-</script>
-
-
-
-
 
   
 </body>
