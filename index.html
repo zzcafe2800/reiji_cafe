@@ -2831,212 +2831,246 @@ document.body.addEventListener("click",{once:true},()=>{
   
 <script>
 /*
- スタッフ画面(staffFull)から「注文ボタン (offlineOrderBtn)」と「再注文ボタン (orderBtn)」を
- 交互に表示させるためのワンファイルスクリプトです。
-
- 要件を満たすポイント:
- - offlineOrderBtn が「注文ボタン」
- - orderBtn が 「再注文ボタン」
- - 初期状態は「再注文ボタン(orderBtn)が非表示」
- - staff 用の切替ボタンを設置（id: staffFullToggle）。押すたびに表示されるボタンを切替。
- - 切替は繰り返し可能
- - 状態は localStorage に保存し、同オリジン内のタブ間は BroadcastChannel / storage event で同期
- - ボタンに現在の表示/非表示が分かる小さなラベルを追加
- - 既存 DOM に該当 id の要素があればそれを使い、なければ簡易的なボタンを自動作成（テスト用）
+  注文/再注文の表示切替スクリプト（単一ブロック）
+  - offlineOrderBtn: 注文ボタン（表示される側がこれ）
+  - orderBtn: 再注文ボタン
+  - staff view 判定: body.classList に "staffFull" / id="staffFull" / pathname に "staffFull"
+  - 共有状態保存: まず /api/button-state を試み、なければ localStorage にフォールバック
+  - 初期は 再注文(orderBtn) を非表示（つまり offlineOrderBtn を表示）
 */
 
-(function () {
-  const VKEY = 'staffFull_visibleButton_v1';
-  const CHANNEL_NAME = 'staffFull_btn_visibility_v1';
-  const OFFLINE_ID = 'offlineOrderBtn'; // 注文ボタン
-  const REORDER_ID = 'orderBtn';        // 再注文ボタン
-  const STAFF_TOGGLE_ID = 'staffFullToggle';
+(function(){
+  // --- 設定 ---
+  const STATE_KEY = 'sharedOrderButtonState_v1'; // localStorage キー
+  const API_ENDPOINT = '/api/button-state'; // OPTIONAL: 実際にサーバーがあれば利用（GET/POST）
+  const DEFAULT_STATE = 'offline'; // 'offline' => offlineOrderBtn表示, 'reorder' => orderBtn表示
 
-  // ユーティリティ: 要素を取得、なければ null
-  function $(id) { return document.getElementById(id); }
-
-  // バッジをボタン内に表示/更新する (表示中 / 非表示)
-  function setBadge(btn, text) {
-    if (!btn) return;
-    let badge = btn.querySelector('.staff-visibility-badge');
-    if (!badge) {
-      badge = document.createElement('span');
-      badge.className = 'staff-visibility-badge';
-      // 簡易スタイル（インラインで追加）
-      badge.style.cssText = 'margin-left:8px;padding:2px 6px;border-radius:12px;font-size:12px;vertical-align:middle;';
-      btn.appendChild(badge);
-    }
-    badge.textContent = text;
-    if (text === '') {
-      badge.style.background = '#2b8a3e'; // 緑
-      badge.style.color = '#fff';
-    } else {
-      badge.style.background = '#aaa';
-      badge.style.color = '#222';
-    }
-  }
-
-  // ボタンの表示/非表示を適用する
-  function applyVisibility(visibleId, broadcast = false) {
-    const offlineBtn = $(OFFLINE_ID);
-    const reorderBtn = $(REORDER_ID);
-
-    if (offlineBtn) offlineBtn.style.display = (visibleId === OFFLINE_ID) ? '' : 'none';
-    if (reorderBtn) reorderBtn.style.display = (visibleId === REORDER_ID) ? '' : 'none';
-
-    // バッジ更新
-    setBadge(offlineBtn, visibleId === OFFLINE_ID ? '表示中' : '非表示');
-    setBadge(reorderBtn, visibleId === REORDER_ID ? '表示中' : '非表示');
-
-    // スタッフ切替ボタンの表示ラベルを更新
-    const staffBtn = $(STAFF_TOGGLE_ID);
-    if (staffBtn) {
-      const labelVisible = (visibleId === OFFLINE_ID) ? '注文ボタン 表示中' : '再注文ボタン 表示中';
-      staffBtn.textContent = 'スタッフ切替 — ' + labelVisible + '（クリックで切替）';
-      // 付属で小さな状態表示を付ける
-      staffBtn.style.cssText = 'padding:8px 12px;border-radius:6px;border:1px solid #ccc;margin:6px;background:#fff;cursor:pointer;';
-    }
-
-    // localStorage に保存（他タブに伝わるように）
+  // --- ヘルパー ---
+  function isStaffView() {
+    if (document.body && document.body.classList.contains('staffFull')) return true;
+    if (document.getElementById && document.getElementById('staffFull')) return true;
     try {
-      localStorage.setItem(VKEY, visibleId);
-    } catch (e) {
-      // 無視
+      if (window.location && window.location.pathname && window.location.pathname.includes('staffFull')) return true;
+    } catch(e){}
+    return false;
+  }
+
+  // 要素が無ければ作る（IDで既存要素を探す）
+  function ensureButton(id, text, container) {
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('button');
+      el.id = id;
+      el.type = 'button';
+      el.textContent = text;
+      // デフォルトスタイル（必要なら上書き可能）
+      el.style.padding = '8px 12px';
+      el.style.margin = '4px';
+      el.style.fontSize = '14px';
+      el.setAttribute('data-generated', 'true');
+      (container || document.body).appendChild(el);
     }
-
-    // BroadcastChannel による通知
-    if (broadcast && typeof BroadcastChannel !== 'undefined') {
-      try {
-        const bc = new BroadcastChannel(CHANNEL_NAME);
-        bc.postMessage({ visible: visibleId });
-        bc.close();
-      } catch (e) {}
-    }
+    return el;
   }
 
-  // 現在の可視ボタン取得（localStorage 優先、なければ初期: offlineOrderBtn）
-  function getStoredVisible() {
-    try {
-      const v = localStorage.getItem(VKEY);
-      if (v === OFFLINE_ID || v === REORDER_ID) return v;
-    } catch (e) {}
-    // 初期は再注文ボタンの非表示 => offlineOrderBtn を表示
-    return OFFLINE_ID;
-  }
-
-  // 切替操作: 現在の表示を反転
-  function toggleVisible() {
-    const current = getStoredVisible();
-    const next = (current === OFFLINE_ID) ? REORDER_ID : OFFLINE_ID;
-    applyVisibility(next, true);
-  }
-
-  // staffFull 用の切替ボタンを DOM に設置（既にある場合はスキップ）
-  function ensureStaffToggleButton() {
-    if ($(STAFF_TOGGLE_ID)) return;
-    const btn = document.createElement('button');
-    btn.id = STAFF_TOGGLE_ID;
-    btn.type = 'button';
-    btn.setAttribute('aria-pressed', 'false');
-    // 初期テキストは後で applyVisibility で上書き
-    btn.textContent = 'スタッフ切替 — 読み込み中...';
-    // 置き場所: body の最上部に挿入（必要なら staffFull 側で別の場所へ移動しても可）
-    document.addEventListener('DOMContentLoaded', () => {
-      // staffFull ページ用に body の先頭に置く
-      document.body.insertBefore(btn, document.body.firstChild);
-    });
-    // event
-    btn.addEventListener('click', () => {
-      toggleVisible();
-    });
-  }
-
-  // BroadcastChannel と storage event で他タブと同期
-  function setupCrossTabSync() {
-    if (typeof BroadcastChannel !== 'undefined') {
-      try {
-        const bc = new BroadcastChannel(CHANNEL_NAME);
-        bc.addEventListener('message', (ev) => {
-          const visible = ev.data && ev.data.visible;
-          if (visible === OFFLINE_ID || visible === REORDER_ID) {
-            applyVisibility(visible, false);
-          }
+  // サーバー経由で状態読み取り（存在すれば使用）、タイムアウト付き
+  function fetchStateFromServer(timeout = 2000) {
+    return new Promise((resolve, reject) => {
+      if (!window.fetch) return reject(new Error('fetch not available'));
+      const timer = setTimeout(() => {
+        reject(new Error('timeout'));
+      }, timeout);
+      fetch(API_ENDPOINT, { method: 'GET', credentials: 'same-origin' })
+        .then(resp => {
+          clearTimeout(timer);
+          if (!resp.ok) return reject(new Error('no-server'));
+          return resp.json().catch(()=>{ throw new Error('bad-json')});
+        })
+        .then(data => {
+          // server expected response: { state: 'offline' | 'reorder' }
+          if (data && (data.state === 'offline' || data.state === 'reorder')) resolve(data.state);
+          else reject(new Error('invalid-data'));
+        })
+        .catch(err => {
+          clearTimeout(timer);
+          reject(err);
         });
-      } catch (e) {}
-    }
-
-    // storage event fallback (他タブで localStorage が更新されたとき)
-    window.addEventListener('storage', (ev) => {
-      if (ev.key === VKEY && (ev.newValue === OFFLINE_ID || ev.newValue === REORDER_ID)) {
-        applyVisibility(ev.newValue, false);
-      }
     });
   }
 
-  // 存在しない場合のみテスト用に簡易ボタンを生成（本番では既存のボタン要素を用意してください）
-  function ensureActionButtonsExistForTesting() {
-    // 既にあるならスキップ
-    const body = document.body;
-    if (!body) return;
-    if (!$(OFFLINE_ID) || !$(REORDER_ID)) {
-      // ラッパーを作って目立つように配置（テスト用）
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:fixed;right:12px;bottom:12px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.95);box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:99999;';
-      wrap.id = 'staffFull_actionBtnsWrapper';
-      if (!$(OFFLINE_ID)) {
-        const b1 = document.createElement('button');
-        b1.id = OFFLINE_ID;
-        b1.textContent = '注文 (offlineOrderBtn)';
-        b1.style.marginRight = '8px';
-        wrap.appendChild(b1);
-      } else {
-        wrap.appendChild($(OFFLINE_ID));
-      }
-      if (!$(REORDER_ID)) {
-        const b2 = document.createElement('button');
-        b2.id = REORDER_ID;
-        b2.textContent = '再注文 (orderBtn)';
-        wrap.appendChild(b2);
-      } else {
-        wrap.appendChild($(REORDER_ID));
-      }
-      // 只今の見た目を分かりやすくするために body に追加（既に別の配置なら不要）
-      document.addEventListener('DOMContentLoaded', () => {
-        if (!$(wrap.id)) document.body.appendChild(wrap);
+  // サーバーへ状態保存（POST {state: 'offline'|'reorder'}）
+  function postStateToServer(state, timeout = 2000) {
+    return new Promise((resolve, reject) => {
+      if (!window.fetch) return reject(new Error('fetch not available'));
+      const timer = setTimeout(() => {
+        reject(new Error('timeout'));
+      }, timeout);
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state })
+      }).then(resp => {
+        clearTimeout(timer);
+        if (!resp.ok) return reject(new Error('post-failed'));
+        resolve(true);
+      }).catch(err => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+
+  // localStorage の読み書き
+  function readStateLocal() {
+    try {
+      const v = localStorage.getItem(STATE_KEY);
+      if (v === 'offline' || v === 'reorder') return v;
+    } catch(e){}
+    return null;
+  }
+  function writeStateLocal(state) {
+    try { localStorage.setItem(STATE_KEY, state); } catch(e){}
+  }
+
+  // --- UI 更新 ---
+  function applyStateToUI(state, els) {
+    // state: 'offline' -> show offlineOrderBtn, hide orderBtn
+    // state: 'reorder' -> show orderBtn, hide offlineOrderBtn
+    if (!els || !els.offline || !els.reorder) return;
+    if (state === 'offline') {
+      els.offline.style.display = '';
+      els.reorder.style.display = 'none';
+    } else {
+      els.offline.style.display = 'none';
+      els.reorder.style.display = '';
+    }
+    // スタッフの状態表示更新
+    if (els.staffStatus) {
+      els.staffStatus.textContent = (state === 'offline') ? '現在: 注文' : '現在: 再注文';
+    }
+    // 切替ボタンのアクセント
+    if (els.staffToggleBtn) {
+      els.staffToggleBtn.style.background = (state === 'offline') ? '#0b79d0' : '#0b9d58';
+      els.staffToggleBtn.style.color = '#fff';
+      els.staffToggleBtn.style.border = 'none';
+      els.staffToggleBtn.style.borderRadius = '4px';
+    }
+  }
+
+  // --- 初期化 ---
+  function init() {
+    // 既存のボタン要素があれば使う。なければページ末尾に作る（デモ互換）
+    const offlineBtn = ensureButton('offlineOrderBtn', '注文する');
+    const reorderBtn  = ensureButton('orderBtn', '再注文');
+
+    const els = { offline: offlineBtn, reorder: reorderBtn, staffToggleBtn: null, staffStatus: null };
+
+    // 初期の非表示設定（隠すものは style.display = 'none'）
+    // ただし状態は保存されたものを読み込むまで仮に DEFAULT_STATE を使う
+    applyStateToUI(DEFAULT_STATE, els);
+
+    // スタッフ画面なら切替 UI を作る
+    if (isStaffView()) {
+      // container
+      const ctrl = document.createElement('div');
+      ctrl.id = 'order-toggle-control';
+      ctrl.style.position = 'fixed';
+      ctrl.style.right = '12px';
+      ctrl.style.top = '12px';
+      ctrl.style.zIndex = 99999;
+      ctrl.style.display = 'flex';
+      ctrl.style.alignItems = 'center';
+      ctrl.style.gap = '8px';
+      // toggle button
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.id = 'staffToggleOrderBtn';
+      toggleBtn.textContent = '切替';
+      toggleBtn.title = '押すと現在表示中のボタンを非表示にしてもう一方を表示します';
+      toggleBtn.style.padding = '8px 10px';
+      toggleBtn.style.cursor = 'pointer';
+      // short status (隣に置くだけ、ボタン内に「表示中」は書かない)
+      const statusSpan = document.createElement('span');
+      statusSpan.id = 'staffOrderStatus';
+      statusSpan.style.fontSize = '13px';
+      statusSpan.style.padding = '6px 8px';
+      statusSpan.style.borderRadius = '4px';
+      statusSpan.style.background = '#efefef';
+      statusSpan.style.color = '#333';
+      statusSpan.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+      // assemble
+      ctrl.appendChild(toggleBtn);
+      ctrl.appendChild(statusSpan);
+      document.body.appendChild(ctrl);
+
+      els.staffToggleBtn = toggleBtn;
+      els.staffStatus = statusSpan;
+
+      // 切替クリック: 現在の状態を反転して保存 -> UI反映
+      toggleBtn.addEventListener('click', function(){
+        // 現在の表示を判定（DOMベース）
+        const current = (els.offline.style.display === 'none') ? 'reorder' : 'offline';
+        const next = (current === 'offline') ? 'reorder' : 'offline';
+        // まず optimistically UI 変更
+        applyStateToUI(next, els);
+        // 保存先を試みる（先にサーバー）
+        postStateToServer(next).catch(() => {
+          // サーバー不可なら localStorage に保存
+          writeStateLocal(next);
+        });
       });
     }
-  }
 
-  // 初期化
-  function init() {
-    // まず staff ボタンを確保
-    ensureStaffToggleButton();
+    // 初期状態はサーバー or local を優先的に読み込む
+    // try server then local then default
+    fetchStateFromServer(1500)
+      .then(state => {
+        applyStateToUI(state, els);
+      })
+      .catch(() => {
+        const local = readStateLocal();
+        if (local) applyStateToUI(local, els);
+        else applyStateToUI(DEFAULT_STATE, els);
+      });
 
-    // テスト環境向けにアクションボタンが無ければ自動作成（無ければ自動作成するが、実際のページでは既存要素を使う）
-    ensureActionButtonsExistForTesting();
-
-    // クロスタブ同期
-    setupCrossTabSync();
-
-    // DOM が整ったら表示状態を適用
-    document.addEventListener('DOMContentLoaded', () => {
-      const initial = getStoredVisible();
-      applyVisibility(initial, false);
+    // 追加: localStorage の他タブでの変更を拾う（ブラウザ間同期）
+    window.addEventListener('storage', function(e){
+      if (e.key === STATE_KEY && (e.newValue === 'offline' || e.newValue === 'reorder')) {
+        applyStateToUI(e.newValue, els);
+      }
     });
+
+    // ボタンが押されたときの動作（必要に応じてここに注文処理を接続）
+    offlineBtn.addEventListener('click', function(){ 
+      // 実際の注文処理をここに書く
+      console.log('offlineOrderBtn clicked');
+    });
+    reorderBtn.addEventListener('click', function(){
+      // 再注文処理をここに書く
+      console.log('orderBtn clicked');
+    });
+
+    // 初回保存: サーバーに状態が無ければ local→server を試す（短時間）
+    // 優先順: server already provided earlier. If not present, attempt to post local/default.
+    setTimeout(() => {
+      // check server quickly
+      fetchStateFromServer(800).catch(() => {
+        const local = readStateLocal() || DEFAULT_STATE;
+        // try post; ignore failures
+        postStateToServer(local).catch(()=>{ writeStateLocal(local); });
+      });
+    }, 800);
   }
 
-  // 実行
-  init();
-
-  // Expose a debug API on window (任意) — staffFull から必要なら直接呼べる
-  window.staffFullVisibility = {
-    toggle: toggleVisible,
-    set: (id) => { if (id === OFFLINE_ID || id === REORDER_ID) applyVisibility(id, true); },
-    get: getStoredVisible
-  };
+  // DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 </script>
-
 
   
 </body>
