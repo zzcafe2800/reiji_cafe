@@ -324,119 +324,308 @@
   </div>
 </div>
 
-<div id="pomodoroPanel" aria-hidden="true" style="
-  width:100%;
-  height:100%;
-  padding:14px;
-  box-sizing:border-box;
-  background:url('https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg') center center / cover no-repeat;
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+/* ===== モーダル背景 ===== */
+#modalEat{
+  backdrop-filter: blur(4px);
+}
+
+/* ===== メインカード背景 ===== */
+#modalEat .modal{
+  background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;
+  border-radius:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.35);
+  color:#fff;
+}
+
+/* 内部を少し暗くして文字を見やすく */
+#modalEat .modal::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.25);
+  border-radius:14px;
+  pointer-events:none;
+}
+
+/* ===== 写真立て風フレーム ===== */
+#eatMainWrap{
+  background:#f6efe7;
   border-radius:12px;
-  box-shadow:inset 0 0 0 2px rgba(255,255,255,0.4),
-             0 8px 20px rgba(0,0,0,0.15);
-  backdrop-filter:blur(2px);
-">
+  box-shadow:
+    inset 0 0 0 8px #c8b7a6,
+    inset 0 0 0 16px #8c6f5c,
+    0 8px 20px rgba(0,0,0,0.35);
+  position:relative;
+}
 
-  <!-- 設定画面 -->
-  <div id="pomoSettings" style="
-    background:rgba(255,255,255,0.88);
-    border-radius:10px;
-    padding:10px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.15);
-  ">
-    <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
-      <div>ポロドーモタイマー</div>
-      <div id="pomoCountDisplay">1 / 1</div>
-    </div>
+/* 写真2枚風レイアウト */
+#servedImage{
+  max-width:80%;
+  max-height:80%;
+  border-radius:6px;
+  background:#fff;
+  padding:6px;
+  box-shadow:0 6px 12px rgba(0,0,0,0.25);
+  transform:rotate(-2deg);
+}
 
-    <div class="pomo-row">
-      <div class="pomo-label">ループ数</div>
-      <div class="pomo-number">
-        <button class="pomo-btn" id="loopDown">-</button>
-        <input id="loopCount" type="number" value="1" min="1" max="10" />
-        <button class="pomo-btn" id="loopUp">+</button>
-      </div>
-    </div>
+#eatMainWrap::after{
+  content:"";
+  position:absolute;
+  width:70%;
+  height:70%;
+  background:#fff;
+  border-radius:6px;
+  top:14%;
+  left:16%;
+  transform:rotate(3deg);
+  box-shadow:0 6px 12px rgba(0,0,0,0.2);
+  z-index:0;
+}
 
-    <div class="pomo-row">
-      <div class="pomo-label">作業(分)</div>
-      <div class="pomo-number">
-        <button class="pomo-btn" id="workDown">-</button>
-        <input id="workMin" type="number" value="25" min="1" max="200" />
-        <button class="pomo-btn" id="workUp">+</button>
-      </div>
-    </div>
+#servedImage{
+  position:relative;
+  z-index:1;
+}
 
-    <div class="pomo-row">
-      <div class="pomo-label">休憩(分)</div>
-      <div class="pomo-number">
-        <button class="pomo-btn" id="breakDown">-</button>
-        <input id="breakMin" type="number" value="5" min="1" max="200" />
-        <button class="pomo-btn" id="breakUp">+</button>
-      </div>
-    </div>
+/* ===== ヒント表示 ===== */
+#serveHint{
+  color:#333;
+  font-weight:bold;
+}
 
-    <div style="text-align:right;margin-top:8px;">
-      <button id="startPomoBtn" class="pomo-start">再生 ▶</button>
-    </div>
-  </div>
+/* ===== ポモドーロタイマー：レトロ時計風 ===== */
+#pomodoroPanel{
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  width:280px;
+  border-radius:16px;
+  background:linear-gradient(#f7e6c8,#e2c59a);
+  box-shadow:
+    inset 0 0 0 4px #a07b50,
+    0 8px 16px rgba(0,0,0,0.35);
+  padding:10px;
+}
 
-  <!-- 実行中 -->
-  <div id="pomoRunning" style="
-    display:none;
-    margin-top:10px;
-    background:rgba(255,248,235,0.92);
-    border-radius:12px;
-    padding:12px;
-    box-shadow:
-      inset 0 0 0 3px rgba(120,80,40,0.25),
-      0 6px 16px rgba(0,0,0,0.25);
-    font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif;
-  ">
+/* 時計表示 */
+.pomo-timer{
+  font-family:monospace;
+  font-size:28px;
+  text-align:center;
+  background:#2d2d2d;
+  color:#7CFF7C;
+  border-radius:8px;
+  padding:8px 0;
+  margin:6px 0;
+  box-shadow:inset 0 0 8px rgba(0,0,0,0.8);
+}
 
-    <div style="text-align:center;margin-bottom:6px;">
-      <div id="pomoLoopCounter">1 / 1</div>
-      <div id="pomoPhaseLabel" style="
-        margin-top:4px;
-        font-size:1.2em;
-        font-weight:800;
-        letter-spacing:0.08em;
-        color:#3b2f2f;
-        text-shadow:1px 1px 0 #fff;
-      ">作業中</div>
-    </div>
+/* プログレスバー */
+.pomo-progress{
+  background:#fff3;
+  height:10px;
+  border-radius:6px;
+  overflow:hidden;
+}
 
-    <!-- レトロ時計風 -->
-    <div id="pomoTimerText" class="pomo-timer" style="
-      font-family:'Courier New',monospace;
-      font-size:1.8em;
-      text-align:center;
-      background:#2e1f14;
-      color:#f5e6c8;
-      padding:8px 0;
-      border-radius:8px;
-      box-shadow:inset 0 0 6px rgba(0,0,0,0.6);
-      margin-bottom:6px;
-    ">00:00:00</div>
+.pomo-progress i{
+  display:block;
+  height:100%;
+  background:#6b4b2a;
+  transition:width .3s;
+}
 
-    <div class="pomo-progress" style="background:rgba(0,0,0,0.15);border-radius:6px;">
-      <i id="pomoProgressBar" style="width:0%"></i>
-    </div>
+/* ボタン */
+.pomo-btn,
+#startPomoBtn,
+#stopPomoBtn,
+#pausePomoBtn,
+#skipPomoBtn{
+  border:none;
+  border-radius:6px;
+  background:#8b5e34;
+  color:#fff;
+  padding:4px 8px;
+  cursor:pointer;
+}
 
-    <div style="margin-top:6px;width:100%;display:flex;gap:8px;justify-content:center;">
-      <div class="pomo-controls">
-        <button id="stopPomoBtn">■</button>
-        <button id="pausePomoBtn">⏸</button>
-        <button id="skipPomoBtn">⏭</button>
-      </div>
-    </div>
+.pomo-btn:hover,
+#startPomoBtn:hover,
+#stopPomoBtn:hover,
+#pausePomoBtn:hover,
+#skipPomoBtn:hover{
+  opacity:0.85;
+}
 
-    <div id="pomoHint" style="margin-top:6px;font-size:12px;color:#555;text-align:center;">
-      タイマーを使って完食しよう！
-    </div>
-  </div>
+.pomo-number input{
+  width:48px;
+  text-align:center;
+}
 
+.pomo-controls{
+  display:flex;
+  gap:6px;
+  justify-content:center;
+}
+
+#pomoPhaseLabel{
+  color:#3b2f2f;
+  font-weight:900;
+}
+
+/* 設定部 */
+#pomoSettings{
+  font-size:13px;
+  color:#3b2f2f;
+}
+
+.pomo-row{
+  display:flex;
+  justify-content:space-between;
+  margin:4px 0;
+}
+
+.pomo-label{
+  font-weight:bold;
+}
+
+.pomo-number{
+  display:flex;
+  gap:4px;
+}
+</style>
+
+<div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
+<div class="modal" style="width:95%;max-width:960px;position:relative;">
+
+<h3>飲食</h3>
+
+<div style="display:flex;gap:12px;flex-wrap:wrap;">
+
+<div style="flex:1;min-width:420px;">
+
+<div id="eatMainWrap" style="width:100%;height:520px;display:flex;align-items:center;justify-content:center;position:relative;">
+
+<img id="servedImage" src="" alt="商品画像" />
+
+<div id="serveHint">長押しで音を鳴らし、離すと次へ</div>
+
+<div id="pomodoroPanel" aria-hidden="true">
+
+<div id="pomoSettings">
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
+<div>ポロドーモタイマー</div>
+<div id="pomoCountDisplay">1 / 1</div>
 </div>
 
+<div class="pomo-row">
+<div class="pomo-label">ループ数</div>
+<div class="pomo-number">
+<button class="pomo-btn" id="loopDown">-</button>
+<input id="loopCount" type="number" value="1" min="1" max="10" />
+<button class="pomo-btn" id="loopUp">+</button>
+</div>
+</div>
+
+<div class="pomo-row">
+<div class="pomo-label">作業(分)</div>
+<div class="pomo-number">
+<button class="pomo-btn" id="workDown">-</button>
+<input id="workMin" type="number" value="25" min="1" max="200" />
+<button class="pomo-btn" id="workUp">+</button>
+</div>
+</div>
+
+<div class="pomo-row">
+<div class="pomo-label">休憩(分)</div>
+<div class="pomo-number">
+<button class="pomo-btn" id="breakDown">-</button>
+<input id="breakMin" type="number" value="5" min="1" max="200" />
+<button class="pomo-btn" id="breakUp">+</button>
+</div>
+</div>
+
+<div style="text-align:right;margin-top:8px;">
+<button id="startPomoBtn">再生 ▶</button>
+</div>
+</div>
+
+<div id="pomoRunning" style="display:none;">
+
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px;">
+<div id="pomoLoopCounter">1 / 1</div>
+<div id="pomoPhaseLabel">作業中</div>
+</div>
+
+<div class="pomo-timer" id="pomoTimerText">00:00:00</div>
+
+<div class="pomo-progress">
+<i id="pomoProgressBar" style="width:0%"></i>
+</div>
+
+<div style="margin-top:6px;width:100%;display:flex;gap:8px;">
+<div class="pomo-controls">
+<button id="stopPomoBtn">■</button>
+<button id="pausePomoBtn">⏸</button>
+<button id="skipPomoBtn">⏭</button>
+</div>
+</div>
+
+<div style="margin-top:6px;font-size:12px;color:#333;text-align:center;" id="pomoHint">
+タイマーを使って完食しよう！
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+</div>
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+
+  
         </div>
 
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
