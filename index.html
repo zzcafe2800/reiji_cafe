@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム（ポロドーモ + BOT 対応版）</title>
+<title>仮想飲食システム（v5 -> v6 統合）</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
@@ -18,7 +18,7 @@
   .cover{background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png") center/cover no-repeat;transform-origin:right center;z-index:2;pointer-events:auto;}
   .cover.open{animation:flip 7.2s ease-in-out forwards;pointer-events:none;}
   .cover.open.finished{display:none;}
-  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center/cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
+  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center / cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
   header{display:flex;align-items:center;justify-content:space-between;padding:12px;color:var(--dark);}
   @keyframes flip{0%{transform:rotateY(0deg);box-shadow:0 20px 40px rgba(0,0,0,.25);}40%{transform:rotateY(-55deg);}70%{transform:rotateY(-130deg);}100%{transform:rotateY(-180deg);box-shadow:none;}}
   @media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio:3/5;}}
@@ -27,6 +27,8 @@
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
   .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:120px;aspect-ratio:5/3;font-size:clamp(16px,4vw,30px);display:flex;align-items:center;justify-content:center;text-align:center;}
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
+  /* offline-order button: same visual but wide/horizontal under the order button */
+  .offline-order{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:12px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:320px;max-width:90%;font-size:16px;text-align:center;}
   .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
   .small-pass input{width:100px;padding:4px;}
   .guest-mini{position:fixed;right:12px;bottom:12px;background:var(--paper);padding:8px;border-radius:8px;border:1px solid #e6d6cc;font-size:13px;box-shadow:0 6px 12px rgba(0,0,0,0.08);}
@@ -60,7 +62,7 @@
   .jukebox .hint{position:absolute;right:2px;bottom:2px;font-size:9px;background:rgba(255,255,255,0.9);padding:2px;border-radius:3px;}
   .wrapper{position:relative;display:inline-block;}
 
-  /* Pomodoro */
+  /* POMODORO */
   #pomodoroPanel{position:absolute;right:10px;top:10px;width:260px;max-width:86%;background:rgba(255,255,255,0.98);border:2px solid var(--accent);padding:10px;border-radius:8px;z-index:220;box-shadow:0 10px 30px rgba(0,0,0,0.18);display:none;}
   #pomodoroPanel.show{display:block;}
   .pomo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
@@ -96,6 +98,8 @@
         <div class="order-block">
           <div id="shiftShort" class="status-line">読み込み中...</div>
           <button id="orderBtn" class="order-btn disabled">注文</button>
+          <div style="height:12px;"></div>
+          <button id="offlineOrderBtn" class="offline-order">オフライン注文</button>
 
           <div style="position:absolute; left:50%; bottom:23px; transform:translateX(-50%); width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
             <div id="helperSmall" class="small-info">実際の支払いはありません</div>
@@ -400,9 +404,10 @@ try {
   db = null;
 }
 
-/* DOM refs (short names) */
+/* DOM refs */
 const nowtimeEl = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
+const offlineOrderBtn = document.getElementById('offlineOrderBtn');
 const shiftShort = document.getElementById('shiftShort');
 const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
@@ -534,6 +539,9 @@ const p3Urls = [
 ];
 const p3Pool = p3Urls.map(url => new Audio(url));
 
+/* signals collection for broadcast sounds (minimized writes: one doc per signal) */
+const signalsCol = db ? collection(db, 'signals') : null;
+
 /* firestore collections if db available */
 const staffsCol = db ? collection(db, 'staffs') : null;
 const ordersCol = db ? collection(db, 'orders') : null;
@@ -556,13 +564,13 @@ const MENUS = {
     longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png', '@zzcafe2800/reiji_cafe/main/rate_art2.png' ] // add art PNGs to repo
+    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png', '@zzcafe2800/reiji_cafe/main/rate_art2.png' ]
   },
   omu: {
     id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
     longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包���', latteArtLabel:'ケチャップアート' },
+    ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' },
     botArtPool: [ '@zzcafe2800/reiji_cafe/main/omu_art1.png', '@zzcafe2800/reiji_cafe/main/omu_art2.png' ]
   }
 };
@@ -575,9 +583,8 @@ function showModal(el){ el.style.display='flex'; el.setAttribute('aria-hidden','
 function hideModal(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
 function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); }catch(e){} }
 
-/* get current JST date/time object (used for shift checks so timezone normalized) */
+/* JST now for shift checks */
 function nowInJST(){
-  // Use toLocaleString with Asia/Tokyo then create Date
   const s = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
   return new Date(s);
 }
@@ -595,7 +602,6 @@ function flushPendingPlays(){
 /* ----------------- Realtime listeners (if db present) ----------------- */
 function startRealtime(){
   if (!db) {
-    // offline: try restore local cached orders/staffs from localStorage
     try {
       const s = JSON.parse(localStorage.getItem('reiji_state_staffs') || '[]');
       const o = JSON.parse(localStorage.getItem('reiji_state_orders') || '[]');
@@ -616,11 +622,6 @@ function startRealtime(){
       renderShiftList();
       updateOrderButtonState();
       updateStaffToggleUI();
-      // if human staff appears, remove bot active flag (bot only if nobody)
-      if (state.staffs && state.staffs.length){
-        // nothing extra to do; renderShiftShort shows humans
-      }
-      // cache locally
       try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
     }, e=>console.warn(e));
   } catch(e){ console.warn(e); }
@@ -633,15 +634,28 @@ function startRealtime(){
       try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
     }, e=>console.warn(e));
   } catch(e){ console.warn(e); }
+
+  // signal listener: play tyaimu when a 'tyaimu' signal is added
+  if (signalsCol){
+    let lastSignalTs = 0;
+    const qsig = query(signalsCol, orderBy('ts','asc'));
+    onSnapshot(qsig, snap=>{
+      snap.docs.forEach(docSnap=>{
+        const data = docSnap.data();
+        if (!data || !data.ts) return;
+        if (data.ts <= lastSignalTs) return;
+        lastSignalTs = data.ts;
+        if (data.type === 'tyaimu'){
+          try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
+        }
+      });
+    }, e=>console.warn('signals listen', e));
+  }
 }
 
-/* Minimal handleNotifications placeholder */
-function handleOrderNotifications(prevOrders, currOrders){ /* left intentionally minimal */ }
-
-/* ----------------- Shift rendering and staff deletion ----------------- */
+/* ----------------- SHIFT & STAFF UI ----------------- */
 setInterval(()=> nowtimeEl.textContent = nowInJST().toLocaleTimeString(), 1000);
 
-/* isNowWithinShift using JST time */
 function isNowWithinShift(start,end,dateObj){
   if (!start || !end) return false;
   const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
@@ -652,7 +666,6 @@ function isNowWithinShift(start,end,dateObj){
 }
 
 function renderShiftShort(){
-  // determine active human staff in JST
   const now = nowInJST();
   const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
   if (humanActive.length){
@@ -660,7 +673,7 @@ function renderShiftShort(){
     state._botActive = false;
     return;
   }
-  // No human staff: enable BOT if configured
+  // No human staff: BOT active
   state._botActive = true;
   shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（手書き接客✖）';
 }
@@ -673,14 +686,12 @@ function renderShiftList(){
     const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
     const html = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
     div.innerHTML = html;
-    // add delete staff button (removes from firestore or locally)
     const delBtn = document.createElement('button'); delBtn.textContent = '削除'; delBtn.className='small'; delBtn.style.marginLeft='8px';
     delBtn.addEventListener('click', async ()=>{
       if (!s.id) return;
       if (db){
         try { await deleteDoc(doc(db,'staffs',s.id)); } catch(e){ console.warn('staff delete failed', e); }
       } else {
-        // offline: remove from local state and cache
         state.staffs = state.staffs.filter(x=>x.id !== s.id);
         try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
         renderShiftList();
@@ -692,7 +703,7 @@ function renderShiftList(){
   });
 }
 
-/* update staff toggle UI */
+/* updateStaffToggleUI */
 function updateStaffToggleUI(){
   if (state.currentUser && state.currentUser.role === 'staff' && state.currentUser.staffId){
     const my = state.staffs.find(s=>s.id === state.currentUser.staffId);
@@ -706,7 +717,7 @@ function updateStaffToggleUI(){
   }
 }
 
-/* ----------------- Orders listing for staff ----------------- */
+/* ----------------- ORDERS (staff view) ----------------- */
 function renderOrderLists(){
   staffOrderList.innerHTML = '';
   state.orders.forEach(o=>{
@@ -749,17 +760,13 @@ function computeOrderTasks(order){
   return pending;
 }
 
-/* ----------------- Staff login flow (fix cancel bug) ----------------- */
+/* ----------------- STAFF LOGIN & MODAL CANCEL FIX ----------------- */
 passOk.addEventListener('click', ()=> {
   if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います');
 });
 function showStaffNameModal(){
   showModal(modalName);
-  // ensure cancel hides modal and does not proceed
-  cancelOrderName.onclick = () => {
-    hideModal(modalName);
-    orderName.value = '';
-  };
+  cancelOrderName.onclick = () => { hideModal(modalName); orderName.value=''; };
   okOrderName.onclick = async ()=>{
     const name = orderName.value.trim(); if (!name) { alert('名前'); return; }
     hideModal(modalName);
@@ -768,7 +775,6 @@ function showStaffNameModal(){
         const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
         enterStaffFull(name, ref.id);
       } else {
-        // offline: push into local state with generated id
         const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
         state.staffs.push(s);
         try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
@@ -825,7 +831,7 @@ saveShift.addEventListener('click', async ()=> {
   }
 });
 
-/* ----------------- Menu & ordering ----------------- */
+/* ----------------- MENU & ORDERING (including fixes) ----------------- */
 async function buildMenu(){
   menuGrid.innerHTML = '';
   if (MENUS.random){
@@ -843,7 +849,6 @@ async function buildMenu(){
     const it = MENUS[id];
     const div = document.createElement('div'); div.className='menu-item';
     const img = document.createElement('img'); img.className='menu-thumb';
-    // prefer frame without leading zero; we'll try both patterns when loading frames later
     const url = getAssetUrl(it.imageBase + '1.png');
     try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
     div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
@@ -851,16 +856,31 @@ async function buildMenu(){
     menuGrid.appendChild(div);
   }
 }
-
 function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
-/* Order button click */
-orderBtn.addEventListener('click', ()=> {
+/* chooseRandomAndOrder: fix bug by selecting actual menu object list */
+function chooseRandomAndOrder(){
+  const menuList = Object.keys(MENUS).filter(k=>k!=='random').map(k=>MENUS[k]);
+  if (!menuList.length){ alert('ランダム対象のメニューがありません'); return; }
+  const chosenMenu = menuList[Math.floor(Math.random() * menuList.length)];
+  onMenuSelect(chosenMenu);
+}
+
+/* orderBtn click: broadcast tyaimu to ALL clients + local behavior */
+orderBtn.addEventListener('click', async ()=> {
   if (orderBtn.classList.contains('disabled')) return;
-  if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'tyaimu' });
-  else { try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
+
+  // Broadcast tyaimu signal to Firestore so all clients will play it (if db available)
+  if (db && signalsCol){
+    try {
+      await addDoc(signalsCol, { type:'tyaimu', ts: Date.now() });
+    } catch(e){ console.warn('signal write failed', e); }
+  }
+  // Play locally too
+  try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
+
+  // open name modal
   showModal(modalName);
-  // cancel already wired earlier
   okOrderName.onclick = () => {
     const name = orderName.value.trim();
     if (!name) { alert('名前を入力してください'); return; }
@@ -870,56 +890,83 @@ orderBtn.addEventListener('click', ()=> {
 });
 backMenu.addEventListener('click', ()=> hideModal(modalMenu));
 
-/* Create order (onMenuSelect) — this function now supports BOT immediate handling when no human staff */
+/* offline-order button click: opens menu but forces BOT delivery (local) */
+offlineOrderBtn.addEventListener('click', ()=>{
+  showModal(modalName);
+  okOrderName.onclick = () => {
+    const name = orderName.value.trim();
+    if (!name) { alert('名前を入力してください'); return; }
+    hideModal(modalName);
+    buildMenu();
+    // When menu open, we need to mark that selection should be offline-BOT regardless of staff
+    // We'll set a flag on the modal element
+    modalMenu.dataset.forceBot = '1';
+    showModal(modalMenu);
+  };
+});
+
+/* onMenuSelect: when called from offline-order flow (modalMenu.dataset.forceBot==='1'), BOT provides locally regardless of human staff */
 async function onMenuSelect(item){
   hideModal(modalMenu);
+  // clear force flag
+  const forceBot = modalMenu.dataset.forceBot === '1';
+  delete modalMenu.dataset.forceBot;
+
   const name = orderName.value.trim() || '名無し';
   if (item.password && item.password.length){
     const entered = prompt('パスワードを入力してください');
     if (entered === null) return;
     if (entered !== item.password){ alert('パスワードが違います'); return; }
-    if (state.audioUnlocked){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{});}catch(e){} }
+    try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{});}catch(e){}
   }
 
-  // Determine whether there is any human staff on shift in JST right now
-  const now = nowInJST();
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
   const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
   const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
 
+  // If forceBot is true, always use BOT local delivery regardless of human staff
+  if (forceBot){
+    state._botActive = true;
+    shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（オフライン注文）';
+    showBotOverlayForClient();
+    const servedResult = await botProduce(orderObj, item, name);
+    // store locally as delivered order (no Firestore write)
+    orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; orderObj.artDataUrl = servedResult.artDataUrl; orderObj.cardDataUrl = servedResult.cardDataUrl;
+    state.orders.push(orderObj);
+    state.currentOrderIdForClient = orderObj.id;
+    try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
+    hideBotOverlayForClient();
+    await showClientServed(orderObj);
+    return;
+  }
+
+  // Normal flow: check humanActive
+  const now = nowInJST();
+  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
   if (!humanActive.length){
-    // BOT flow: block UI, show BOT message in shiftShort and process immediately
+    // BOT fallback (automatic)
     state._botActive = true;
     shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（手書き接客✖）';
-    // show temporary overlay to prevent interactions
     showBotOverlayForClient();
-    // Compose served image and art/card using BOT assets
     const servedResult = await botProduce(orderObj, item, name);
-    // Save servedResult to firestore if available (minimize writes: write single delivered order)
     if (db){
       try {
         const ref = await addDoc(ordersCol, { ...orderObj, state:'delivered', deliveredAt: Date.now(), servedImageData: servedResult.servedImageData, artDataUrl: servedResult.artDataUrl, cardDataUrl: servedResult.cardDataUrl });
         state.currentOrderIdForClient = ref.id;
       } catch(e){
         console.warn('bot order write failed', e);
-        // fallback to local simulation
-        orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id;
-        try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
+        orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; orderObj.artDataUrl = servedResult.artDataUrl; orderObj.cardDataUrl = servedResult.cardDataUrl;
+        state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; try{ localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
       }
     } else {
-      // offline: push into local state
       orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; orderObj.artDataUrl = servedResult.artDataUrl; orderObj.cardDataUrl = servedResult.cardDataUrl;
-      state.orders.push(orderObj);
-      state.currentOrderIdForClient = orderObj.id;
-      try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
+      state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; try{ localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
     }
-    // Remove BOT overlay and open served modal
     hideBotOverlayForClient();
-    showClientServed(await fetchOrderById(state.currentOrderIdForClient));
+    await showClientServed(orderObj);
     return;
   }
 
-  // If humans present, normal order flow: create doc in firestore or local list
+  // Human staff present: submit order to Firestore or local list
   try {
     if (db){
       const ref = await addDoc(ordersCol, orderObj);
@@ -935,28 +982,13 @@ async function onMenuSelect(item){
   }
 }
 
-/* helper to fetch order object by id from current state or firestore */
-async function fetchOrderById(id){
-  if (!id) return null;
-  const fromState = state.orders.find(x=>x.id===id);
-  if (fromState) return fromState;
-  if (db){
-    try {
-      const snap = await getDoc(doc(db,'orders',id));
-      if (snap.exists()) return { id: snap.id, ...snap.data() };
-    } catch(e){ console.warn('fetchOrderById failed', e); }
-  }
-  return null;
-}
-
-/* scheduleOrderTimeout remains similar */
+/* scheduleOrderTimeout (same behavior, offline supported) */
 async function scheduleOrderTimeout(orderId, expiresAt){
   const remaining = (expiresAt || 0) - Date.now();
   if (remaining <= 0) return;
   setTimeout(async ()=>{
     try {
       if (!db){
-        // offline: check state
         const o = state.orders.find(x=>x.id===orderId);
         if (o && o.state === 'waiting'){ o.state='cancelled'; o.cancelReason='スタッフの応答がないため現在注文を取り消しになります'; try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}; renderOrderLists(); }
         return;
@@ -972,7 +1004,7 @@ async function scheduleOrderTimeout(orderId, expiresAt){
   }, remaining);
 }
 
-/* assignOrderToCurrentStaff unchanged except offline handling */
+/* assign order to staff */
 async function assignOrderToCurrentStaff(orderId){
   const staffId = state.currentUser.staffId; if (!staffId) { alert('スタッフとしてログインしてください'); return; }
   const s = state.staffs.find(x=>x.id===staffId);
@@ -988,7 +1020,9 @@ async function assignOrderToCurrentStaff(orderId){
   } catch(e){ console.warn(e); }
 }
 
-/* ----------------- STROKES + canvases (same as previous) ----------------- */
+/* ----------------- STROKES & CANVASES (unchanged logic) ----------------- */
+/* (for brevity we keep the same reliable implementation as previous versions) */
+
 function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
 function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
 
@@ -1065,11 +1099,9 @@ function renderLatestCardStrokeSegment(stroke){
 clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
 clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
 
-/* saveArt / saveCard */
+/* saveArt / saveCard (as before) */
 saveArt.addEventListener('click', ()=>{
-  const scale = 2;
-  const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale;
-  const t = tmp.getContext('2d');
+  const scale = 2; const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale; const t = tmp.getContext('2d');
   t.fillStyle = artBgColor.value || '#6b3b24'; t.fillRect(0,0,tmp.width,tmp.height);
   t.lineCap = 'round'; t.lineJoin = 'round';
   const strokes = JSON.parse(JSON.stringify(artStrokes || []));
@@ -1089,9 +1121,7 @@ saveArt.addEventListener('click', ()=>{
 });
 
 saveCard.addEventListener('click', ()=>{
-  const scale = 2;
-  const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale;
-  const t = tmp.getContext('2d');
+  const scale = 2; const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale; const t = tmp.getContext('2d');
   t.fillStyle = cardBgColor.value || '#fff2e6'; t.fillRect(0,0,tmp.width,tmp.height);
   t.lineCap = 'round'; t.lineJoin = 'round';
   const strokes = JSON.parse(JSON.stringify(cardStrokes || []));
@@ -1110,7 +1140,7 @@ saveCard.addEventListener('click', ()=>{
   alert('カードを保存しました。。');
 });
 
-/* pouring logic */
+/* pouring and latte visuals unchanged */
 let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
 function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
 resetPouring();
@@ -1125,13 +1155,13 @@ startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatc
 startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
 startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
 
-/* latte visuals */
 const latteCanvas = document.getElementById('latteCanvas'); const latteCtx = latteCanvas.getContext('2d');
 function latteClear(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle='#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
 function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
 function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
 latteClear();
 
+/* updateTaskStatus */
 function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtStrokesLocal && (!artStrokes || !artStrokes.length)) parts.push('アート'); if (!savedCardStrokesLocal && (!cardStrokes || !cardStrokes.length)) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
 
 /* openMakeModal (per-order isolation) */
@@ -1147,7 +1177,6 @@ async function openMakeModal(order){
   milkLabelEl.textContent = (cfg.ui && cfg.ui.milkLabel) || 'フームドミルク注ぎ';
   latteArtLabelEl.textContent = (cfg.ui && cfg.ui.latteArtLabel) || 'ラテアート';
 
-  // per-order isolation copies
   artStrokes = (order.artStrokes && Array.isArray(order.artStrokes)) ? JSON.parse(JSON.stringify(order.artStrokes)) : [];
   cardStrokes = (order.cardStrokes && Array.isArray(order.cardStrokes)) ? JSON.parse(JSON.stringify(order.cardStrokes)) : [];
 
@@ -1160,12 +1189,9 @@ async function openMakeModal(order){
   const cardBgColorToUse = (savedCardMeta && savedCardMeta.bg) || cfg.cardBg || cardBgColor.value;
   initArtCanvas(artBgColorToUse);
   initCardCanvas(cardBgColorToUse);
-
   if (artStrokes && artStrokes.length) replayStrokesOnCanvasImmediate(artStrokes, artLayer, artLayerCtx, savedArtMeta);
   if (cardStrokes && cardStrokes.length) replayStrokesOnCanvasImmediate(cardStrokes, cardCanvas, cardCtx, savedCardMeta);
-
   currentArtStroke = null; currentCardStroke = null; artDrawing=false; cardDrawing=false;
-
   saveArt.disabled = !(artStrokes && artStrokes.length); saveCard.disabled = !(cardStrokes && cardStrokes.length);
   updateTaskStatus();
   modalMakeLatte.style.display = 'flex';
@@ -1184,7 +1210,7 @@ function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
   }
 }
 
-/* completeMake writes delivered order (minimized writes) */
+/* completeMake (minimized writes) */
 completeMake.addEventListener('click', async ()=>{
   if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
   const artStrokesToSave = artStrokes || [];
@@ -1192,7 +1218,6 @@ completeMake.addEventListener('click', async ()=>{
   const artMetaToSave = savedArtMeta || (artStrokesToSave.length ? { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: artLayer.width*2, savedHeight: artLayer.height*2, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#fff', scale:2 } : null);
   const cardMetaToSave = savedCardMeta || (cardStrokesToSave.length ? { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: cardCanvas.width*2, savedHeight: cardCanvas.height*2, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000', scale:2 } : null);
 
-  // compose served image
   const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
   tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
   tctx.drawImage(latteCanvas, 450,300,300,300);
@@ -1251,10 +1276,7 @@ function showClientStatus(text){ orderStatusMain.textContent = text; orderStatus
 function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
 
 function updateClientOverlay(){
-  if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){
-    state.currentOrderIdForClient = null;
-    return;
-  }
+  if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){ state.currentOrderIdForClient = null; return; }
   if (!state.currentOrderIdForClient) return;
   const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
   if (!o) return;
@@ -1274,7 +1296,7 @@ function updateClientOverlay(){
   }
 }
 
-/* showClientServed — reliably open modal and render art/card */
+/* showClientServed (robust) */
 async function showClientServed(order){
   if (!order) return;
   const ord = order.id ? order : (await fetchOrderById(order.id)) || order;
@@ -1285,61 +1307,47 @@ async function showClientServed(order){
     servedImage.src = baseUrl;
   }
 
-  // art mini
   const artCtx = servedArtMini.getContext('2d');
   artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
   artCtx.fillStyle = (ord.artMeta && ord.artMeta.bg) || MENUS[ord.item]?.artBg || '#6b3b24';
   artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
   if (ord.clientId === clientId){
-    if (ord.artStrokes && ord.artStrokes.length){
-      replayStrokesOnCanvasImmediate(ord.artStrokes, servedArtMini, artCtx, ord.artMeta);
-    } else if (ord.artDataUrl){
-      const img = new Image(); img.src = ord.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
-    }
+    if (ord.artStrokes && ord.artStrokes.length){ replayStrokesOnCanvasImmediate(ord.artStrokes, servedArtMini, artCtx, ord.artMeta); }
+    else if (ord.artDataUrl){ const img = new Image(); img.src = ord.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height); }
   } else {
-    // Not this client's order: if BOT provided artDataUrl present, show it
     if (ord.artDataUrl){ const img = new Image(); img.src = ord.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height); }
   }
 
-  // card mini
   const cardCtxMini = servedCardMini.getContext('2d');
   cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
   cardCtxMini.fillStyle = (ord.cardMeta && ord.cardMeta.bg) || MENUS[ord.item]?.cardBg || '#fff2e6';
   cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
   if (ord.clientId === clientId){
-    if (ord.cardStrokes && ord.cardStrokes.length){
-      replayStrokesOnCanvasImmediate(ord.cardStrokes, servedCardMini, cardCtxMini, ord.cardMeta);
-    } else if (ord.cardDataUrl){
-      const img = new Image(); img.src = ord.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
-    }
+    if (ord.cardStrokes && ord.cardStrokes.length){ replayStrokesOnCanvasImmediate(ord.cardStrokes, servedCardMini, cardCtxMini, ord.cardMeta); }
+    else if (ord.cardDataUrl){ const img = new Image(); img.src = ord.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height); }
   } else {
     if (ord.cardDataUrl){ const img = new Image(); img.src = ord.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height); }
   }
 
-  // preload frames for POMO use (menu-specific) — important: frames 2..6 without leading zero
   const cfg = MENUS[ord.item] || MENUS['rate'];
   const frames = await preloadFrames(cfg.imageBase, cfg.frameCount || 6, cfg.lastFrameRandom);
   servedSequence = frames.slice(); servedSequenceIndex = 0;
   if (servedSequence.length) servedImage.src = servedSequence[0];
 
-  // set POMO.currentMenuKey to this order's item for frame mapping
   POMO.currentMenuKey = ord.item || 'rate';
-  // show modal reliably
   modalEat.style.display = 'flex';
 }
 
-/* preloadFrames adaptation: check patterns without leading zero first (2..6), but we attempt common patterns */
+/* preloadFrames - prefer no-leading-zero pattern first */
 async function preloadFrames(basePath, frameCount=6, lastRandom=false){
   const frames = [];
   for (let i=1;i<=frameCount;i++){
-    // for pomodoro we will use numbers like 2,3,4,5,6 (no leading zero) — but we still attempt multiple patterns
     const variants = [
       `${basePath}${i}.png`,
       `${basePath}${String(i).padStart(2,'0')}.png`,
       `${basePath}_${i}.png`,
       `${basePath}_${String(i).padStart(2,'0')}.png`
     ];
-    let got = false;
     for (const v of variants){
       try {
         const url = getAssetUrl(v);
@@ -1347,78 +1355,34 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
         if (!res.ok) continue;
         const blob = await res.blob();
         frames.push(URL.createObjectURL(blob));
-        got = true; break;
+        break;
       } catch(e){ continue; }
-    }
-    if (!got){
-      // skip
     }
   }
   return frames;
 }
 
-/* servedImage click opens pomodoro (we removed long-press eat) */
-servedImage.addEventListener('click', ()=>{
-  const currentMenu = POMO.currentMenuKey || 'rate';
-  openPomodoroForMenu(currentMenu);
-});
-
-/* ----------------- Pomodoro implementation (client only) ----------------- */
+/* ----------------- Pomodoro (client only) - unchanged core logic but robust */ 
 const POMO = {
-  running: false,
-  phase: 'idle',
-  loopTotal: 1,
-  loopIndex: 0,
-  workMin: 25,
-  breakMin: 5,
-  remainingMs: 0,
-  tickInterval: null,
-  lastTickTs: 0,
-  currentMenuKey: 'rate',
-  frameCount: 6,
-  scheduledP3Timers: [],
-  lastP3Index: -1,
-  lastMessageIndex: -1,
-  messageTimer: null
+  running: false, phase: 'idle', loopTotal: 1, loopIndex: 0, workMin: 25, breakMin: 5,
+  remainingMs: 0, tickInterval: null, lastTickTs: 0, currentMenuKey: 'rate', frameCount:6,
+  scheduledP3Timers: [], lastP3Index:-1, lastMessageIndex:-1, messageTimer:null
 };
 
-function formatTime(ms){
-  if (ms < 0) ms = 0;
-  let s = Math.floor(ms/1000);
-  const h = Math.floor(s/3600); s = s%3600;
-  const m = Math.floor(s/60);
-  const sec = s%60;
-  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
-}
-
-const POMO_MESSAGES = {
-  work: ['集中してがんばろう！','一息入れずに進めよう','今の調子を維持して','もう少しで区切りだよ','ペースを作っていこう'],
-  break: ['軽く休憩しましょう','深呼吸してリラックス','腕を伸ばして休憩','水分補給をどうぞ','ゆっくり休んでOK']
-};
+function formatTime(ms){ if (ms<0) ms=0; let s=Math.floor(ms/1000); const h=Math.floor(s/3600); s=s%3600; const m=Math.floor(s/60); const sec=s%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+const POMO_MESSAGES = { work:['集中してがんばろう！','一息入れずに進めよう','今の調子を維持して','もう少しで区切りだよ','ペースを作っていこう'], break:['軽く休憩しましょう','深呼吸してリラックス','腕を伸ばして休憩','水分補給をどうぞ','ゆっくり休んでOK'] };
 
 function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
-  const menu = MENUS[menuKey];
-  const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
   if (!totalMs || totalMs <= 0) return 1;
   const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
-  const from = 2;
-  const to = fc;
-  const idx = Math.floor(from + (to - from) * ratio);
+  const from = 2; const to = fc; const idx = Math.floor(from + (to - from) * ratio);
   return Math.min(fc, Math.max(1, idx));
 }
-
-function pickBreakFrame(menuKey){
-  const menu = MENUS[menuKey];
-  const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
-  if (fc <= 1) return 1;
-  const choices = [Math.max(1, fc-1), fc];
-  return choices[Math.floor(Math.random() * choices.length)];
-}
+function pickBreakFrame(menuKey){ const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6); if (fc <= 1) return 1; const choices = [Math.max(1, fc-1), fc]; return choices[Math.floor(Math.random() * choices.length)]; }
 
 function setServedImageFrame(menuKey, frameIndex){
-  const menu = MENUS[menuKey];
-  if (!menu) return;
-  // try patterns in order of preference: base + n.png (no leading zero)
+  const menu = MENUS[menuKey]; if (!menu) return;
   const candidates = [
     `${menu.imageBase}${frameIndex}.png`,
     `${menu.imageBase}${String(frameIndex).padStart(2,'0')}.png`,
@@ -1429,135 +1393,26 @@ function setServedImageFrame(menuKey, frameIndex){
     for (const c of candidates){
       try {
         const url = getAssetUrl(c);
-        // quick check
         const res = await fetch(url, { method:'HEAD' });
         if (res.ok){ servedImage.src = url; return; }
       } catch(e){}
     }
-    // fallback: use first frame
     servedImage.src = getAssetUrl(menu.imageBase + '1.png');
   })();
 }
 
 function clearScheduledP3(){ if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers=[]; for(const t of POMO.scheduledP3Timers) clearTimeout(t); POMO.scheduledP3Timers = []; POMO.lastP3Index=-1; }
+function scheduleBreakRandomSounds(){ clearScheduledP3(); function scheduleNext(){ if (POMO.phase !== 'break') return; const interval = 8000 + Math.floor(Math.random() * (12000)); const timer = setTimeout(()=>{ let idxCandidates = p3Pool.map((_,i)=>i); if (POMO.lastP3Index >= 0 && idxCandidates.length > 1) idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index); const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)]; POMO.lastP3Index = idx; try { const a = new Audio(p3Pool[idx].src); a.play().catch(()=>{}); } catch(e){} scheduleNext(); }, interval); POMO.scheduledP3Timers.push(timer); } scheduleNext(); }
 
-function scheduleBreakRandomSounds(){
-  clearScheduledP3();
-  function scheduleNext(){
-    if (POMO.phase !== 'break') return;
-    const interval = 8000 + Math.floor(Math.random() * (12000));
-    const timer = setTimeout(()=>{
-      let idxCandidates = p3Pool.map((_,i)=>i);
-      if (POMO.lastP3Index >= 0 && idxCandidates.length > 1) idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index);
-      const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)];
-      POMO.lastP3Index = idx;
-      try { const a = new Audio(p3Pool[idx].src); a.play().catch(()=>{}); } catch(e){}
-      scheduleNext();
-    }, interval);
-    POMO.scheduledP3Timers.push(timer);
-  }
-  scheduleNext();
-}
+function rotatePomoMessage(){ const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null); if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; } const pool = POMO_MESSAGES[phase] || []; if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; } let idxs = pool.map((_,i)=>i); if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex); const idx = idxs[Math.floor(Math.random()*idxs.length)]; POMO.lastMessageIndex = idx; document.getElementById('eatSoundInfo').textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx]; }
 
-function rotatePomoMessage(){
-  const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null);
-  if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; }
-  const pool = POMO_MESSAGES[phase] || [];
-  if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; }
-  let idxs = pool.map((_,i)=>i);
-  if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex);
-  const idx = idxs[Math.floor(Math.random()*idxs.length)];
-  POMO.lastMessageIndex = idx;
-  document.getElementById('eatSoundInfo').textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx];
-}
-
-function startPomoTick(){
-  if (POMO.tickInterval) return;
-  POMO.lastTickTs = Date.now();
-  POMO.tickInterval = setInterval(()=> {
-    const now = Date.now();
-    const delta = now - POMO.lastTickTs;
-    POMO.lastTickTs = now;
-    if (POMO.phase === 'paused' || POMO.phase === 'idle') return;
-    POMO.remainingMs -= delta;
-    if (POMO.remainingMs <= 0){
-      if (POMO.phase === 'work'){
-        POMO.phase = 'break';
-        audioPiroBreak && audioPiroBreak.play().catch(()=>{});
-        POMO.remainingMs = (POMO.breakMin * 60 * 1000);
-        const bf = pickBreakFrame(POMO.currentMenuKey || 'rate');
-        setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
-        scheduleBreakRandomSounds();
-      } else if (POMO.phase === 'break'){
-        clearScheduledP3();
-        POMO.loopIndex++;
-        if (POMO.loopIndex >= POMO.loopTotal){
-          stopPomo(true); return;
-        } else {
-          POMO.phase = 'work';
-          POMO.remainingMs = (POMO.workMin * 60 * 1000);
-          setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
-          audioPiroStart && audioPiroStart.play().catch(()=>{});
-        }
-      }
-      renderPomoUI();
-    } else {
-      if (POMO.phase === 'work'){
-        const total = (POMO.workMin * 60 * 1000);
-        const elapsed = total - POMO.remainingMs;
-        const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total);
-        setServedImageFrame(POMO.currentMenuKey || 'rate', idx);
-      }
-      renderPomoUI();
-    }
-  }, 250);
-
-  if (POMO.messageTimer) clearInterval(POMO.messageTimer);
-  POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000);
-  rotatePomoMessage();
-}
+function startPomoTick(){ if (POMO.tickInterval) return; POMO.lastTickTs = Date.now(); POMO.tickInterval = setInterval(()=> { const now = Date.now(); const delta = now - POMO.lastTickTs; POMO.lastTickTs = now; if (POMO.phase === 'paused' || POMO.phase === 'idle') return; POMO.remainingMs -= delta; if (POMO.remainingMs <= 0){ if (POMO.phase === 'work'){ POMO.phase = 'break'; audioPiroBreak && audioPiroBreak.play().catch(()=>{}); POMO.remainingMs = (POMO.breakMin * 60 * 1000); const bf = pickBreakFrame(POMO.currentMenuKey || 'rate'); setServedImageFrame(POMO.currentMenuKey || 'rate', bf); scheduleBreakRandomSounds(); } else if (POMO.phase === 'break'){ clearScheduledP3(); POMO.loopIndex++; if (POMO.loopIndex >= POMO.loopTotal){ stopPomo(true); return; } else { POMO.phase = 'work'; POMO.remainingMs = (POMO.workMin * 60 * 1000); setServedImageFrame(POMO.currentMenuKey || 'rate', 2); audioPiroStart && audioPiroStart.play().catch(()=>{}); } } renderPomoUI(); } else { if (POMO.phase === 'work'){ const total = (POMO.workMin * 60 * 1000); const elapsed = total - POMO.remainingMs; const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total); setServedImageFrame(POMO.currentMenuKey || 'rate', idx); } renderPomoUI(); } }, 250); if (POMO.messageTimer) clearInterval(POMO.messageTimer); POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000); rotatePomoMessage(); }
 
 function stopPomoTick(){ if (POMO.tickInterval){ clearInterval(POMO.tickInterval); POMO.tickInterval=null; } clearScheduledP3(); if (POMO.messageTimer){ clearInterval(POMO.messageTimer); POMO.messageTimer = null; } }
 
-function renderPomoUI(){
-  if (!POMO.running){
-    pomoSettings.style.display = 'block';
-    pomoRunning.style.display = 'none';
-    pomoPanel.setAttribute('aria-hidden','false');
-    document.getElementById('eatSoundInfo').textContent = '—';
-    return;
-  }
-  pomoSettings.style.display = 'none';
-  pomoRunning.style.display = 'block';
-  pomoPanel.setAttribute('aria-hidden','false');
-  pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`;
-  pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機'));
-  pomoTimerText.textContent = formatTime(POMO.remainingMs);
-  if (POMO.phase === 'work'){
-    const total = (POMO.workMin * 60 * 1000);
-    const elapsed = Math.max(0, total - POMO.remainingMs);
-    const pct = Math.min(100, Math.floor((elapsed / total) * 100));
-    pomoProgressBar.style.width = `${pct}%`;
-  } else if (POMO.phase === 'break'){
-    const total = (POMO.breakMin * 60 * 1000);
-    const elapsed = Math.max(0, total - POMO.remainingMs);
-    const pct = Math.min(100, Math.floor((elapsed / total) * 100));
-    pomoProgressBar.style.width = `${pct}%`;
-  } else { pomoProgressBar.style.width = `0%`; }
-  if (POMO.phase === 'paused'){ pausePomoBtn.textContent = '▶'; } else { pausePomoBtn.textContent = '⏸'; }
-}
+function renderPomoUI(){ if (!POMO.running){ pomoSettings.style.display = 'block'; pomoRunning.style.display = 'none'; pomoPanel.setAttribute('aria-hidden','false'); document.getElementById('eatSoundInfo').textContent = '—'; return; } pomoSettings.style.display = 'none'; pomoRunning.style.display = 'block'; pomoPanel.setAttribute('aria-hidden','false'); pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`; pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機')); pomoTimerText.textContent = formatTime(POMO.remainingMs); if (POMO.phase === 'work'){ const total = (POMO.workMin * 60 * 1000); const elapsed = Math.max(0, total - POMO.remainingMs); const pct = Math.min(100, Math.floor((elapsed / total) * 100)); pomoProgressBar.style.width = `${pct}%`; } else if (POMO.phase === 'break'){ const total = (POMO.breakMin * 60 * 1000); const elapsed = Math.max(0, total - POMO.remainingMs); const pct = Math.min(100, Math.floor((elapsed / total) * 100)); pomoProgressBar.style.width = `${pct}%`; } else { pomoProgressBar.style.width = `0%`; } if (POMO.phase === 'paused'){ pausePomoBtn.textContent = '▶'; } else { pausePomoBtn.textContent = '⏸'; } }
 
-function startPomo(){
-  const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1')));
-  const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25')));
-  const bmin = Math.max(1, Math.min(200, parseInt(breakMinInput.value || '5')));
-  POMO.loopTotal = loops; POMO.loopIndex = 0; POMO.workMin = wmin; POMO.breakMin = bmin; POMO.running = true; POMO.phase = 'work';
-  POMO.remainingMs = (wmin * 60 * 1000); POMO.currentMenuKey = POMO.currentMenuKey || 'rate';
-  const menu = MENUS[POMO.currentMenuKey] || MENUS['rate']; POMO.frameCount = menu.frameCount || 6;
-  audioPiroStart && audioPiroStart.play().catch(()=>{});
-  setServedImageFrame(POMO.currentMenuKey, 2);
-  clearScheduledP3(); startPomoTick(); renderPomoUI();
-}
+function startPomo(){ const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1'))); const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25'))); const bmin = Math.max(1, Math.min(200, parseInt(breakMinInput.value || '5'))); POMO.loopTotal = loops; POMO.loopIndex = 0; POMO.workMin = wmin; POMO.breakMin = bmin; POMO.running = true; POMO.phase = 'work'; POMO.remainingMs = (wmin * 60 * 1000); POMO.currentMenuKey = POMO.currentMenuKey || 'rate'; const menu = MENUS[POMO.currentMenuKey] || MENUS['rate']; POMO.frameCount = menu.frameCount || 6; audioPiroStart && audioPiroStart.play().catch(()=>{}); setServedImageFrame(POMO.currentMenuKey, 2); clearScheduledP3(); startPomoTick(); renderPomoUI(); }
 function togglePausePomo(){ if (!POMO.running) return; if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; audioPiroToggle && audioPiroToggle.play().catch(()=>{}); startPomoTick(); } else { POMO._prevPhase = POMO.phase; POMO.phase = 'paused'; stopPomoTick(); audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } renderPomoUI(); }
 function stopPomo(returnToSettings){ POMO.running = false; POMO.phase = 'idle'; POMO.remainingMs = 0; clearScheduledP3(); stopPomoTick(); if (returnToSettings){ pomoSettings.style.display='block'; pomoRunning.style.display='none'; } renderPomoUI(); }
 function skipPomo(){ if (!POMO.running) return; if (POMO.phase === 'work'){ POMO.remainingMs = 0; } else if (POMO.phase === 'break'){ POMO.remainingMs = 0; } else if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; POMO.remainingMs = 0; } }
@@ -1584,11 +1439,11 @@ startPomoBtn.addEventListener('click', ()=>{ if (!POMO.running){ startPomo(); st
 stopPomoBtn.addEventListener('click', ()=>{ stopPomo(true); startPomoBtn.textContent = '再生 ▶'; });
 pausePomoBtn.addEventListener('click', ()=>{ togglePausePomo(); });
 skipPomoBtn.addEventListener('click', ()=>{ skipPomo(); });
-function openPomodoroForMenu(menuKey){ POMO.currentMenuKey = menuKey || 'rate'; loopCountInput.value = POMO.loopTotal || 1; workMinInput.value = POMO.workMin || 25; breakMinInput.value = POMO.breakMin || 5; updatePomoCountDisplay(); pomoPanel.classList.add('show'); pomoPanel.style.display='block'; pomoSettings.style.display = POMO.running ? 'none' : 'block'; pomoRunning.style.display = POMO.running ? 'block' : 'none'; renderPomoUI(); }
+function openPomodoroForMenu(menuKey){ POMO.currentMenuKey = menuKey || 'rate'; loopCountInput.value = POMO.loopTotal || 1; workMinInput.value = POMO.workMin || 25; breakMinInput.value = POMO.breakMin || 5; updatePomoCountDisplay(); pomoPanel.classList.add('show'); pomoPanel.style.display = 'block'; pomoSettings.style.display = POMO.running ? 'none' : 'block'; pomoRunning.style.display = POMO.running ? 'block' : 'none'; renderPomoUI(); }
 document.addEventListener('click', (e)=>{ if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){ if (!POMO.running){ pomoPanel.classList.remove('show'); pomoPanel.style.display='none'; } } });
 servedImage.addEventListener('click', ()=>{ const currentMenu = POMO.currentMenuKey || 'rate'; openPomodoroForMenu(currentMenu); });
 
-/* ----------------- Save / home / close flows ----------------- */
+/* ----------------- Save & home flows ----------------- */
 saveAllBtn.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
   t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
@@ -1646,15 +1501,12 @@ function buildJukebox(){
   }
 }
 
-/* ----------------- Order button enable logic (JST-based) ----------------- */
+/* updateOrderButtonState: JST-based */
 function updateOrderButtonState(){
   const now = nowInJST();
   const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (anyAvailable) orderBtn.classList.remove('disabled');
-  else {
-    // If no human available, we still allow ordering because BOT will respond; per requirements, when no human, BOT handles
-    orderBtn.classList.remove('disabled');
-  }
+  // per requirement: orders allowed if human staff present OR BOT will handle -> always enable;
+  orderBtn.classList.remove('disabled');
 }
 
 /* Sound overlay */
@@ -1663,11 +1515,9 @@ function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
 enableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = true; try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); ctx.resume && ctx.resume(); ctx.close && ctx.close(); } catch(e){} hideSoundOverlay(); flushPendingPlays(); });
 disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
 
-/* header BGM */
 bgmBtn.addEventListener('click', ()=> window.open('https://x.gd/6C0VB', '_blank'));
 
-/* ----------------- BOT behavior helpers ----------------- */
-/* Show blocking overlay to prevent clicks during BOT processing */
+/* ----------------- BOT helpers (art/card generation, overlay) ----------------- */
 let _botOverlayEl = null;
 function showBotOverlayForClient(){
   if (_botOverlayEl) return;
@@ -1677,9 +1527,8 @@ function showBotOverlayForClient(){
 }
 function hideBotOverlayForClient(){ if (!_botOverlayEl) return; _botOverlayEl.remove(); _botOverlayEl = null; }
 
-/* BOT produces served image, art and card by selecting random art PNGs and creating a message card (canvas) */
+/* botProduce: returns { servedImageData, artDataUrl, cardDataUrl } */
 async function botProduce(orderObj, menuItem, customerName){
-  // art: choose random from menu.botArtPool if exists, else create placeholder
   const cfg = menuItem;
   let artDataUrl = null;
   if (cfg.botArtPool && cfg.botArtPool.length){
@@ -1690,92 +1539,59 @@ async function botProduce(orderObj, menuItem, customerName){
       if (res.ok){ const blob = await res.blob(); artDataUrl = URL.createObjectURL(blob); }
     } catch(e){ console.warn('bot art fetch fail', e); }
   }
-  // message card: create canvas, draw 3 lines (固定文言 + name)
+  // compose card canvas with 3 lines (styled)
   const cardCanvasTmp = document.createElement('canvas'); cardCanvasTmp.width = 520; cardCanvasTmp.height = 240; const cctx = cardCanvasTmp.getContext('2d');
-  // background
   cctx.fillStyle = cfg.cardBg || '#fff2e6'; cctx.fillRect(0,0,cardCanvasTmp.width,cardCanvasTmp.height);
-  // decorative: rounded rect border
   cctx.strokeStyle = '#d4c0b8'; cctx.lineWidth = 4; roundRect(cctx,8,8,cardCanvasTmp.width-16,cardCanvasTmp.height-16,12); cctx.stroke();
-  // text: use bold sans serif (note: web fonts not guaranteed offline) - render centered lines
   cctx.fillStyle = '#000'; cctx.textAlign = 'center';
-  // line 1
-  cctx.font = '28px serif'; cctx.fillText('どうぞ', cardCanvasTmp.width/2, 80);
-  // line 2
-  cctx.font = '22px serif'; cctx.fillText('ごゆっくり～☕', cardCanvasTmp.width/2, 120);
-  // line 3: customer's name + さん
-  cctx.font = '30px bold serif'; const displayName = (customerName || '名無し') + 'さん'; cctx.fillText(displayName, cardCanvasTmp.width/2, 170);
+  cctx.font = '28px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif'; cctx.fillText('どうぞ', cardCanvasTmp.width/2, 70);
+  cctx.font = '22px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif'; cctx.fillText('ごゆっくり～☕', cardCanvasTmp.width/2, 110);
+  cctx.font = '30px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif'; const displayName = (customerName || '名無し') + 'さん'; cctx.fillText(displayName, cardCanvasTmp.width/2, 160);
   const cardDataUrl = cardCanvasTmp.toDataURL('image/png');
 
-  // compose served image canvas (latte + art + card)
   const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const tctx = tmp.getContext('2d');
   tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  // draw placeholder latte circle
   tctx.fillStyle = '#6b3b24'; tctx.beginPath(); tctx.arc(600,400,180,0,Math.PI*2); tctx.fill();
-  // draw art if available
   if (artDataUrl){
     const img = new Image();
     img.src = artDataUrl;
     await new Promise(res=>{ img.onload=res; img.onerror=res; });
     tctx.drawImage(img, 430,220,340,340);
   }
-  // draw card
   const cardImg = new Image(); cardImg.src = cardDataUrl; await new Promise(res=>{ cardImg.onload=res; cardImg.onerror=res; });
   tctx.drawImage(cardImg, 430,720,340,160);
-
   const servedImageData = tmp.toDataURL('image/png');
   return { servedImageData, artDataUrl, cardDataUrl };
 }
+function roundRect(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath(); }
 
-/* rounded rect helper */
-function roundRect(ctx, x, y, w, h, r){
-  ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.arcTo(x+w, y, x+w, y+h, r);
-  ctx.arcTo(x+w, y+h, x, y+h, r);
-  ctx.arcTo(x, y+h, x, y, r);
-  ctx.arcTo(x, y, x+w, y, r);
-  ctx.closePath();
-}
-
-/* ----------------- BOT removal / human arrival reaction ----------------- */
-/* If a human staff enters (via realtime), BOT should withdraw automatically; handled by renderShiftShort which sets state._botActive false if humans present */
-
-/* ----------------- Utility: fetch order by id (search state first) ----------------- 
+/* ----------------- Utility fetchOrderById ----------------- */
 async function fetchOrderById(id){
   const s = state.orders.find(x=>x.id===id);
   if (s) return s;
   if (!db) return null;
-  try {
-    const snap = await getDoc(doc(db,'orders',id));
-    if (snap.exists()) return { id: snap.id, ...snap.data() };
-  } catch(e){ console.warn(e); }
+  try { const snap = await getDoc(doc(db,'orders',id)); if (snap.exists()) return { id: snap.id, ...snap.data() }; } catch(e){ console.warn(e); }
   return null;
-}*/
+}
 
-/* ----------------- Cover open animation removal logic ----------------- */
+/* ----------------- Cover open animation removal ----------------- */
 const coverPage = document.getElementById('coverPage');
 if (coverPage){
-  // simulate opening when user clicks orderBtn or similar; keep existing animation handling
-  // we'll provide a function to open and after animation remove element
-  function openCover(){
-    coverPage.classList.add('open');
-    coverPage.addEventListener('animationend', ()=>{ coverPage.classList.add('finished'); try{ coverPage.remove(); }catch(e){} }, { once:true });
-  }
-  // Optionally call openCover on first user interaction
+  function openCover(){ coverPage.classList.add('open'); coverPage.addEventListener('animationend', ()=>{ coverPage.classList.add('finished'); try{ coverPage.remove(); }catch(e){} }, { once:true }); }
   document.addEventListener('click', function onFirst(){ openCover(); document.removeEventListener('click', onFirst); }, { once:true });
 }
 
-/* ----------------- Initialization ----------------- */
+/* ----------------- Init ----------------- */
 buildJukebox();
 buildMenu().catch(()=>{});
 initArtCanvas(); initCardCanvas();
 startRealtime();
 showSoundOverlay();
 
-/* End of script */
+/* End */
 </script>
-
-
+</body>
+</html>
 
 
 
