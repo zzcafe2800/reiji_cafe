@@ -455,44 +455,64 @@
     }
 
     /* ===== タイマー：レトロ時計 ===== */
-    #pomodoroPanel{
-      position:absolute;
-      bottom:8px;
-      right:8px;
-      width:280px;
-      background:#fff7e9;
-      border-radius:14px;
-      padding:10px;
-      box-shadow:0 8px 18px rgba(0,0,0,.3);
-      cursor:grab;
-    }
+#pomodoroPanel{
+  position:absolute;
+  bottom:8px;
+  right:8px;
 
-    .pomo-timer{
-      font-family:monospace;
-      font-size:26px;
-      text-align:center;
-      background:#222;
-      color:#7cff7c;
-      padding:6px;
-      border-radius:6px;
-      letter-spacing:2px;
-    }
+  /* 元サイズ */
+  width:230px;
+  background:#fff7e9;
+  border-radius:14px;
+  padding:10px;
+  box-shadow:0 8px 18px rgba(0,0,0,.3);
 
-    .pomo-controls button{
-      flex:1;
-      background:#c9a57a;
-      border:none;
-      color:#fff;
-      border-radius:8px;
-      padding:6px;
-      cursor:pointer;
-    }
+  /* ▼ 半分表示 */
+  transform:scale(0.5);
+  transform-origin:bottom right;
 
-    /* 縦画面対応 */
-    @media(max-width:700px){
-      #eatMainWrap{height:400px;}
-      #pomodoroPanel{width:100px;}
-    }
+  cursor:grab;
+}
+
+/* タイマー表示 */
+.pomo-timer{
+  font-family:monospace;
+  font-size:26px;
+  text-align:center;
+  background:#222;
+  color:#7cff7c;
+  padding:6px;
+  border-radius:6px;
+  letter-spacing:2px;
+}
+
+/* ボタン */
+.pomo-controls button{
+  flex:1;
+  background:#c9a57a;
+  border:none;
+  color:#fff;
+  border-radius:8px;
+  padding:6px;
+  cursor:pointer;
+}
+
+/* 設定ボタン */
+.pomo-btn,
+#startPomoBtn,
+#stopPomoBtn,
+#pausePomoBtn,
+#skipPomoBtn{
+  font-size:14px;
+}
+
+/* スマホ対応 */
+@media(max-width:700px){
+  #pomodoroPanel{
+    transform:scale(0.5);
+    transform-origin:bottom right;
+  }
+}
   </style>
 
   <div class="modal">
