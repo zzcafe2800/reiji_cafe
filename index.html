@@ -1390,10 +1390,10 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
   return frames;
 }
 
-/* ----------------- Pomodoro (client only) - unchanged core logic but robust */ 
+/* ----------------- Pomodoro (client only) - unchanged core logic but robust *//* ----- POMO ブロック：ここで既存の POMO 定義を丸ごと置換してください ----- */
 const POMO = {
   running: false,
-  phase: 'idle',            // 'idle' | 'work' | 'break' | 'paused'
+  phase: 'idle',
   loopTotal: 1,
   loopIndex: 0,
   workMin: 25,
@@ -1410,7 +1410,6 @@ const POMO = {
 };
 
 function formatTime(ms){
-  if (ms == null) ms = 0;
   if (ms < 0) ms = 0;
   let s = Math.floor(ms/1000);
   const h = Math.floor(s/3600); s = s%3600;
@@ -1418,75 +1417,26 @@ function formatTime(ms){
   const sec = s%60;
   return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
 }
-/* rotate messages shown in eatSoundInfo */
-const POMO_MESSAGES = { work: [
-  '今の集中、ちゃんと成果になるよ',
-  'そのキーボードの音、がんばってる証拠♪',
-  '今日は“進める日”って顔してます',
-  '一息つくのも、作業のうちですよ',
-  'ちゃんと一歩進んでます、大丈夫です',
 
-  '集中力は約25分が一区切り、短く休むと長持ちするんです',
-  '画面を見続けたら、20秒だけ遠くを見ると目が楽になりますよ',
-  '水分が足りないと、脳もちょっとサボりがちなんです',
-  '姿勢を正すだけで、思考スピードが上がることもあるらしいよ',
-  '詰まったら紙に書くと、頭の中が整理されやすいんだって',
-  'BGMは歌詞なしの方が、集中しやすいよね',
-
-  'このカフェ、作業が進むと評判なんです（たぶん）',
-  '今の一行、あとで見たら「よく書いたな」ってなったりして',
-  '締切って、近づくほどドキドキしますよね',
-  '頑張ってる人ほど、自分に厳しいんだと思います',
-  'コーヒーは魔法じゃないけど、気分は上げてくれます',
-  '静かな時間って、意外と贅沢♪',
-
-  '夜は無理しすぎないでくださいね、思考も眠くなるよ',
-  '今日はここまで、って決めるのも大事‼',
-  '少し疲れてる顔です、目だけ休ませませんか？',
-  '深夜の集中は強いけど、朝の自分に優しくしてあげてくださいね',
-  '温かい飲み物、思考も丸くなりますよ',
-
-  '完璧じゃなくていいんです、進むのが大事',
-  'その作業、きっと誰かに届くよ',
-  '今日は“積み上げた日”だね',
-  '迷ってる時間も、無駄じゃないですよ',
-  'ここまで来た自分、褒めてね',
-  '続けてること自体が、もうすごいんご'], break:[
-  'おつかれさま、いいタイミングの休憩ですね',
-  '今は何もしなくて大丈夫',
-  'ちょっと肩の力、抜きましょう',
-  'ここまでちゃんと進んでます',
-  '休むのも作業の一部',
-  '一息入れるの、大切',
-  '今のペース、悪くないですよ',
-  '目を閉じるだけでも回復します',
-  '飲み物、冷めないうちにどうぞ',
-  '今は考えなくていい時間です',
-
-  '深呼吸、ゆっくりで大丈夫',
-  'スマホ見すぎ注意、目が休憩中です',
-  '何もしない時間、意外と大事',
-  '今の自分、ちょっと労ってあげてください',
-  '区切りまでよくがんばりました',
-  'この静けさ、味わっていきましょう',
-  '気分転換、成功です',
-  '戻る準備は、あとでいいですよ',
-  '今日はちゃんと進んでます',
-  'ぼーっとするのも才能です',
-
-  '今は休憩席、作業禁止ですよ',
-  '頭を空っぽにする時間♪',
-  '温かい飲み物、正解～♪',
-  '今のうちに姿勢、楽にしましょう',
-  '目を休ませると、次が楽ですよ',
-  '少し離れると、見え方変わります',
-  '今は充電中～',
-  '何も生まれなくていい時間も必要だよね',
-  '戻ったとき、きっと続きが書けます',
-  'この余白、きっと大切'] };
+const POMO_MESSAGES = {
+  work: [
+    '集中してがんばろう！',
+    '一息入れずに進めよう',
+    '今の調子を維持して',
+    'もう少しで区切りだよ',
+    'ペースを作っていこう'
+  ],
+  break: [
+    '軽く休憩しましょう',
+    '深呼吸してリラックス',
+    '腕を伸ばして休憩',
+    '水分補給をどうぞ',
+    'ゆっくり休んでOK'
+  ]
+};
 
 function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
-  const menu = MENUS && MENUS[menuKey];
+  const menu = MENUS[menuKey];
   const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
   if (!totalMs || totalMs <= 0) return 1;
   const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
@@ -1497,7 +1447,7 @@ function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
 }
 
 function pickBreakFrame(menuKey){
-  const menu = MENUS && MENUS[menuKey];
+  const menu = MENUS[menuKey];
   const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
   if (fc <= 1) return 1;
   const choices = [Math.max(1, fc-1), fc];
@@ -1505,8 +1455,7 @@ function pickBreakFrame(menuKey){
 }
 
 function setServedImageFrame(menuKey, frameIndex){
-  // attempt a few candidate filename patterns; set servedImage.src to first that loads
-  const menu = MENUS && MENUS[menuKey];
+  const menu = MENUS[menuKey];
   if (!menu) return;
   const base = menu.imageBase;
   const candidates = [
@@ -1518,17 +1467,11 @@ function setServedImageFrame(menuKey, frameIndex){
   (async ()=>{
     for (const c of candidates){
       const url = getAssetUrl(c);
-      // try load by creating Image
-      const ok = await new Promise((res)=>{
-        const img = new Image();
-        let called = false;
-        img.onload = ()=>{ if (!called){ called=true; res(true);} };
-        img.onerror = ()=>{ if (!called){ called=true; res(false);} };
-        img.src = url;
-        // also add small timeout to avoid hang
-        setTimeout(()=>{ if (!called){ called=true; res(false);} }, 1500);
-      }).catch(()=>false);
-      if (ok){ servedImage.src = getAssetUrl(c); return; }
+      try {
+        await new Promise((res)=>{ const img=new Image(); img.onload=()=>res(true); img.onerror=()=>res(false); img.src = url; });
+        servedImage.src = url;
+        return;
+      } catch(e){}
     }
     // fallback
     servedImage.src = getAssetUrl(base + '1.png');
@@ -1546,13 +1489,10 @@ function scheduleBreakRandomSounds(){
   clearScheduledP3();
   function scheduleNext(){
     if (POMO.phase !== 'break') return;
-    const interval = 8000 + Math.floor(Math.random() * 12000); // 8..20s
+    const interval = 8000 + Math.floor(Math.random() * (12000));
     const timer = setTimeout(()=>{
-      // choose random p3 index not equal to last if possible
       let idxCandidates = p3Pool.map((_,i)=>i);
-      if (POMO.lastP3Index >= 0 && idxCandidates.length > 1){
-        idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index);
-      }
+      if (POMO.lastP3Index >= 0 && idxCandidates.length > 1) idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index);
       const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)];
       POMO.lastP3Index = idx;
       try { const a = new Audio(p3Pool[idx].src); a.play().catch(()=>{}); } catch(e){}
@@ -1565,89 +1505,60 @@ function scheduleBreakRandomSounds(){
 
 function rotatePomoMessage(){
   const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null);
-  const el = document.getElementById('eatSoundInfo');
-  if (!phase){ if (el) el.textContent = '—'; return; }
+  if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; }
   const pool = POMO_MESSAGES[phase] || [];
-  if (!pool.length){ if (el) el.textContent = (phase==='work' ? '作業中' : '休憩中'); return; }
+  if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; }
   let idxs = pool.map((_,i)=>i);
-  if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i => i !== POMO.lastMessageIndex);
-  const idx = idxs[Math.floor(Math.random() * idxs.length)];
+  if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex);
+  const idx = idxs[Math.floor(Math.random()*idxs.length)];
   POMO.lastMessageIndex = idx;
-  if (el) el.textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx];
+  document.getElementById('eatSoundInfo').textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx];
 }
 
-/* Robust tick using Date.now() delta. Ensure single interval only. */
 function startPomoTick(){
-  // avoid double interval
   if (POMO.tickInterval) return;
-
   POMO.lastTickTs = Date.now();
   POMO.tickInterval = setInterval(()=> {
     const now = Date.now();
-    const delta = now - (POMO.lastTickTs || now);
+    const delta = now - POMO.lastTickTs;
     POMO.lastTickTs = now;
-
-    // If not running or paused/idle, skip subtracting time but still update UI occasionally
-    if (!POMO.running || POMO.phase === 'idle'){
-      renderPomoUI();
-      return;
-    }
-
-    if (POMO.phase === 'paused'){
-      // don't decrement remainingMs when paused, but update UI and messages
-      renderPomoUI();
-      return;
-    }
-
-    // reduce remaining time by actual elapsed
-    POMO.remainingMs = Math.max(0, (POMO.remainingMs || 0) - delta);
-
+    if (POMO.phase === 'paused' || POMO.phase === 'idle') return;
+    POMO.remainingMs -= delta;
     if (POMO.remainingMs <= 0){
-      // ensure we run transition logic only once per phase end
       if (POMO.phase === 'work'){
-        // transition to break
         POMO.phase = 'break';
-        try{ audioPiroBreak && audioPiroBreak.play().catch(()=>{}); } catch(e){}
+        audioPiroBreak && audioPiroBreak.play().catch(()=>{});
         POMO.remainingMs = (POMO.breakMin * 60 * 1000);
         const bf = pickBreakFrame(POMO.currentMenuKey || 'rate');
         setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
         scheduleBreakRandomSounds();
       } else if (POMO.phase === 'break'){
         clearScheduledP3();
-        POMO.loopIndex = (POMO.loopIndex || 0) + 1;
-        if (POMO.loopIndex >= (POMO.loopTotal || 1)){
-          // finished all loops
+        POMO.loopIndex++;
+        if (POMO.loopIndex >= POMO.loopTotal){
           stopPomo(true);
           return;
         } else {
-          // start next work cycle
           POMO.phase = 'work';
           POMO.remainingMs = (POMO.workMin * 60 * 1000);
           setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
-          try{ audioPiroStart && audioPiroStart.play().catch(()=>{}); } catch(e){}
+          audioPiroStart && audioPiroStart.play().catch(()=>{});
         }
       }
-      // update UI immediately after transition
       renderPomoUI();
-      return;
+    } else {
+      if (POMO.phase === 'work'){
+        const total = (POMO.workMin * 60 * 1000);
+        const elapsed = total - POMO.remainingMs;
+        const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total);
+        setServedImageFrame(POMO.currentMenuKey || 'rate', idx);
+      }
+      renderPomoUI();
     }
-
-    // during work phase update image according to progress
-    if (POMO.phase === 'work'){
-      const total = (POMO.workMin * 60 * 1000);
-      const elapsed = Math.max(0, total - POMO.remainingMs);
-      const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total);
-      setServedImageFrame(POMO.currentMenuKey || 'rate', idx);
-    }
-
-    // update UI
-    renderPomoUI();
-
   }, 250);
 
-  // start message rotation interval (only one)
   if (POMO.messageTimer) clearInterval(POMO.messageTimer);
-  POMO.messageTimer = setInterval(()=> { rotatePomoMessage(); }, 6000);
+  POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000);
   rotatePomoMessage();
 }
 
@@ -1658,43 +1569,33 @@ function stopPomoTick(){
 }
 
 function renderPomoUI(){
-  try {
-    if (!POMO.running){
-      if (pomoSettings) pomoSettings.style.display = 'block';
-      if (pomoRunning) pomoRunning.style.display = 'none';
-      if (pomoPanel) pomoPanel.setAttribute('aria-hidden','false');
-      const el = document.getElementById('eatSoundInfo'); if (el) el.textContent = '—';
-      return;
-    }
-    if (pomoSettings) pomoSettings.style.display = 'none';
-    if (pomoRunning) pomoRunning.style.display = 'block';
-    if (pomoPanel) pomoPanel.setAttribute('aria-hidden','false');
-
-    if (pomoLoopCounter) pomoLoopCounter.textContent = `${(POMO.loopIndex || 0) + 1} / ${POMO.loopTotal || 1}`;
-    if (pomoPhaseLabel) pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機'));
-    if (pomoTimerText) pomoTimerText.textContent = formatTime(POMO.remainingMs || 0);
-
-    if (POMO.phase === 'work'){
-      const total = (POMO.workMin * 60 * 1000);
-      const elapsed = Math.max(0, total - (POMO.remainingMs || 0));
-      const pct = total > 0 ? Math.min(100, Math.floor((elapsed / total) * 100)) : 0;
-      if (pomoProgressBar) pomoProgressBar.style.width = `${pct}%`;
-    } else if (POMO.phase === 'break'){
-      const total = (POMO.breakMin * 60 * 1000);
-      const elapsed = Math.max(0, total - (POMO.remainingMs || 0));
-      const pct = total > 0 ? Math.min(100, Math.floor((elapsed / total) * 100)) : 0;
-      if (pomoProgressBar) pomoProgressBar.style.width = `${pct}%`;
-    } else {
-      if (pomoProgressBar) pomoProgressBar.style.width = `0%`;
-    }
-
-    if (pausePomoBtn){
-      if (POMO.phase === 'paused') pausePomoBtn.textContent = '▶';
-      else pausePomoBtn.textContent = '⏸';
-    }
-  } catch(e){
-    console.warn('renderPomoUI error', e);
+  if (!POMO.running){
+    pomoSettings.style.display = 'block';
+    pomoRunning.style.display = 'none';
+    pomoPanel.setAttribute('aria-hidden','false');
+    document.getElementById('eatSoundInfo').textContent = '—';
+    return;
   }
+  pomoSettings.style.display = 'none';
+  pomoRunning.style.display = 'block';
+  pomoPanel.setAttribute('aria-hidden','false');
+  pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`;
+  pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機'));
+  pomoTimerText.textContent = formatTime(POMO.remainingMs);
+  if (POMO.phase === 'work'){
+    const total = (POMO.workMin * 60 * 1000);
+    const elapsed = Math.max(0, total - POMO.remainingMs);
+    const pct = Math.min(100, Math.floor((elapsed / total) * 100));
+    pomoProgressBar.style.width = `${pct}%`;
+  } else if (POMO.phase === 'break'){
+    const total = (POMO.breakMin * 60 * 1000);
+    const elapsed = Math.max(0, total - POMO.remainingMs);
+    const pct = Math.min(100, Math.floor((elapsed / total) * 100));
+    pomoProgressBar.style.width = `${pct}%`;
+  } else {
+    pomoProgressBar.style.width = `0%`;
+  }
+  if (POMO.phase === 'paused'){ pausePomoBtn.textContent = '▶'; } else { pausePomoBtn.textContent = '⏸'; }
 }
 
 function startPomo(){
@@ -1709,9 +1610,9 @@ function startPomo(){
   POMO.phase = 'work';
   POMO.remainingMs = (wmin * 60 * 1000);
   POMO.currentMenuKey = POMO.currentMenuKey || 'rate';
-  const menu = MENUS && MENUS[POMO.currentMenuKey] ? MENUS[POMO.currentMenuKey] : (MENUS && MENUS['rate']);
-  POMO.frameCount = (menu && menu.frameCount) ? menu.frameCount : 6;
-  try{ audioPiroStart && audioPiroStart.play().catch(()=>{}); } catch(e){}
+  const menu = MENUS[POMO.currentMenuKey] || MENUS['rate'];
+  POMO.frameCount = menu.frameCount || 6;
+  audioPiroStart && audioPiroStart.play().catch(()=>{});
   setServedImageFrame(POMO.currentMenuKey, 2);
   clearScheduledP3();
   startPomoTick();
@@ -1722,20 +1623,16 @@ function togglePausePomo(){
   if (!POMO.running) return;
   if (POMO.phase === 'paused'){
     POMO.phase = POMO._prevPhase || 'work';
-    try{ audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } catch(e){}
-    // resume ticking
+    audioPiroToggle && audioPiroToggle.play().catch(()=>{});
     startPomoTick();
   } else {
     POMO._prevPhase = POMO.phase;
     POMO.phase = 'paused';
-    // pause tick (stop decrementing time)
     stopPomoTick();
-    try{ audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } catch(e){}
-    // keep UI updated once immediately
-    renderPomoUI();
+    audioPiroToggle && audioPiroToggle.play().catch(()=>{});
   }
+  renderPomoUI();
 }
-
 function stopPomo(returnToSettings){
   POMO.running = false;
   POMO.phase = 'idle';
@@ -1743,23 +1640,61 @@ function stopPomo(returnToSettings){
   clearScheduledP3();
   stopPomoTick();
   if (returnToSettings){
-    if (pomoSettings) pomoSettings.style.display = 'block';
-    if (pomoRunning) pomoRunning.style.display = 'none';
+    pomoSettings.style.display = 'block';
+    pomoRunning.style.display = 'none';
   }
   renderPomoUI();
 }
-
 function skipPomo(){
   if (!POMO.running) return;
-  // set remaining to 0 so next tick triggers immediate transition
-  POMO.remainingMs = 0;
-  // call tick handler once synchronously to transition immediately
-  // we can reuse startPomoTick's logic by invoking render then letting interval call transition.
-  // But for immediate effect call startPomoTick then no-wait:
-  if (!POMO.tickInterval) startPomoTick();
-  // force one UI update
+  if (POMO.phase === 'work' || POMO.phase === 'break') POMO.remainingMs = 0;
+  else if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; POMO.remainingMs = 0; }
+}
+
+function wireHoldButton(buttonEl, inputEl, delta, min, max){
+  let timer = null; let holdStart = 0; let currentInterval = 500;
+  function doStep(){ let v = parseInt(inputEl.value || '0'); v += delta; if (typeof min === 'number') v = Math.max(min, v); if (typeof max === 'number') v = Math.min(max, v); inputEl.value = v; updatePomoCountDisplay(); }
+  function startHold(){ holdStart = Date.now(); currentInterval = 500; doStep(); timer = setTimeout(function repeat(){ const held = Date.now() - holdStart; const t = Math.min(1, held / 2000); currentInterval = Math.max(80, Math.floor(500 - (420 * t))); doStep(); timer = setTimeout(repeat, currentInterval); }, currentInterval); }
+  function stopHold(){ if (timer){ clearTimeout(timer); timer=null; } }
+  buttonEl.addEventListener('mousedown', (e)=>{ e.preventDefault(); startHold(); });
+  buttonEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(); });
+  window.addEventListener('mouseup', stopHold);
+  window.addEventListener('touchend', stopHold);
+  buttonEl.addEventListener('click', (e)=>{ e.preventDefault(); doStep(); });
+}
+function updatePomoCountDisplay(){ const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1'))); pomoCountDisplay.textContent = `${loops} / ${loops}`; }
+
+wireHoldButton(loopUp, loopCountInput, +1, 1, 10);
+wireHoldButton(loopDown, loopCountInput, -1, 1, 10);
+wireHoldButton(workUp, workMinInput, +1, 1, 200);
+wireHoldButton(workDown, workMinInput, -1, 1, 200);
+wireHoldButton(breakUp, breakMinInput, +1, 1, 200);
+wireHoldButton(breakDown, breakMinInput, -1, 1, 200);
+
+startPomoBtn.addEventListener('click', (e)=>{ if (!POMO.running){ startPomo(); startPomoBtn.textContent='実行中'; } });
+stopPomoBtn.addEventListener('click', ()=>{ stopPomo(true); startPomoBtn.textContent='再生 ▶'; });
+pausePomoBtn.addEventListener('click', ()=>{ togglePausePomo(); });
+skipPomoBtn.addEventListener('click', ()=>{ skipPomo(); });
+
+function openPomodoroForMenu(menuKey){
+  POMO.currentMenuKey = menuKey || 'rate';
+  loopCountInput.value = POMO.loopTotal || 1;
+  workMinInput.value = POMO.workMin || 25;
+  breakMinInput.value = POMO.breakMin || 5;
+  updatePomoCountDisplay();
+  pomoPanel.classList.add('show');
+  pomoPanel.style.display = 'block';
+  pomoSettings.style.display = POMO.running ? 'none' : 'block';
+  pomoRunning.style.display = POMO.running ? 'block' : 'none';
   renderPomoUI();
 }
+document.addEventListener('click', (e)=>{
+  if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){
+    if (!POMO.running){ pomoPanel.classList.remove('show'); pomoPanel.style.display='none'; }
+  }
+});
+servedImage.addEventListener('click', ()=>{ const currentMenu = POMO.currentMenuKey || 'rate'; openPomodoroForMenu(currentMenu); });
+/* ----- end POMO ブロック ----- */
 /* ----------------- Save & home flows ----------------- */
 saveAllBtn.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
