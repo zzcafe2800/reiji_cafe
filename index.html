@@ -2832,27 +2832,20 @@ document.body.addEventListener("click",{once:true},()=>{
   
 <script>
 /* ===============================
-   注文 / 再注文 ボタン切替（共有）
+   注文 / 再注文 ボタン切替（共有・確定版）
    =============================== */
 
-/*
-  表示ルール:
-  mode = "order"   → offlineOrderBtn（注文）表示
-  mode = "reorder" → orderBtn（再注文）表示
-  初期値: "order"
-*/
-
-const orderBtn = document.getElementById('orderBtn');              // 再注文
+const orderBtn = document.getElementById('orderBtn');               // 再注文
 const offlineOrderBtn = document.getElementById('offlineOrderBtn'); // 注文
 const toggleBtn = document.getElementById('toggleOrderMode');
 
-/* Firestore が使える場合のみ共有 */
+/* Firestore */
 let orderModeDoc = null;
 if (typeof db !== 'undefined' && db) {
   orderModeDoc = doc(db, 'shared', 'orderButtonMode');
 }
 
-/* ===== 表示反映 ===== */
+/* ===== 表示切替 ===== */
 function applyOrderMode(mode) {
   if (mode === 'reorder') {
     orderBtn.style.display = 'flex';
@@ -2863,22 +2856,22 @@ function applyOrderMode(mode) {
   }
 }
 
-/* ===== 初期状態（ローカル仮） ===== */
-applyOrderMode('order'); // 再注文は非表示から
+/* ===== 初期表示（保険） ===== */
+applyOrderMode('order'); // 再注文は最初非表示
 
-/* ===== Firestore から共有状態を監視 ===== */
+/* ===== 共有状態を監視 ===== */
 if (orderModeDoc) {
   onSnapshot(orderModeDoc, (snap) => {
     if (snap.exists()) {
       applyOrderMode(snap.data().mode);
     } else {
-      // 初回は注文ボタン表示で作成
-      updateDoc(orderModeDoc, { mode: 'order' }).catch(()=>{});
+      // 🔥 初回は必ず setDoc
+      setDoc(orderModeDoc, { mode: 'order' });
     }
   });
 }
 
-/* ===== スタッフ側：切替ボタン ===== */
+/* ===== スタッフ画面の切替ボタン ===== */
 if (toggleBtn) {
   toggleBtn.addEventListener('click', async () => {
     if (!orderModeDoc) return;
@@ -2887,10 +2880,12 @@ if (toggleBtn) {
     const current = snap.exists() ? snap.data().mode : 'order';
     const next = current === 'order' ? 'reorder' : 'order';
 
-    await updateDoc(orderModeDoc, { mode: next });
+    // 🔥 ここも setDoc（merge 付き）
+    await setDoc(orderModeDoc, { mode: next }, { merge: true });
   });
 }
 </script>
+
 
   
 </body>
