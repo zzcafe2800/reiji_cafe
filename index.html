@@ -336,208 +336,116 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
+<div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
 
 <style>
-/* ===== モーダル背景 ===== */
-#modalEat{
-  backdrop-filter: blur(4px);
-}
-
-/* ===== メインカード背景 ===== */
-#modalEat .modal{
+/* ===== 共通背景 ===== */
+.frame-bg{
   background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;
-  border-radius:14px;
-  box-shadow:0 12px 40px rgba(0,0,0,0.35);
-  color:#fff;
 }
 
-/* 内部を少し暗くして文字を見やすく */
-#modalEat .modal::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:rgba(0,0,0,0.25);
-  border-radius:14px;
-  pointer-events:none;
-}
-
-/* ===== 写真立て風フレーム ===== */
-#eatMainWrap{
-  background:#f6efe7;
-  border-radius:12px;
-  box-shadow:
-    inset 0 0 0 8px #c8b7a6,
-    inset 0 0 0 16px #8c6f5c,
-    0 8px 20px rgba(0,0,0,0.35);
-  position:relative;
-}
-
-/* 写真2枚風レイアウト */
-#servedImage{
-  max-width:80%;
-  max-height:80%;
-  border-radius:6px;
-  background:#fff;
-  padding:6px;
-  box-shadow:0 6px 12px rgba(0,0,0,0.25);
-  transform:rotate(-2deg);
-}
-
-#eatMainWrap::after{
-  content:"";
-  position:absolute;
-  width:70%;
-  height:70%;
-  background:#fff;
-  border-radius:6px;
-  top:14%;
-  left:16%;
-  transform:rotate(3deg);
-  box-shadow:0 6px 12px rgba(0,0,0,0.2);
-  z-index:0;
-}
-
-#servedImage{
-  position:relative;
-  z-index:1;
-}
-
-/* ===== ヒント表示 ===== */
-#serveHint{
-  color:#333;
-  font-weight:bold;
-}
-
-/* ===== ポモドーロタイマー：レトロ時計風 ===== */
-#pomodoroPanel{
-  position:absolute;
-  right:12px;
-  bottom:12px;
-  width:280px;
-  border-radius:16px;
-  background:linear-gradient(#f7e6c8,#e2c59a);
-  box-shadow:
-    inset 0 0 0 4px #a07b50,
-    0 8px 16px rgba(0,0,0,0.35);
+/* ===== 写真立てフレーム ===== */
+.photo-frame{
   padding:10px;
+  background:linear-gradient(145deg,#caa56b,#9b6c3c);
+  border-radius:8px;
+  box-shadow:inset 0 0 6px rgba(0,0,0,0.5),0 6px 14px rgba(0,0,0,0.25);
 }
 
-/* 時計表示 */
+.photo-frame canvas{
+  background:#fff;
+  box-shadow:inset 0 0 5px rgba(0,0,0,0.25);
+}
+
+/* ===== レトロタイマー ===== */
+#pomodoroPanel{
+  background:rgba(40,25,15,0.75);
+  backdrop-filter:blur(4px);
+  border-radius:12px;
+  padding:12px;
+  color:#fff;
+  box-shadow:0 6px 20px rgba(0,0,0,0.35);
+}
+
+#pomoSettings{
+  background:rgba(255,255,255,0.15);
+  padding:10px;
+  border-radius:10px;
+}
+
+#pomoRunning{
+  background:radial-gradient(circle,#2e2118,#120b07);
+  border-radius:10px;
+  padding:10px;
+  box-shadow:inset 0 0 20px rgba(0,0,0,0.8);
+}
+
 .pomo-timer{
   font-family:monospace;
-  font-size:28px;
+  font-size:42px;
   text-align:center;
-  background:#2d2d2d;
-  color:#7CFF7C;
-  border-radius:8px;
-  padding:8px 0;
-  margin:6px 0;
-  box-shadow:inset 0 0 8px rgba(0,0,0,0.8);
+  color:#ffd37a;
+  text-shadow:0 0 12px rgba(255,180,80,0.8);
+  letter-spacing:3px;
 }
 
-/* プログレスバー */
 .pomo-progress{
-  background:#fff3;
   height:10px;
+  background:#2b1a12;
   border-radius:6px;
   overflow:hidden;
+  box-shadow:inset 0 0 6px rgba(0,0,0,0.6);
 }
 
 .pomo-progress i{
   display:block;
   height:100%;
-  background:#6b4b2a;
-  transition:width .3s;
+  background:linear-gradient(90deg,#ffb347,#ff7043);
 }
 
-/* ボタン */
-.pomo-btn,
-#startPomoBtn,
-#stopPomoBtn,
-#pausePomoBtn,
-#skipPomoBtn{
+.pomo-controls button,
+.pomo-start,
+.pomo-btn{
+  background:#5a3b26;
+  color:#fff;
   border:none;
   border-radius:6px;
-  background:#8b5e34;
-  color:#fff;
-  padding:4px 8px;
+  padding:4px 10px;
   cursor:pointer;
 }
 
-.pomo-btn:hover,
-#startPomoBtn:hover,
-#stopPomoBtn:hover,
-#pausePomoBtn:hover,
-#skipPomoBtn:hover{
-  opacity:0.85;
-}
-
-.pomo-number input{
-  width:48px;
-  text-align:center;
-}
-
-.pomo-controls{
-  display:flex;
-  gap:6px;
-  justify-content:center;
-}
-
-#pomoPhaseLabel{
-  color:#3b2f2f;
-  font-weight:900;
-}
-
-/* 設定部 */
-#pomoSettings{
-  font-size:13px;
-  color:#3b2f2f;
-}
-
-.pomo-row{
-  display:flex;
-  justify-content:space-between;
-  margin:4px 0;
-}
-
-.pomo-label{
-  font-weight:bold;
-}
-
-.pomo-number{
-  display:flex;
-  gap:4px;
+.pomo-controls button:hover,
+.pomo-start:hover,
+.pomo-btn:hover{
+  background:#7a5337;
 }
 </style>
 
-<div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
-<div class="modal" style="width:95%;max-width:960px;position:relative;">
-
+<div class="modal frame-bg" style="width:95%;max-width:960px;">
 <h3>飲食</h3>
 
 <div style="display:flex;gap:12px;flex-wrap:wrap;">
 
 <div style="flex:1;min-width:420px;">
 
-<div id="eatMainWrap" style="width:100%;height:520px;display:flex;align-items:center;justify-content:center;position:relative;">
+<div id="eatMainWrap"
+style="width:100%;height:520px;border:1px solid #d4c0b8;border-radius:10px;background:#fff;
+display:flex;align-items:center;justify-content:center;position:relative;">
 
-<img id="servedImage" src="" alt="商品画像" />
+<img id="servedImage" src="" alt="商品画像"
+style="max-width:100%;max-height:100%;border-radius:8px;" />
 
-<div id="serveHint">長押しで音を鳴らし、離すと次へ</div>
+<div id="serveHint"
+style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+background:rgba(255,255,255,0.85);padding:8px;border-radius:8px;display:none;">
+長押しで音を鳴らし、離すと次へ
+</div>
 
+<!-- ===== タイマー ===== -->
 <div id="pomodoroPanel" aria-hidden="true">
 
 <div id="pomoSettings">
+
 <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
 <div>ポロドーモタイマー</div>
 <div id="pomoCountDisplay">1 / 1</div>
@@ -571,15 +479,19 @@
 </div>
 
 <div style="text-align:right;margin-top:8px;">
-<button id="startPomoBtn">再生 ▶</button>
+<button id="startPomoBtn" class="pomo-start">再生 ▶</button>
 </div>
+
 </div>
 
 <div id="pomoRunning" style="display:none;">
 
 <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px;">
 <div id="pomoLoopCounter">1 / 1</div>
-<div id="pomoPhaseLabel">作業中</div>
+<div id="pomoPhaseLabel"
+style="font-weight:800;letter-spacing:0.08em;">
+作業中
+</div>
 </div>
 
 <div class="pomo-timer" id="pomoTimerText">00:00:00</div>
@@ -596,16 +508,63 @@
 </div>
 </div>
 
-<div style="margin-top:6px;font-size:12px;color:#333;text-align:center;" id="pomoHint">
+<div style="margin-top:6px;font-size:12px;color:#ddd;text-align:center;"
+id="pomoHint">
 タイマーを使って完食しよう！
 </div>
 
 </div>
 </div>
+<!-- ===== タイマーここまで ===== -->
+
+</div>
+
+<div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+
+<div id="eatSoundInfo" class="small-info"
+style="font-weight:700;letter-spacing:0.06em;line-height:1.4;
+color:#3b2f2f;padding:0.35em 0.7em;background:#f4e6d8;
+border-radius:0.6em;box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+↑作業やゲームなどする必要があります（クリック）
+</div>
+
+<button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
 
 </div>
 </div>
 
+<!-- ===== 右カード ===== -->
+<div style="width:320px;">
+
+<div class="frame-bg"
+style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;">
+
+<div style="display:flex;justify-content:space-between;align-items:center;">
+<strong>アート</strong>
+<span id="artLabelMini" style="font-size:12px;color:#fff;"></span>
+</div>
+
+<div class="photo-frame" style="margin-top:8px;">
+<canvas id="servedArtMini" width="220" height="220" style="display:block;"></canvas>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+<strong>メッセージカード</strong>
+<span id="cardLabelMini" style="font-size:12px;color:#fff;"></span>
+</div>
+
+<div class="photo-frame" style="margin-top:8px;">
+<canvas id="servedCardMini" width="260" height="120"></canvas>
+</div>
+
+<div style="margin-top:8px;text-align:right;">
+<button id="homeFromEat" class="small">ホームへ</button>
+</div>
+
+</div>
+</div>
+
+</div>
 </div>
 </div>
 
@@ -617,46 +576,6 @@
 
 
   
-
-
-
-  
-
-
-
-
-  
-        </div>
-
-        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-         <div id="eatSoundInfo" class="small-info" style="display:inline-block;font-family:'Zen Maru Gothic','Noto Sans JP','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;font-weight:700;letter-spacing:0.06em;line-height:1.4;color:#3b2f2f;padding:0.35em 0.7em;background:#f4e6d8;border-radius:0.6em;box-shadow:0 2px 6px rgba(0,0,0,0.08);text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">↑作業やゲームなどする必要があります（クリック）</div>
-
-          <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
-        </div>
-      </div>
-
-      <div style="width:320px;">
-        <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong>アート</strong>
-            <span id="artLabelMini" style="font-size:12px;color:#777;"></span>
-          </div>
-          <canvas id="servedArtMini" width="220" height="220" style="border:1px solid #d4c0b8;margin-top:8px;background:#6b3b24;display:block;"></canvas>
-
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-            <strong style="display:block;">メッセージカード</strong>
-            <span id="cardLabelMini" style="font-size:12px;color:#777;"></span>
-          </div>
-          <canvas id="servedCardMini" width="260" height="120" style="border:1px solid #d4c0b8;margin-top:8px;background:var(--card-skin)"></canvas>
-
-          <div style="margin-top:8px;text-align:right;">
-            <button id="homeFromEat" class="small">ホームへ</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script type="module">
 /* ===== Firebase imports ===== */
