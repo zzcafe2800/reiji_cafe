@@ -316,7 +316,7 @@
           <div id="pomodoroPanel" aria-hidden="true">
             <div id="pomoSettings">
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
-                <div>ループ数</div><div id="pomoCountDisplay">1 / 1</div>
+                <div>ポロドーモタイマー</div><div id="pomoCountDisplay">1 / 1</div>
               </div>
               <div class="pomo-row"><div class="pomo-label">ループ数</div><div class="pomo-number"><button class="pomo-btn" id="loopDown">-</button><input id="loopCount" type="number" value="1" min="1" max="10" /><button class="pomo-btn" id="loopUp">+</button></div></div>
               <div class="pomo-row"><div class="pomo-label">作業(分)</div><div class="pomo-number"><button class="pomo-btn" id="workDown">-</button><input id="workMin" type="number" value="25" min="1" max="200" /><button class="pomo-btn" id="workUp">+</button></div></div>
@@ -346,7 +346,7 @@
       <div style="width:320px;">
         <div style="border:1px solid #e2cfc8;padding:8px;border-radius:8px;background:#fff7f3;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong>ラテアート</strong>
+            <strong>アート</strong>
             <span id="artLabelMini" style="font-size:12px;color:#777;"></span>
           </div>
           <canvas id="servedArtMini" width="220" height="220" style="border:1px solid #d4c0b8;margin-top:8px;background:#6b3b24;display:block;"></canvas>
@@ -566,14 +566,14 @@ const MENUS = {
     longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
     artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png', '@zzcafe2800/reiji_cafe/main/rate_art2.png' ]
+    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png' ]
   },
   omu: {
     id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
     longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
     artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
     ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/omu_art1.png', '@zzcafe2800/reiji_cafe/main/omu_art2.png' ]
+    botArtPool: [ '@zzcafe2800/reiji_cafe/main/omu_art1.png' ]
   }
 };
 MENUS.random = { id:'random', title:'ランダム', imageBase:'@zzcafe2800/reiji_cafe/main/random', frameCount:1, lastFrameRandom:false, artBg:'#cccccc', artPen:'#000000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'ランダム' }, botArtPool: [] };
