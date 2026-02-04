@@ -342,7 +342,7 @@
           <div id="pomodoroPanel" aria-hidden="true">
             <div id="pomoSettings">
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:6px;">
-                <div>ループ数</div><div id="pomoCountDisplay">1 / 1</div>
+                <div>ポロドーモタイマー</div><div id="pomoCountDisplay">1 / 1</div>
               </div>
               <div class="pomo-row"><div class="pomo-label">ループ数</div><div class="pomo-number"><button class="pomo-btn" id="loopDown">-</button><input id="loopCount" type="number" value="1" min="1" max="10" /><button class="pomo-btn" id="loopUp">+</button></div></div>
               <div class="pomo-row"><div class="pomo-label">作業(分)</div><div class="pomo-number"><button class="pomo-btn" id="workDown">-</button><input id="workMin" type="number" value="25" min="1" max="200" /><button class="pomo-btn" id="workUp">+</button></div></div>
@@ -351,18 +351,20 @@
             </div>
 
             <div id="pomoRunning" style="display:none;">
-              <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px;"><div id="pomoLoopCounter">1 / 1</div><div id="pomoPhaseLabel">作業中</div></div>
+            <div id="pomoPhaseLabel" style="display:inline-block;font-family:'Zen Maru Gothic','Noto Sans JP','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;font-size:1.2em;font-weight:800;letter-spacing:0.08em;line-height:1.4;color:#3b2f2f;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">作業中</div>
+
               <div class="pomo-timer" id="pomoTimerText">00:00:00</div>
               <div class="pomo-progress"><i id="pomoProgressBar" style="width:0%"></i></div>
               <div style="margin-top:6px;width:100%;display:flex;gap:8px;"><div class="pomo-controls"><button id="stopPomoBtn">■</button><button id="pausePomoBtn">⏸</button><button id="skipPomoBtn">⏭</button></div></div>
-              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">作業開始で画像は2番フレームから変化します</div>
+              <div style="margin-top:6px;font-size:12px;color:#666;text-align:center;" id="pomoHint">タイマーを使って完食しよう！</div>
             </div>
           </div>
 
         </div>
 
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-          <div id="eatSoundInfo" class="small-info">—</div>
+        <div id="eatSoundInfo" class="small-info" style="display:inline-block;font-family:'Zen Maru Gothic','Noto Sans JP','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;font-weight:700;letter-spacing:0.06em;line-height:1.4;color:#3b2f2f;padding:0.35em 0.7em;background:#f4e6d8;border-radius:0.6em;box-shadow:0 2px 6px rgba(0,0,0,0.08);text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;">↑作業やゲームなどする必要があります（クリック）</div>
+
           <button id="saveAllBtn" class="small" style="margin-left:auto">画像保存</button>
         </div>
       </div>
@@ -701,7 +703,7 @@ function renderShiftShort(){
   }
   // No human staff: BOT active
   state._botActive = true;
-  shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（手書き接客✖）';
+  shiftShort.textContent = 'シフト：じどうスタッフ';
 }
 
 function renderShiftList(){
@@ -952,7 +954,7 @@ async function onMenuSelect(item){
   // If forceBot is true, always use BOT local delivery regardless of human staff
   if (forceBot){
     state._botActive = true;
-    shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（オフライン注文）';
+    shiftShort.textContent = 'シフト：じどうスタッフ';
     showBotOverlayForClient();
     const servedResult = await botProduce(orderObj, item, name);
     // store locally as delivered order (no Firestore write)
@@ -971,7 +973,7 @@ async function onMenuSelect(item){
   if (!humanActive.length){
     // BOT fallback (automatic)
     state._botActive = true;
-    shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（手書き接客✖）';
+    shiftShort.textContent = 'シフト：じどうスタッフ';
     showBotOverlayForClient();
     const servedResult = await botProduce(orderObj, item, name);
     if (db){
@@ -1396,7 +1398,71 @@ const POMO = {
 };
 
 function formatTime(ms){ if (ms<0) ms=0; let s=Math.floor(ms/1000); const h=Math.floor(s/3600); s=s%3600; const m=Math.floor(s/60); const sec=s%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
-const POMO_MESSAGES = { work:['集中してがんばろう！','一息入れずに進めよう','今の調子を維持して','もう少しで区切りだよ','ペースを作っていこう'], break:['軽く休憩しましょう','深呼吸してリラックス','腕を伸ばして休憩','水分補給をどうぞ','ゆっくり休んでOK'] };
+const POMO_MESSAGES = { work:[ '無理しすぎないでくださいね、集中は甘い飲み物と相性いいんです',
+  '今の集中、ちゃんと成果になるよ',
+  'そのキーボードの音、がんばってる証拠♪',
+  '今日は“進める日”って顔してます',
+  '一息つくのも、作業のうちですよ',
+  'ちゃんと一歩進んでます、大丈夫です',
+
+  '集中力は約25分が一区切り、短く休むと長持ちするんです',
+  '画面を見続けたら、20秒だけ遠くを見ると目が楽になりますよ',
+  '水分が足りないと、脳もちょっとサボりがちなんです',
+  '姿勢を正すだけで、思考スピードが上がることもあるらしいよ',
+  '詰まったら紙に書くと、頭の中が整理されやすいんだって',
+  'BGMは歌詞なしの方が、集中しやすいよね',
+
+  'このカフェ、作業が進むと評判なんです（たぶん）',
+  '今の一行、あとで見たら「よく書いたな」ってなったりして',
+  '締切って、近づくほどドキドキしますよね',
+  '頑張ってる人ほど、自分に厳しいんだと思います',
+  'コーヒーは魔法じゃないけど、気分は上げてくれます',
+  '静かな時間って、意外と贅沢♪',
+
+  '夜は無理しすぎないでくださいね、思考も眠くなるよ',
+  '今日はここまで、って決めるのも大事‼',
+  '少し疲れてる顔です、目だけ休ませませんか？',
+  '深夜の集中は強いけど、朝の自分に優しくしてあげてくださいね',
+  '温かい飲み物、思考も丸くなりますよ',
+
+  '完璧じゃなくていいんです、進むのが大事',
+  'その作業、きっと誰かに届くよ',
+  '今日は“積み上げた日”だね',
+  '迷ってる時間も、無駄じゃないですよ',
+  'ここまで来た自分、褒めてね',
+  '続けてること自体が、もうすごいんご'], break:[
+  'おつかれさま、いいタイミングの休憩ですね',
+  '今は何もしなくて大丈夫',
+  'ちょっと肩の力、抜きましょう',
+  'ここまでちゃんと進んでます',
+  '休むのも作業の一部',
+  '一息入れるの、大切',
+  '今のペース、悪くないですよ',
+  '目を閉じるだけでも回復します',
+  '飲み物、冷めないうちにどうぞ',
+  '今は考えなくていい時間です',
+
+  '深呼吸、ゆっくりで大丈夫',
+  'スマホ見すぎ注意、目が休憩中です',
+  '何もしない時間、意外と大事',
+  '今の自分、ちょっと労ってあげてください',
+  '区切りまでよくがんばりました',
+  'この静けさ、味わっていきましょう',
+  '気分転換、成功です',
+  '戻る準備は、あとでいいですよ',
+  '今日はちゃんと進んでます',
+  'ぼーっとするのも才能です',
+
+  '今は休憩席、作業禁止ですよ',
+  '頭を空っぽにする時間♪',
+  '温かい飲み物、正解～♪',
+  '今のうちに姿勢、楽にしましょう',
+  '目を休ませると、次が楽ですよ',
+  '少し離れると、見え方変わります',
+  '今は充電中～',
+  '何も生まれなくていい時間も必要だよね',
+  '戻ったとき、きっと続きが書けます',
+  'この余白、きっと大切'] };
 
 function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
   const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
