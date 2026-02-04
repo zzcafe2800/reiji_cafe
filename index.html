@@ -460,17 +460,19 @@
   bottom:8px;
   right:8px;
 
-  /* 元サイズ */
-  width:230px;
+  width:230px;              /* 横サイズ基準 */
+  aspect-ratio:1 / 1;       /* ← 正方形にする */
+
   background:#fff7e9;
   border-radius:14px;
   padding:10px;
   box-shadow:0 8px 18px rgba(0,0,0,.3);
 
-  /* ▼ 半分表示 */
+  /* 全体半分表示 */
   transform:scale(0.5);
   transform-origin:bottom right;
 
+  overflow:auto;
   cursor:grab;
 }
 
@@ -486,16 +488,6 @@
   letter-spacing:2px;
 }
 
-/* ボタン */
-.pomo-controls button{
-  flex:1;
-  background:#c9a57a;
-  border:none;
-  color:#fff;
-  border-radius:8px;
-  padding:6px;
-  cursor:pointer;
-}
 
 /* 設定ボタン */
 .pomo-btn,
