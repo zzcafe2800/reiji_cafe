@@ -1434,8 +1434,65 @@ function scheduleBreakRandomSounds(){ clearScheduledP3(); function scheduleNext(
 
 function rotatePomoMessage(){ const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null); if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; } const pool = POMO_MESSAGES[phase] || []; if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; } let idxs = pool.map((_,i)=>i); if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex); const idx = idxs[Math.floor(Math.random()*idxs.length)]; POMO.lastMessageIndex = idx; document.getElementById('eatSoundInfo').textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx]; }
 
-function startPomoTick(){ if (POMO.tickInterval) return; POMO.lastTickTs = Date.now(); POMO.tickInterval = setInterval(()=> { const now = Date.now(); const delta = now - POMO.lastTickTs; POMO.lastTickTs = now; if (POMO.phase === 'paused' || POMO.phase === 'idle') return; POMO.remainingMs -= delta; if (POMO.remainingMs <= 0){ if (POMO.phase === 'work'){ POMO.phase = 'break'; audioPiroBreak && audioPiroBreak.play().catch(()=>{}); POMO.remainingMs = (POMO.breakMin * 60 * 1000); const bf = pickBreakFrame(POMO.currentMenuKey || 'rate'); setServedImageFrame(POMO.currentMenuKey || 'rate', bf); scheduleBreakRandomSounds(); } else if (POMO.phase === 'break'){ clearScheduledP3(); POMO.loopIndex++; if (POMO.loopIndex >= POMO.loopTotal){ stopPomo(true); return; } else { POMO.phase = 'work'; POMO.remainingMs = (POMO.workMin * 60 * 1000); setServedImageFrame(POMO.currentMenuKey || 'rate', 2); audioPiroStart && audioPiroStart.play().catch(()=>{}); } } renderPomoUI(); } else { if (POMO.phase === 'work'){ const total = (POMO.workMin * 60 * 1000); const elapsed = total - POMO.remainingMs; const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total); setServedImageFrame(POMO.currentMenuKey || 'rate', idx); } renderPomoUI(); } }, 250); if (POMO.messageTimer) clearInterval(POMO.messageTimer); POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000); rotatePomoMessage(); }
+function startPomoTick(){
+  if (POMO.tickInterval) return;
+  POMO.lastTickTs = Date.now();
 
+  // 初回 UI 更新（遅延を待たず表示を即時反映）
+  renderPomoUI();
+
+  POMO.tickInterval = setInterval(()=> {
+    const now = Date.now();
+    const delta = now - POMO.lastTickTs;
+    POMO.lastTickTs = now;
+
+    // note: even if paused/idle we still update the timer display (to keep it fresh)
+    if (POMO.phase === 'paused' || POMO.phase === 'idle'){
+      // still render UI so the time text is shown correctly when paused/idle
+      renderPomoUI();
+      return;
+    }
+
+    POMO.remainingMs -= delta;
+
+    if (POMO.remainingMs <= 0){
+      if (POMO.phase === 'work'){
+        POMO.phase = 'break';
+        audioPiroBreak && audioPiroBreak.play().catch(()=>{});
+        POMO.remainingMs = (POMO.breakMin * 60 * 1000);
+        const bf = pickBreakFrame(POMO.currentMenuKey || 'rate');
+        setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
+        scheduleBreakRandomSounds();
+      } else if (POMO.phase === 'break'){
+        clearScheduledP3();
+        POMO.loopIndex++;
+        if (POMO.loopIndex >= POMO.loopTotal){
+          stopPomo(true);
+          return;
+        } else {
+          POMO.phase = 'work';
+          POMO.remainingMs = (POMO.workMin * 60 * 1000);
+          setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
+          audioPiroStart && audioPiroStart.play().catch(()=>{});
+        }
+      }
+      renderPomoUI();
+    } else {
+      if (POMO.phase === 'work'){
+        const total = (POMO.workMin * 60 * 1000);
+        const elapsed = total - POMO.remainingMs;
+        const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total);
+        setServedImageFrame(POMO.currentMenuKey || 'rate', idx);
+      }
+      renderPomoUI();
+    }
+  }, 250);
+
+  // メッセージ回転も即時開始（最初のメッセージをすぐ表示）
+  if (POMO.messageTimer) clearInterval(POMO.messageTimer);
+  rotatePomoMessage();
+  POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 6000);
+}
 function stopPomoTick(){ if (POMO.tickInterval){ clearInterval(POMO.tickInterval); POMO.tickInterval=null; } clearScheduledP3(); if (POMO.messageTimer){ clearInterval(POMO.messageTimer); POMO.messageTimer = null; } }
 
 function renderPomoUI(){ if (!POMO.running){ pomoSettings.style.display = 'block'; pomoRunning.style.display = 'none'; pomoPanel.setAttribute('aria-hidden','false'); document.getElementById('eatSoundInfo').textContent = '—'; return; } pomoSettings.style.display = 'none'; pomoRunning.style.display = 'block'; pomoPanel.setAttribute('aria-hidden','false'); pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`; pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機')); pomoTimerText.textContent = formatTime(POMO.remainingMs); if (POMO.phase === 'work'){ const total = (POMO.workMin * 60 * 1000); const elapsed = Math.max(0, total - POMO.remainingMs); const pct = Math.min(100, Math.floor((elapsed / total) * 100)); pomoProgressBar.style.width = `${pct}%`; } else if (POMO.phase === 'break'){ const total = (POMO.breakMin * 60 * 1000); const elapsed = Math.max(0, total - POMO.remainingMs); const pct = Math.min(100, Math.floor((elapsed / total) * 100)); pomoProgressBar.style.width = `${pct}%`; } else { pomoProgressBar.style.width = `0%`; } if (POMO.phase === 'paused'){ pausePomoBtn.textContent = '▶'; } else { pausePomoBtn.textContent = '⏸'; } }
