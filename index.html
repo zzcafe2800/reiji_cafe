@@ -1393,63 +1393,31 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
 /* ----------------- Pomodoro (client only) - unchanged core logic but robust */ 
 const POMO = {
   running: false,
-  phase: 'idle',       // 'idle' | 'work' | 'break' | 'paused'
+  phase: 'idle',            // 'idle' | 'work' | 'break' | 'paused'
   loopTotal: 1,
   loopIndex: 0,
   workMin: 25,
   breakMin: 5,
   remainingMs: 0,
-  tickIntervalId: null,   // numeric id from setInterval
+  tickInterval: null,
   lastTickTs: 0,
   currentMenuKey: 'rate',
   frameCount: 6,
   scheduledP3Timers: [],
   lastP3Index: -1,
-  messageTimerId: null,
-  lastMessageIndex: -1
+  lastMessageIndex: -1,
+  messageTimer: null
 };
 
 function formatTime(ms){
+  if (ms == null) ms = 0;
   if (ms < 0) ms = 0;
-  const sTotal = Math.floor(ms / 1000);
-  const h = Math.floor(sTotal / 3600);
-  const m = Math.floor((sTotal % 3600) / 60);
-  const s = sTotal % 60;
-  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  let s = Math.floor(ms/1000);
+  const h = Math.floor(s/3600); s = s%3600;
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
 }
-
-/* helper to clear scheduled p3 timers */
-function clearScheduledP3(){
-  if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers = [];
-  for (const t of POMO.scheduledP3Timers) clearTimeout(t);
-  POMO.scheduledP3Timers = [];
-  POMO.lastP3Index = -1;
-}
-
-/* schedule random short sounds during break */
-function scheduleBreakRandomSounds(){
-  clearScheduledP3();
-  function next(){
-    if (POMO.phase !== 'break') return;
-    const delay = 8000 + Math.floor(Math.random() * 12000); // 8..20s
-    const id = setTimeout(()=>{
-      const pool = p3Pool || [];
-      if (pool.length){
-        let idxCandidates = pool.map((_,i)=>i);
-        if (POMO.lastP3Index >= 0 && idxCandidates.length > 1){
-          idxCandidates = idxCandidates.filter(i=>i!==POMO.lastP3Index);
-        }
-        const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)];
-        POMO.lastP3Index = idx;
-        try { const a = new Audio(pool[idx].src); a.play().catch(()=>{}); } catch(e){}
-      }
-      next();
-    }, delay);
-    POMO.scheduledP3Timers.push(id);
-  }
-  next();
-}
-
 /* rotate messages shown in eatSoundInfo */
 const POMO_MESSAGES = { work: [
   '今の集中、ちゃんと成果になるよ',
@@ -1517,65 +1485,154 @@ const POMO_MESSAGES = { work: [
   '戻ったとき、きっと続きが書けます',
   'この余白、きっと大切'] };
 
-function rotatePomoMessage(){
-  const el = document.getElementById('eatSoundInfo');
-  if (!el) return;
-  const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break') ? 'break' : null;
-  if (!phase){ el.textContent = '—'; return; }
-  const pool = POMO_MESSAGES[phase] || [];
-  if (!pool.length){ el.textContent = phase === 'work' ? '作業中' : '休憩中'; return; }
-  let candidates = pool.map((_,i)=>i);
-  if (POMO.lastMessageIndex >= 0 && candidates.length > 1) candidates = candidates.filter(i=>i!==POMO.lastMessageIndex);
-  const idx = candidates[Math.floor(Math.random() * candidates.length)];
-  POMO.lastMessageIndex = idx;
-  el.textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx];
+function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
+  const menu = MENUS && MENUS[menuKey];
+  const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  if (!totalMs || totalMs <= 0) return 1;
+  const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
+  const from = 2;
+  const to = fc;
+  const idx = Math.floor(from + (to - from) * ratio);
+  return Math.min(fc, Math.max(1, idx));
 }
 
-/* Start the central tick loop (single registration only) */
+function pickBreakFrame(menuKey){
+  const menu = MENUS && MENUS[menuKey];
+  const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
+  if (fc <= 1) return 1;
+  const choices = [Math.max(1, fc-1), fc];
+  return choices[Math.floor(Math.random() * choices.length)];
+}
+
+function setServedImageFrame(menuKey, frameIndex){
+  // attempt a few candidate filename patterns; set servedImage.src to first that loads
+  const menu = MENUS && MENUS[menuKey];
+  if (!menu) return;
+  const base = menu.imageBase;
+  const candidates = [
+    `${base}${frameIndex}.png`,
+    `${base}${String(frameIndex).padStart(2,'0')}.png`,
+    `${base}_${frameIndex}.png`,
+    `${base}_${String(frameIndex).padStart(2,'0')}.png`
+  ];
+  (async ()=>{
+    for (const c of candidates){
+      const url = getAssetUrl(c);
+      // try load by creating Image
+      const ok = await new Promise((res)=>{
+        const img = new Image();
+        let called = false;
+        img.onload = ()=>{ if (!called){ called=true; res(true);} };
+        img.onerror = ()=>{ if (!called){ called=true; res(false);} };
+        img.src = url;
+        // also add small timeout to avoid hang
+        setTimeout(()=>{ if (!called){ called=true; res(false);} }, 1500);
+      }).catch(()=>false);
+      if (ok){ servedImage.src = getAssetUrl(c); return; }
+    }
+    // fallback
+    servedImage.src = getAssetUrl(base + '1.png');
+  })();
+}
+
+function clearScheduledP3(){
+  if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers = [];
+  for(const t of POMO.scheduledP3Timers) clearTimeout(t);
+  POMO.scheduledP3Timers = [];
+  POMO.lastP3Index = -1;
+}
+
+function scheduleBreakRandomSounds(){
+  clearScheduledP3();
+  function scheduleNext(){
+    if (POMO.phase !== 'break') return;
+    const interval = 8000 + Math.floor(Math.random() * 12000); // 8..20s
+    const timer = setTimeout(()=>{
+      // choose random p3 index not equal to last if possible
+      let idxCandidates = p3Pool.map((_,i)=>i);
+      if (POMO.lastP3Index >= 0 && idxCandidates.length > 1){
+        idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index);
+      }
+      const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)];
+      POMO.lastP3Index = idx;
+      try { const a = new Audio(p3Pool[idx].src); a.play().catch(()=>{}); } catch(e){}
+      scheduleNext();
+    }, interval);
+    POMO.scheduledP3Timers.push(timer);
+  }
+  scheduleNext();
+}
+
+function rotatePomoMessage(){
+  const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null);
+  const el = document.getElementById('eatSoundInfo');
+  if (!phase){ if (el) el.textContent = '—'; return; }
+  const pool = POMO_MESSAGES[phase] || [];
+  if (!pool.length){ if (el) el.textContent = (phase==='work' ? '作業中' : '休憩中'); return; }
+  let idxs = pool.map((_,i)=>i);
+  if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i => i !== POMO.lastMessageIndex);
+  const idx = idxs[Math.floor(Math.random() * idxs.length)];
+  POMO.lastMessageIndex = idx;
+  if (el) el.textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx];
+}
+
+/* Robust tick using Date.now() delta. Ensure single interval only. */
 function startPomoTick(){
-  if (POMO.tickIntervalId) return; // already running
+  // avoid double interval
+  if (POMO.tickInterval) return;
 
   POMO.lastTickTs = Date.now();
-  POMO.tickIntervalId = window.setInterval(()=> {
+  POMO.tickInterval = setInterval(()=> {
     const now = Date.now();
     const delta = now - (POMO.lastTickTs || now);
     POMO.lastTickTs = now;
 
-    if (!POMO.running) return;
-    if (POMO.phase === 'paused' || POMO.phase === 'idle') return;
-
-    POMO.remainingMs -= delta;
-
-    if (POMO.remainingMs <= 0){
-      // end of phase
-      if (POMO.phase === 'work'){
-        // switch to break
-        POMO.phase = 'break';
-        try { audioPiroBreak && audioPiroBreak.play().catch(()=>{}); } catch(e){}
-        POMO.remainingMs = (POMO.breakMin * 60 * 1000);
-        // show random last-frame
-        const bf = pickBreakFrame(POMO.currentMenuKey || 'rate');
-        setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
-        scheduleBreakRandomSounds();
-      } else if (POMO.phase === 'break'){
-        // loop handling
-        clearScheduledP3();
-        POMO.loopIndex++;
-        if (POMO.loopIndex >= POMO.loopTotal){
-          stopPomo(true);
-          return;
-        } else {
-          POMO.phase = 'work';
-          POMO.remainingMs = (POMO.workMin * 60 * 1000);
-          setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
-          try { audioPiroStart && audioPiroStart.play().catch(()=>{}); } catch(e){}
-        }
-      }
+    // If not running or paused/idle, skip subtracting time but still update UI occasionally
+    if (!POMO.running || POMO.phase === 'idle'){
       renderPomoUI();
       return;
     }
 
-    // during running, update image for work phase according to elapsed
+    if (POMO.phase === 'paused'){
+      // don't decrement remainingMs when paused, but update UI and messages
+      renderPomoUI();
+      return;
+    }
+
+    // reduce remaining time by actual elapsed
+    POMO.remainingMs = Math.max(0, (POMO.remainingMs || 0) - delta);
+
+    if (POMO.remainingMs <= 0){
+      // ensure we run transition logic only once per phase end
+      if (POMO.phase === 'work'){
+        // transition to break
+        POMO.phase = 'break';
+        try{ audioPiroBreak && audioPiroBreak.play().catch(()=>{}); } catch(e){}
+        POMO.remainingMs = (POMO.breakMin * 60 * 1000);
+        const bf = pickBreakFrame(POMO.currentMenuKey || 'rate');
+        setServedImageFrame(POMO.currentMenuKey || 'rate', bf);
+        scheduleBreakRandomSounds();
+      } else if (POMO.phase === 'break'){
+        clearScheduledP3();
+        POMO.loopIndex = (POMO.loopIndex || 0) + 1;
+        if (POMO.loopIndex >= (POMO.loopTotal || 1)){
+          // finished all loops
+          stopPomo(true);
+          return;
+        } else {
+          // start next work cycle
+          POMO.phase = 'work';
+          POMO.remainingMs = (POMO.workMin * 60 * 1000);
+          setServedImageFrame(POMO.currentMenuKey || 'rate', 2);
+          try{ audioPiroStart && audioPiroStart.play().catch(()=>{}); } catch(e){}
+        }
+      }
+      // update UI immediately after transition
+      renderPomoUI();
+      return;
+    }
+
+    // during work phase update image according to progress
     if (POMO.phase === 'work'){
       const total = (POMO.workMin * 60 * 1000);
       const elapsed = Math.max(0, total - POMO.remainingMs);
@@ -1585,22 +1642,61 @@ function startPomoTick(){
 
     // update UI
     renderPomoUI();
+
   }, 250);
 
-  // start message rotation
-  if (POMO.messageTimerId) clearInterval(POMO.messageTimerId);
-  POMO.messageTimerId = window.setInterval(()=> rotatePomoMessage(), 6000);
+  // start message rotation interval (only one)
+  if (POMO.messageTimer) clearInterval(POMO.messageTimer);
+  POMO.messageTimer = setInterval(()=> { rotatePomoMessage(); }, 6000);
   rotatePomoMessage();
 }
 
-/* Stop the central tick loop and timers */
 function stopPomoTick(){
-  if (POMO.tickIntervalId){ clearInterval(POMO.tickIntervalId); POMO.tickIntervalId = null; }
+  if (POMO.tickInterval){ clearInterval(POMO.tickInterval); POMO.tickInterval = null; }
   clearScheduledP3();
-  if (POMO.messageTimerId){ clearInterval(POMO.messageTimerId); POMO.messageTimerId = null; }
+  if (POMO.messageTimer){ clearInterval(POMO.messageTimer); POMO.messageTimer = null; }
 }
 
-/* Public controls */
+function renderPomoUI(){
+  try {
+    if (!POMO.running){
+      if (pomoSettings) pomoSettings.style.display = 'block';
+      if (pomoRunning) pomoRunning.style.display = 'none';
+      if (pomoPanel) pomoPanel.setAttribute('aria-hidden','false');
+      const el = document.getElementById('eatSoundInfo'); if (el) el.textContent = '—';
+      return;
+    }
+    if (pomoSettings) pomoSettings.style.display = 'none';
+    if (pomoRunning) pomoRunning.style.display = 'block';
+    if (pomoPanel) pomoPanel.setAttribute('aria-hidden','false');
+
+    if (pomoLoopCounter) pomoLoopCounter.textContent = `${(POMO.loopIndex || 0) + 1} / ${POMO.loopTotal || 1}`;
+    if (pomoPhaseLabel) pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機'));
+    if (pomoTimerText) pomoTimerText.textContent = formatTime(POMO.remainingMs || 0);
+
+    if (POMO.phase === 'work'){
+      const total = (POMO.workMin * 60 * 1000);
+      const elapsed = Math.max(0, total - (POMO.remainingMs || 0));
+      const pct = total > 0 ? Math.min(100, Math.floor((elapsed / total) * 100)) : 0;
+      if (pomoProgressBar) pomoProgressBar.style.width = `${pct}%`;
+    } else if (POMO.phase === 'break'){
+      const total = (POMO.breakMin * 60 * 1000);
+      const elapsed = Math.max(0, total - (POMO.remainingMs || 0));
+      const pct = total > 0 ? Math.min(100, Math.floor((elapsed / total) * 100)) : 0;
+      if (pomoProgressBar) pomoProgressBar.style.width = `${pct}%`;
+    } else {
+      if (pomoProgressBar) pomoProgressBar.style.width = `0%`;
+    }
+
+    if (pausePomoBtn){
+      if (POMO.phase === 'paused') pausePomoBtn.textContent = '▶';
+      else pausePomoBtn.textContent = '⏸';
+    }
+  } catch(e){
+    console.warn('renderPomoUI error', e);
+  }
+}
+
 function startPomo(){
   const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1')));
   const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25')));
@@ -1613,9 +1709,9 @@ function startPomo(){
   POMO.phase = 'work';
   POMO.remainingMs = (wmin * 60 * 1000);
   POMO.currentMenuKey = POMO.currentMenuKey || 'rate';
-  const menu = MENUS[POMO.currentMenuKey] || MENUS['rate'];
-  POMO.frameCount = menu.frameCount || 6;
-  try { audioPiroStart && audioPiroStart.play().catch(()=>{}); } catch(e){}
+  const menu = MENUS && MENUS[POMO.currentMenuKey] ? MENUS[POMO.currentMenuKey] : (MENUS && MENUS['rate']);
+  POMO.frameCount = (menu && menu.frameCount) ? menu.frameCount : 6;
+  try{ audioPiroStart && audioPiroStart.play().catch(()=>{}); } catch(e){}
   setServedImageFrame(POMO.currentMenuKey, 2);
   clearScheduledP3();
   startPomoTick();
@@ -1626,15 +1722,18 @@ function togglePausePomo(){
   if (!POMO.running) return;
   if (POMO.phase === 'paused'){
     POMO.phase = POMO._prevPhase || 'work';
-    try { audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } catch(e){}
+    try{ audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } catch(e){}
+    // resume ticking
     startPomoTick();
   } else {
     POMO._prevPhase = POMO.phase;
     POMO.phase = 'paused';
-    stopPomoTick(); // stop ticking while paused (keeps remainingMs)
-    try { audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } catch(e){}
+    // pause tick (stop decrementing time)
+    stopPomoTick();
+    try{ audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } catch(e){}
+    // keep UI updated once immediately
+    renderPomoUI();
   }
-  renderPomoUI();
 }
 
 function stopPomo(returnToSettings){
@@ -1652,46 +1751,15 @@ function stopPomo(returnToSettings){
 
 function skipPomo(){
   if (!POMO.running) return;
-  if (POMO.phase === 'paused'){
-    // unpause then skip
-    POMO.phase = POMO._prevPhase || 'work';
-  }
+  // set remaining to 0 so next tick triggers immediate transition
   POMO.remainingMs = 0;
+  // call tick handler once synchronously to transition immediately
+  // we can reuse startPomoTick's logic by invoking render then letting interval call transition.
+  // But for immediate effect call startPomoTick then no-wait:
+  if (!POMO.tickInterval) startPomoTick();
+  // force one UI update
+  renderPomoUI();
 }
-
-/* Render UI state for pomodoro (safe guards if elements missing) */
-function renderPomoUI(){
-  try {
-    if (!POMO.running){
-      if (pomoSettings) pomoSettings.style.display = 'block';
-      if (pomoRunning) pomoRunning.style.display = 'none';
-      pomoPanel && pomoPanel.setAttribute('aria-hidden','false');
-      const infoEl = document.getElementById('eatSoundInfo'); if (infoEl) infoEl.textContent = '—';
-      return;
-    }
-    if (pomoSettings) pomoSettings.style.display = 'none';
-    if (pomoRunning) pomoRunning.style.display = 'block';
-    pomoPanel && pomoPanel.setAttribute('aria-hidden','false');
-    pomoLoopCounter && (pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`);
-    pomoPhaseLabel && (pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機')));
-    pomoTimerText && (pomoTimerText.textContent = formatTime(POMO.remainingMs));
-    if (POMO.phase === 'work'){
-      const total = (POMO.workMin * 60 * 1000);
-      const elapsed = Math.max(0, total - POMO.remainingMs);
-      const pct = (total>0) ? Math.min(100, Math.floor((elapsed / total) * 100)) : 0;
-      pomoProgressBar && (pomoProgressBar.style.width = `${pct}%`);
-    } else if (POMO.phase === 'break'){
-      const total = (POMO.breakMin * 60 * 1000);
-      const elapsed = Math.max(0, total - POMO.remainingMs);
-      const pct = (total>0) ? Math.min(100, Math.floor((elapsed / total) * 100)) : 0;
-      pomoProgressBar && (pomoProgressBar.style.width = `${pct}%`);
-    } else {
-      pomoProgressBar && (pomoProgressBar.style.width = `0%`);
-    }
-    if (POMO.phase === 'paused'){ pausePomoBtn && (pausePomoBtn.textContent = '▶'); } else { pausePomoBtn && (pausePomoBtn.textContent = '⏸'); }
-  } catch(e){ console.warn('renderPomoUI error', e); }
-}
-
 /* ----------------- Save & home flows ----------------- */
 saveAllBtn.addEventListener('click', ()=>{
   const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
