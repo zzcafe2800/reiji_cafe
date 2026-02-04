@@ -2822,51 +2822,71 @@ document.body.addEventListener("click",{once:true},()=>{
 })();
 
  -->
-<script>
-/* =========================
-   注文 / 再注文ボタン切替
-   offlineOrderBtn = 注文
-   orderBtn        = 再注文
-========================= */
+<script type="module">
+import { doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-const orderBtnEl = document.getElementById('orderBtn');          // 再注文
-const offlineOrderBtnEl = document.getElementById('offlineOrderBtn'); // 注文
+/* ====== 前提 ======
+   db は既に初期化済み
+   orderBtn           → 再注文ボタン
+   offlineOrderBtn    → 注文ボタン
+==================== */
 
-function updateOrderButtonsByShift() {
-  // シフト中のスタッフが1人でもいるか？
-  const hasActiveStaff = Array.isArray(state.staffs) && state.staffs.some(s => {
-    if (!s) return false;
-    if (s.on !== true) return false;      // シフトON
-    if (s.break === true) return false;   // 休憩中は除外
-    return true;
-  });
+const orderBtn = document.getElementById("orderBtn");
+const offlineOrderBtn = document.getElementById("offlineOrderBtn");
 
-  if (hasActiveStaff) {
-    // 🧑‍🍳 人スタッフがいる → 注文のみ
-    offlineOrderBtnEl.style.display = 'flex';
-    orderBtnEl.style.display = 'none';
-    shiftShort.textContent = 'スタッフ対応中です';
+/* ===== 共有ドキュメント ===== */
+const uiDoc = doc(db, "settings", "ui");
+
+/* ===== 表示切り替え ===== */
+function applyButtonMode(mode){
+  if (mode === "order") {
+    // 注文ボタンのみ表示
+    offlineOrderBtn.style.display = "flex";
+    orderBtn.style.display = "none";
   } else {
-    // 🤖 誰もいない → 再注文のみ
-    offlineOrderBtnEl.style.display = 'none';
-    orderBtnEl.style.display = 'flex';
-    shiftShort.textContent = '現在ロボスタッフ対応中です';
+    // 再注文ボタンのみ表示
+    offlineOrderBtn.style.display = "none";
+    orderBtn.style.display = "flex";
   }
 }
 
-/* 初期状態 */
-updateOrderButtonsByShift();
+/* ===== 初期 & リアルタイム反映 ===== */
+onSnapshot(uiDoc, snap => {
+  if (!snap.exists()) return;
+  const mode = snap.data().orderButtonMode || "order";
+  applyButtonMode(mode);
+});
 
-/* Firestoreのスタッフ変化に追従 */
-if (staffsCol) {
-  onSnapshot(staffsCol, snap => {
-    state.staffs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    updateOrderButtonsByShift();
-  });
+/* ===== スタッフ操作用 =====
+   staffFull が開いている＝スタッフ
+========================== */
+function setButtonMode(mode){
+  setDoc(uiDoc, { orderButtonMode: mode }, { merge:true });
 }
 
-/* 念のため1分ごとにも再評価（時刻跨ぎ対策） */
-setInterval(updateOrderButtonsByShift, 60 * 1000);
+/* ===== スタッフ画面に切替ボタンを追加 ===== */
+const staffPanel = document.querySelector(".staff-top");
+
+const toggleWrap = document.createElement("div");
+toggleWrap.style.display = "flex";
+toggleWrap.style.gap = "6px";
+toggleWrap.style.marginTop = "8px";
+
+const btnOrder = document.createElement("button");
+btnOrder.textContent = "注文ボタン表示";
+btnOrder.onclick = () => setButtonMode("order");
+
+const btnReorder = document.createElement("button");
+btnReorder.textContent = "再注文ボタン表示";
+btnReorder.onclick = () => setButtonMode("reorder");
+
+toggleWrap.appendChild(btnOrder);
+toggleWrap.appendChild(btnReorder);
+staffPanel.appendChild(toggleWrap);
+
+/* ===== 初期非表示安全処理 ===== */
+orderBtn.style.display = "none";
+offlineOrderBtn.style.display = "none";
 </script>
 
   
