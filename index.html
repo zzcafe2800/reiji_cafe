@@ -147,6 +147,10 @@
 
 <div id="staffFull" class="staff-full" aria-hidden="true">
   <div class="staff-top">
+    <button id="toggleOrderMode" class="small">
+  注文／再注文 切替
+</button>
+
     <div>
       <strong id="staffBadge">店員</strong>
       <div class="small-info">店員控室</div>
@@ -2825,71 +2829,66 @@ document.body.addEventListener("click",{once:true},()=>{
 
 
   
-<script type="module">
-import { doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+<script>
+/* ===============================
+   注文 / 再注文 ボタン切替（共有）
+   =============================== */
 
-/* ====== 前提 ======
-   db は既に初期化済み
-   orderBtn           → 再注文ボタン
-   offlineOrderBtn    → 注文ボタン
-==================== */
+/*
+  表示ルール:
+  mode = "order"   → offlineOrderBtn（注文）表示
+  mode = "reorder" → orderBtn（再注文）表示
+  初期値: "order"
+*/
 
-const orderBtn = document.getElementById("orderBtn");
-const offlineOrderBtn = document.getElementById("offlineOrderBtn");
+const orderBtn = document.getElementById('orderBtn');              // 再注文
+const offlineOrderBtn = document.getElementById('offlineOrderBtn'); // 注文
+const toggleBtn = document.getElementById('toggleOrderMode');
 
-/* ===== 共有ドキュメント ===== */
-const uiDoc = doc(db, "settings", "ui");
+/* Firestore が使える場合のみ共有 */
+let orderModeDoc = null;
+if (typeof db !== 'undefined' && db) {
+  orderModeDoc = doc(db, 'shared', 'orderButtonMode');
+}
 
-/* ===== 表示切り替え ===== */
-function applyButtonMode(mode){
-  if (mode === "order") {
-    // 注文ボタンのみ表示
-    offlineOrderBtn.style.display = "flex";
-    orderBtn.style.display = "none";
+/* ===== 表示反映 ===== */
+function applyOrderMode(mode) {
+  if (mode === 'reorder') {
+    orderBtn.style.display = 'flex';
+    offlineOrderBtn.style.display = 'none';
   } else {
-    // 再注文ボタンのみ表示
-    offlineOrderBtn.style.display = "none";
-    orderBtn.style.display = "flex";
+    offlineOrderBtn.style.display = 'flex';
+    orderBtn.style.display = 'none';
   }
 }
 
-/* ===== 初期 & リアルタイム反映 ===== */
-onSnapshot(uiDoc, snap => {
-  if (!snap.exists()) return;
-  const mode = snap.data().orderButtonMode || "order";
-  applyButtonMode(mode);
-});
+/* ===== 初期状態（ローカル仮） ===== */
+applyOrderMode('order'); // 再注文は非表示から
 
-/* ===== スタッフ操作用 =====
-   staffFull が開いている＝スタッフ
-========================== */
-function setButtonMode(mode){
-  setDoc(uiDoc, { orderButtonMode: mode }, { merge:true });
+/* ===== Firestore から共有状態を監視 ===== */
+if (orderModeDoc) {
+  onSnapshot(orderModeDoc, (snap) => {
+    if (snap.exists()) {
+      applyOrderMode(snap.data().mode);
+    } else {
+      // 初回は注文ボタン表示で作成
+      updateDoc(orderModeDoc, { mode: 'order' }).catch(()=>{});
+    }
+  });
 }
 
-/* ===== スタッフ画面に切替ボタンを追加 ===== */
-const staffPanel = document.querySelector(".staff-top");
+/* ===== スタッフ側：切替ボタン ===== */
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', async () => {
+    if (!orderModeDoc) return;
 
-const toggleWrap = document.createElement("div");
-toggleWrap.style.display = "flex";
-toggleWrap.style.gap = "6px";
-toggleWrap.style.marginTop = "8px";
+    const snap = await getDoc(orderModeDoc);
+    const current = snap.exists() ? snap.data().mode : 'order';
+    const next = current === 'order' ? 'reorder' : 'order';
 
-const btnOrder = document.createElement("button");
-btnOrder.textContent = "注文ボタン表示";
-btnOrder.onclick = () => setButtonMode("order");
-
-const btnReorder = document.createElement("button");
-btnReorder.textContent = "再注文ボタン表示";
-btnReorder.onclick = () => setButtonMode("reorder");
-
-toggleWrap.appendChild(btnOrder);
-toggleWrap.appendChild(btnReorder);
-staffPanel.appendChild(toggleWrap);
-
-/* ===== 初期非表示安全処理 ===== */
-orderBtn.style.display = "none";
-offlineOrderBtn.style.display = "none";
+    await updateDoc(orderModeDoc, { mode: next });
+  });
+}
 </script>
 
   
