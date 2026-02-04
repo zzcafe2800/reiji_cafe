@@ -30,11 +30,6 @@
   .hidden {
   display: none !important;
 }
-offlineOrderBtn.classList.add('hidden');
-state.currentUser = {
-  role: 'guest',   // or 'staff'
-  staffId: null    // 'A' など
-};
 
 
 
@@ -694,6 +689,8 @@ try {
 const nowtimeEl = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
 const offlineOrderBtn = document.getElementById('offlineOrderBtn');
+  offlineOrderBtn.classList.add('hidden');
+
 const shiftShort = document.getElementById('shiftShort');
 const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
@@ -1867,18 +1864,17 @@ function updateOrderButtonsVisibility() {
   const isStaffA =
     state.currentUser.role === 'staff' &&
     state.currentUser.staffId === 'A' &&
-    shiftBtn.classList.contains('on'); // シフト中のみ
+    shiftBtn.classList.contains('on');
 
   if (isStaffA) {
-    // 店員A・シフト中 → 再注文のみ表示
     orderBtn.classList.add('hidden');
     offlineOrderBtn.classList.remove('hidden');
   } else {
-    // それ以外 → 通常注文のみ表示
     orderBtn.classList.remove('hidden');
     offlineOrderBtn.classList.add('hidden');
   }
 }
+updateOrderButtonsVisibility();
 
 /* Sound overlay */
 function showSoundOverlay(){ soundOverlay.style.display = 'flex'; }
