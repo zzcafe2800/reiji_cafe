@@ -163,9 +163,8 @@
       <label>シフト開始時間</label><input id="shiftStart" type="time" />
       <label>終了時間</label><input id="shiftEnd" type="time" />
       <button id="saveShift" class="small">保存</button>
-          <button id="toggleOrderMode" class="small">
-  注文／再注文 切替
-</button>
+        <button id="orderToggleBtn" class="off">注文ボタン表示中</button>
+
     </div>
 
     <div class="big-toggle" style="margin-top:8px;">
@@ -2830,61 +2829,67 @@ document.body.addEventListener("click",{once:true},()=>{
 
 
   
-<script>
-/* ===============================
-   注文 / 再注文 ボタン切替（共有・確定版）
-   =============================== */
+<script type="module">
+/* ===== Order / Reorder Toggle (Shared) ===== */
 
-const orderBtn = document.getElementById('orderBtn');               // 再注文
-const offlineOrderBtn = document.getElementById('offlineOrderBtn'); // 注文
-const toggleBtn = document.getElementById('toggleOrderMode');
+/* Firestore 前提：すでに db がある前提 */
+const orderBtn = document.getElementById("orderBtn");               // 注文
+const offlineOrderBtn = document.getElementById("offlineOrderBtn"); // 再注文
+const toggleBtn = document.getElementById("orderToggleBtn");
 
-/* Firestore */
-let orderModeDoc = null;
-if (typeof db !== 'undefined' && db) {
-  orderModeDoc = doc(db, 'shared', 'orderButtonMode');
+if (!orderBtn || !offlineOrderBtn || !toggleBtn || !db) {
+  console.warn("order toggle init skipped");
+  return;
 }
 
-/* ===== 表示切替 ===== */
-function applyOrderMode(mode) {
-  if (mode === 'reorder') {
-    orderBtn.style.display = 'flex';
-    offlineOrderBtn.style.display = 'none';
-  } else {
-    offlineOrderBtn.style.display = 'flex';
-    orderBtn.style.display = 'none';
+/* ===== Firestore doc ===== */
+const toggleRef = doc(db, "ui", "orderToggle");
+
+/* ===== 表示制御 ===== */
+function applyMode(mode){
+  const isOrder = mode === "order";
+
+  orderBtn.style.display = isOrder ? "flex" : "none";
+  offlineOrderBtn.style.display = isOrder ? "none" : "flex";
+
+  toggleBtn.textContent = isOrder
+    ? "注文ボタン表示中（押すと再注文）"
+    : "再注文ボタン表示中（押すと注文）";
+
+  toggleBtn.classList.toggle("on", isOrder);
+  toggleBtn.classList.toggle("off", !isOrder);
+}
+
+/* ===== 初期化（なければ作る） ===== */
+(async ()=>{
+  const snap = await getDoc(toggleRef);
+  if (!snap.exists()) {
+    await updateDoc(toggleRef, { mode: "order" }).catch(async()=>{
+      // create
+      await setDoc(toggleRef, { mode: "order" });
+    });
   }
-}
-
-/* ===== 初期表示（保険） ===== */
-applyOrderMode('order'); // 再注文は最初非表示
+})();
 
 /* ===== 共有状態を監視 ===== */
-if (orderModeDoc) {
-  onSnapshot(orderModeDoc, (snap) => {
-    if (snap.exists()) {
-      applyOrderMode(snap.data().mode);
-    } else {
-      // 🔥 初回は必ず setDoc
-      setDoc(orderModeDoc, { mode: 'order' });
-    }
-  });
-}
+onSnapshot(toggleRef, (snap)=>{
+  if (!snap.exists()) return;
+  applyMode(snap.data().mode);
+});
 
-/* ===== スタッフ画面の切替ボタン ===== */
-if (toggleBtn) {
-  toggleBtn.addEventListener('click', async () => {
-    if (!orderModeDoc) return;
+/* ===== staff 操作 ===== */
+toggleBtn.addEventListener("click", async ()=>{
+  const snap = await getDoc(toggleRef);
+  const current = snap.data()?.mode || "order";
+  const next = current === "order" ? "reorder" : "order";
 
-    const snap = await getDoc(orderModeDoc);
-    const current = snap.exists() ? snap.data().mode : 'order';
-    const next = current === 'order' ? 'reorder' : 'order';
+  await updateDoc(toggleRef, { mode: next });
+});
 
-    // 🔥 ここも setDoc（merge 付き）
-    await setDoc(orderModeDoc, { mode: next }, { merge: true });
-  });
-}
+/* ===== 初期状態：再注文ボタン非表示 ===== */
+applyMode("order");
 </script>
+
 
 
   
