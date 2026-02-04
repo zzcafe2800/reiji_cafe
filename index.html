@@ -2824,73 +2824,71 @@ document.body.addEventListener("click",{once:true},()=>{
 
  -->
 <script>
-/* ================================
-   再注文ボタン表示制御（ロボスタッフ用）
-================================ */
+/* ===============================
+   再注文ボタン表示制御（単体完結）
+   =============================== */
 
-/*
-  ロボスタッフ対応中かどうかのフラグ
-  true  = ロボスタッフ
-  false = 通常（人 or 無人）
-*/
-let isRobotStaffActive = false;
+/* 初期状態：完全に非表示 */
+offlineOrderBtn.style.display = 'none';
 
-/* DOM取得（既存IDを使う） */
-const orderBtnEl = document.getElementById('orderBtn');
-const offlineOrderBtnEl = document.getElementById('offlineOrderBtn');
-const shiftShortEl = document.getElementById('shiftShort');
+/* 時刻判定ヘルパー */
+function isNowInShift(start, end) {
+  if (!start || !end) return false;
+  const now = new Date();
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
 
-/* 表示を切り替える唯一の関数 */
-function updateOrderButtons() {
-  if (isRobotStaffActive) {
-    // ロボスタッフ中：再注文のみ表示
-    orderBtnEl.style.display = 'none';
-    offlineOrderBtnEl.style.display = 'flex';
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + em;
+
+  return startMin <= endMin
+    ? nowMin >= startMin && nowMin <= endMin
+    : nowMin >= startMin || nowMin <= endMin; // 日跨ぎ対応
+}
+
+/* 再注文ボタンの表示更新 */
+function updateOfflineOrderButton() {
+  if (!state.staffs || state.staffs.length === 0) {
+    offlineOrderBtn.style.display = 'block';
+    shiftShort.textContent = '現在スタッフ不在のため再注文できます';
+    return;
+  }
+
+  /* 今この時間にシフトに入っている「人スタッフ」だけ抽出 */
+  const activeHumanStaffs = state.staffs.filter(s =>
+    s.onShift === true &&
+    s.isRobot !== true &&
+    isNowInShift(s.shiftStart, s.shiftEnd)
+  );
+
+  if (activeHumanStaffs.length === 0) {
+    /* 人が誰もいない → 再注文OK */
+    offlineOrderBtn.style.display = 'block';
+    shiftShort.textContent = '現在スタッフ不在のため再注文できます';
   } else {
-    // 通常時：注文のみ表示
-    orderBtnEl.style.display = 'flex';
-    offlineOrderBtnEl.style.display = 'none';
+    /* 人スタッフがいる → 非表示 */
+    offlineOrderBtn.style.display = 'none';
+    shiftShort.textContent = 'スタッフ対応中です';
   }
 }
 
-/* -------------------------------
-   ロボスタッフON / OFF 切替用API
-   ------------------------------- */
-
-/* ロボスタッフ開始 */
-function enableRobotStaff() {
-  isRobotStaffActive = true;
-  updateOrderButtons();
+/* Firestore スタッフ監視と連動 */
+if (staffsCol) {
+  onSnapshot(staffsCol, snap => {
+    state.staffs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateOfflineOrderButton();
+  });
 }
 
-/* ロボスタッフ終了 */
-function disableRobotStaff() {
-  isRobotStaffActive = false;
-  updateOrderButtons();
-}
+/* 1分ごとに時刻変化でも再評価 */
+setInterval(updateOfflineOrderButton, 60 * 1000);
 
-/* 初期状態を必ず反映 */
-updateOrderButtons();
-
-/* -------------------------------
-   例：シフト表示文言から自動判定したい場合
-   -------------------------------
-   shiftShort の文言に「ロボ」などが入ったら
-   自動で切り替える例
--------------------------------- */
-
-/*
-const observer = new MutationObserver(() => {
-  const text = shiftShortEl.textContent || '';
-  if (text.includes('ロボ')) {
-    enableRobotStaff();
-  } else {
-    disableRobotStaff();
-  }
+/* 再注文クリック */
+offlineOrderBtn.addEventListener('click', () => {
+  if (offlineOrderBtn.style.display === 'none') return;
+  modalName.style.display = 'flex';
 });
-
-observer.observe(shiftShortEl, { childList: true, subtree: true });
-*/
 </script>
 
   
