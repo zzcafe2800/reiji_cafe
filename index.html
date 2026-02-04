@@ -27,13 +27,6 @@
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
   .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:120px;aspect-ratio:5/3;font-size:clamp(16px,4vw,30px);display:flex;align-items:center;justify-content:center;text-align:center;}
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
-  .hidden {
-  display: none !important;
-}
-
-
-
-  
   /* offline-order button: same visual but wide/horizontal under the order button */
   .offline-order{
   background: linear-gradient(180deg, #ffe1d6, #ff9f7a); /* 少し明るめ寄り */
@@ -126,7 +119,9 @@
           <div id="shiftShort" class="status-line">読み込み中...</div>
           <button id="orderBtn" class="order-btn disabled">注文</button>
           <div style="height:12px;"></div>
-             <button id="offlineOrderBtn" class="offline-order"><span style="font-size:0.9em;">再注文</span></button>
+           <button id="offlineOrderBtn" class="offline-order" style="display:none;">
+  <span style="font-size:0.9em;">再注文</span>
+</button>
 
           <div style="position:absolute; left:50%; bottom:23px; transform:translateX(-50%); width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
             <div id="helperSmall" class="small-info">実際の支払いはありません</div>
@@ -689,8 +684,6 @@ try {
 const nowtimeEl = document.getElementById('nowtime');
 const orderBtn = document.getElementById('orderBtn');
 const offlineOrderBtn = document.getElementById('offlineOrderBtn');
-  offlineOrderBtn.classList.add('hidden');
-
 const shiftShort = document.getElementById('shiftShort');
 const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
@@ -1859,22 +1852,6 @@ function updateOrderButtonState(){
   // per requirement: orders allowed if human staff present OR BOT will handle -> always enable;
   orderBtn.classList.remove('disabled');
 }
-/* ☆ updateOrderButtonState: JST-based */
-function updateOrderButtonsVisibility() {
-  const isStaffA =
-    state.currentUser.role === 'staff' &&
-    state.currentUser.staffId === 'A' &&
-    shiftBtn.classList.contains('on');
-
-  if (isStaffA) {
-    orderBtn.classList.add('hidden');
-    offlineOrderBtn.classList.remove('hidden');
-  } else {
-    orderBtn.classList.remove('hidden');
-    offlineOrderBtn.classList.add('hidden');
-  }
-}
-updateOrderButtonsVisibility();
 
 /* Sound overlay */
 function showSoundOverlay(){ soundOverlay.style.display = 'flex'; }
@@ -2846,6 +2823,75 @@ document.body.addEventListener("click",{once:true},()=>{
 })();
 
  -->
+<script>
+/* ================================
+   再注文ボタン表示制御（ロボスタッフ用）
+================================ */
+
+/*
+  ロボスタッフ対応中かどうかのフラグ
+  true  = ロボスタッフ
+  false = 通常（人 or 無人）
+*/
+let isRobotStaffActive = false;
+
+/* DOM取得（既存IDを使う） */
+const orderBtnEl = document.getElementById('orderBtn');
+const offlineOrderBtnEl = document.getElementById('offlineOrderBtn');
+const shiftShortEl = document.getElementById('shiftShort');
+
+/* 表示を切り替える唯一の関数 */
+function updateOrderButtons() {
+  if (isRobotStaffActive) {
+    // ロボスタッフ中：再注文のみ表示
+    orderBtnEl.style.display = 'none';
+    offlineOrderBtnEl.style.display = 'flex';
+  } else {
+    // 通常時：注文のみ表示
+    orderBtnEl.style.display = 'flex';
+    offlineOrderBtnEl.style.display = 'none';
+  }
+}
+
+/* -------------------------------
+   ロボスタッフON / OFF 切替用API
+   ------------------------------- */
+
+/* ロボスタッフ開始 */
+function enableRobotStaff() {
+  isRobotStaffActive = true;
+  updateOrderButtons();
+}
+
+/* ロボスタッフ終了 */
+function disableRobotStaff() {
+  isRobotStaffActive = false;
+  updateOrderButtons();
+}
+
+/* 初期状態を必ず反映 */
+updateOrderButtons();
+
+/* -------------------------------
+   例：シフト表示文言から自動判定したい場合
+   -------------------------------
+   shiftShort の文言に「ロボ」などが入ったら
+   自動で切り替える例
+-------------------------------- */
+
+/*
+const observer = new MutationObserver(() => {
+  const text = shiftShortEl.textContent || '';
+  if (text.includes('ロボ')) {
+    enableRobotStaff();
+  } else {
+    disableRobotStaff();
+  }
+});
+
+observer.observe(shiftShortEl, { childList: true, subtree: true });
+*/
+</script>
 
   
 </body>
