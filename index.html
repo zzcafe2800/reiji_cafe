@@ -928,7 +928,7 @@ async function onMenuSelect(item){
   // If forceBot is true, always use BOT local delivery regardless of human staff
   if (forceBot){
     state._botActive = true;
-    shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（オフライン注文）';
+    shiftShort.textContent = 'シフト：ろぼスタッフ';
     showBotOverlayForClient();
     const servedResult = await botProduce(orderObj, item, name);
     // store locally as delivered order (no Firestore write)
@@ -947,7 +947,7 @@ async function onMenuSelect(item){
   if (!humanActive.length){
     // BOT fallback (automatic)
     state._botActive = true;
-    shiftShort.textContent = '現在：ＢＯＴスタッフ対応中（手書き接客✖）';
+    shiftShort.textContent = 'シフト：ろぼスタッフ';
     showBotOverlayForClient();
     const servedResult = await botProduce(orderObj, item, name);
     if (db){
