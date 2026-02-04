@@ -2842,6 +2842,84 @@ document.body.addEventListener("click",{once:true},()=>{
 
 
 
+<script>
+/* ===============================
+   全ボタン共通 SE 制御
+   hover → kati.mp3（1回）
+   click → cli.mp3
+================================ */
+
+/* --- 音声準備 --- */
+const hoverSE = new Audio("kati.mp3");
+const clickSE = new Audio("cli.mp3");
+
+/* 音の重なり防止（自然に） */
+hoverSE.preload = "auto";
+clickSE.preload = "auto";
+
+/* --- hover判定用 WeakMap --- */
+/* ボタンごとに「今エイム中か」を管理 */
+const hoverState = new WeakMap();
+
+/* --- hover 再生関数 --- */
+function playHoverSE(button) {
+  if (hoverState.get(button)) return; // すでに鳴らした
+  hoverState.set(button, true);
+
+  try {
+    hoverSE.currentTime = 0;
+    hoverSE.play();
+  } catch (e) {}
+}
+
+/* --- hover解除 --- */
+function resetHoverState(button) {
+  hoverState.set(button, false);
+}
+
+/* --- click 再生関数 --- */
+function playClickSE() {
+  try {
+    clickSE.currentTime = 0;
+    clickSE.play();
+  } catch (e) {}
+}
+
+/* ===============================
+   イベント委譲（全ボタン対応）
+================================ */
+
+/* hover */
+document.addEventListener("mouseover", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  playHoverSE(btn);
+});
+
+document.addEventListener("mouseout", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+
+  /* 本当にボタン外に出たかチェック */
+  if (!btn.contains(e.relatedTarget)) {
+    resetHoverState(btn);
+  }
+});
+
+/* click */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  playClickSE();
+});
+
+/* ===============================
+   初期化：既存ボタンにも状態付与
+================================ */
+document.querySelectorAll("button").forEach(btn => {
+  hoverState.set(btn, false);
+});
+</script>
 
 
 
