@@ -2823,71 +2823,50 @@ document.body.addEventListener("click",{once:true},()=>{
 
  -->
 <script>
-/* ===============================
-   再注文ボタン表示制御（単体完結）
-   =============================== */
+/* =========================
+   注文 / 再注文ボタン切替
+   offlineOrderBtn = 注文
+   orderBtn        = 再注文
+========================= */
 
-/* 初期状態：完全に非表示 */
-offlineOrderBtn.style.display = 'none';
+const orderBtnEl = document.getElementById('orderBtn');          // 再注文
+const offlineOrderBtnEl = document.getElementById('offlineOrderBtn'); // 注文
 
-/* 時刻判定ヘルパー */
-function isNowInShift(start, end) {
-  if (!start || !end) return false;
-  const now = new Date();
-  const [sh, sm] = start.split(':').map(Number);
-  const [eh, em] = end.split(':').map(Number);
+function updateOrderButtonsByShift() {
+  // シフト中のスタッフが1人でもいるか？
+  const hasActiveStaff = Array.isArray(state.staffs) && state.staffs.some(s => {
+    if (!s) return false;
+    if (s.on !== true) return false;      // シフトON
+    if (s.break === true) return false;   // 休憩中は除外
+    return true;
+  });
 
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const startMin = sh * 60 + sm;
-  const endMin = eh * 60 + em;
-
-  return startMin <= endMin
-    ? nowMin >= startMin && nowMin <= endMin
-    : nowMin >= startMin || nowMin <= endMin; // 日跨ぎ対応
-}
-
-/* 再注文ボタンの表示更新 */
-function updateOfflineOrderButton() {
-  if (!state.staffs || state.staffs.length === 0) {
-    offlineOrderBtn.style.display = 'block';
-    shiftShort.textContent = '現在スタッフ不在のため再注文できます';
-    return;
-  }
-
-  /* 今この時間にシフトに入っている「人スタッフ」だけ抽出 */
-  const activeHumanStaffs = state.staffs.filter(s =>
-    s.onShift === true &&
-    s.isRobot !== true &&
-    isNowInShift(s.shiftStart, s.shiftEnd)
-  );
-
-  if (activeHumanStaffs.length === 0) {
-    /* 人が誰もいない → 再注文OK */
-    offlineOrderBtn.style.display = 'block';
-    shiftShort.textContent = '現在スタッフ不在のため再注文できます';
-  } else {
-    /* 人スタッフがいる → 非表示 */
-    offlineOrderBtn.style.display = 'none';
+  if (hasActiveStaff) {
+    // 🧑‍🍳 人スタッフがいる → 注文のみ
+    offlineOrderBtnEl.style.display = 'flex';
+    orderBtnEl.style.display = 'none';
     shiftShort.textContent = 'スタッフ対応中です';
+  } else {
+    // 🤖 誰もいない → 再注文のみ
+    offlineOrderBtnEl.style.display = 'none';
+    orderBtnEl.style.display = 'flex';
+    shiftShort.textContent = '現在ロボスタッフ対応中です';
   }
 }
 
-/* Firestore スタッフ監視と連動 */
+/* 初期状態 */
+updateOrderButtonsByShift();
+
+/* Firestoreのスタッフ変化に追従 */
 if (staffsCol) {
   onSnapshot(staffsCol, snap => {
     state.staffs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    updateOfflineOrderButton();
+    updateOrderButtonsByShift();
   });
 }
 
-/* 1分ごとに時刻変化でも再評価 */
-setInterval(updateOfflineOrderButton, 60 * 1000);
-
-/* 再注文クリック */
-offlineOrderBtn.addEventListener('click', () => {
-  if (offlineOrderBtn.style.display === 'none') return;
-  modalName.style.display = 'flex';
-});
+/* 念のため1分ごとにも再評価（時刻跨ぎ対策） */
+setInterval(updateOrderButtonsByShift, 60 * 1000);
 </script>
 
   
