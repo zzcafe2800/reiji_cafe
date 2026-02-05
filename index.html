@@ -119,7 +119,7 @@
           <div id="shiftShort" class="status-line">読み込み中...</div>
           <button id="orderBtn" class="order-btn disabled">注文</button>
           <div style="height:12px;"></div>
-      <button id="offlineOrderBtn" class="offline-order"><span style="font-size:0.9em;">再注文</span></button>
+      <button id="offlineOrderBtn" class="offline-order"><span style="font-size:0.9em;">＿注文＿</span></button>
 
 
           <div style="position:absolute; left:50%; bottom:23px; transform:translateX(-50%); width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
@@ -530,7 +530,7 @@
             <div id="pomodoroPanel" aria-hidden="true">
               <div id="pomoSettings">
                 <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                  <div>タイマー</div>
+                  <div>ポロドーモタイマー</div>
                   <div id="pomoCountDisplay">1 / 1</div>
                 </div>
 
@@ -538,7 +538,7 @@
                   <div>ループ</div>
                   <div class="pomo-number">
                     <button class="pomo-btn" id="loopDown">-</button>
-                    <input id="loopCount" type="number" value="1" min="1" max="10"/>
+                    <input id="loopCount" type="number" value="2" min="1" max="10"/>
                     <button class="pomo-btn" id="loopUp">+</button>
                   </div>
                 </div>
@@ -547,7 +547,7 @@
                   <div>作業</div>
                   <div class="pomo-number">
                     <button id="workDown">-</button>
-                    <input id="workMin" type="number" value="25"/>
+                    <input id="workMin" type="number" value="1"/>
                     <button id="workUp">+</button>
                   </div>
                 </div>
@@ -578,7 +578,7 @@
                 </div>
 
                 <div id="pomoHint" style="font-size:12px;text-align:center;margin-top:4px;">
-                  タイマーを使って完食しよう！
+                  作業した分完食に近づくよ！
                 </div>
               </div>
             </div>
@@ -588,7 +588,7 @@
         <!-- コメント -->
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
           <div id="eatSoundInfo">
-            ↑ 作業やゲームなどする必要があります（クリック）
+            ↑ タイマーを使って飲食（クリック）
           </div>
 
           <button id="saveAllBtn" class="wood-btn small" style="margin-left:auto">
@@ -813,8 +813,9 @@ const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3
 /* p3 pool */
 const p3Urls = [
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_2.mp3'),
   getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_4.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_3.mp3')
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_5.mp3')
 ];
 const p3Pool = p3Urls.map(url => new Audio(url));
 
@@ -1623,9 +1624,9 @@ async function preloadFrames(basePath, frameCount=6, lastRandom=false){
   for (let i=1;i<=frameCount;i++){
     const variants = [
       `${basePath}${i}.png`,
-      `${basePath}${String(i).padStart(2,'0')}.png`,
+      `${basePath}${String(i).padStart(2,'')}.png`,
       `${basePath}_${i}.png`,
-      `${basePath}_${String(i).padStart(2,'0')}.png`
+      `${basePath}_${String(i).padStart(2,'')}.png`
     ];
     for (const v of variants){
       try {
