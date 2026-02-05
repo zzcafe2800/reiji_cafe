@@ -167,7 +167,7 @@
     <!-- B：スタッフ対応なし注文 -->
     <button id="offlineOrderBtn"
             class="offline-order">
-      セルフ<br>
+ 
       <span>スタッフ対応なし</span>
 
 
@@ -2878,192 +2878,210 @@ document.body.addEventListener("click",{once:true},()=>{
  -->
 
 
-import React, { useEffect, useRef, useState } from 'react';
+<script>
+(() => {
+  // ユーザー名（環境から差し替えてください）
+  const USER = 'zz2800';
 
-type Props = {
-  userLogin: string; // 例: "zz2800"
-  isWorkMode: boolean; // 作業中か休憩中か
-  // ランダム再生の範囲（秒） - 作業時に使う
-  workPlayWindow?: { minSec: number; maxSec: number };
-  // 休憩時に既存のランダム挙動があるなら isManagedByParent を true にして親コンポーネントに任せる
-  isManagedByParent?: boolean;
-};
+  // 既存の休憩用 p3Urls は既にある想定（上書きしません）
+  // 作業中用の音声ファイル配列（必要に応じてファイル名を修正）
+  const p3WorkUrls = [
+    getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_1.mp3'),
+    getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_2.mp3'),
+    getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_3.mp3')
+  ];
 
-const p3BreakUrls = [
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_4.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_3.mp3'),
-];
+  // localStorage キー（ユーザー単位）
+  const KEY_BREAK = `reiji_mute_break_${USER}`;
+  const KEY_WORK  = `reiji_mute_work_${USER}`;
 
-const p3WorkUrls = [
-  // 作業用音声ファイル（アセット名は適宜置き換えてください）
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_1.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_2.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_3.mp3'),
-];
+  // ランダム間隔（ミリ秒） — 必要に応じて調整してください
+  const WORK_MIN_MS = 30 * 1000;      // 最小 30秒
+  const WORK_MAX_MS = 3  * 60 * 1000; // 最大 3分
 
-function storageKey(user: string, kind: 'break' | 'work') {
-  return `reiji_cafe_mute_${kind}_${user}`;
+  // UI 作成（右上に表示）
+  const style = document.createElement('style');
+  style.textContent = `
+#reiji-sound-controls {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  z-index: 99999;
+  align-items: center;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
+.reiji-sound-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.95);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+}
+.reiji-sound-btn.muted {
+  opacity: 0.45;
+  filter: grayscale(80%);
+}
+.reiji-sound-btn:hover { transform: translateY(-1px); }
+.reiji-sound-label {
+  font-size: 11px;
+  transform: translateY(2px);
+}
+`;
+  document.head.appendChild(style);
 
-export default function TimerAudioManager({
-  userLogin,
-  isWorkMode,
-  workPlayWindow = { minSec: 60, maxSec: 300 }, // デフォルト: 1分〜5分の間隔でランダムに鳴らす
-  isManagedByParent = false,
-}: Props) {
-  const timeoutRef = useRef<number | null>(null);
-  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
-  // ミュート状態（localStorageに保存）
-  const [muteBreak, setMuteBreak] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(storageKey(userLogin, 'break')) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const [muteWork, setMuteWork] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(storageKey(userLogin, 'work')) === '1';
-    } catch {
-      return false;
-    }
-  });
+  const container = document.createElement('div');
+  container.id = 'reiji-sound-controls';
+  container.innerHTML = `
+    <button id="reiji-break-toggle" class="reiji-sound-btn" title="休憩音のミュート切替 (あなたのみ)">🔊</button>
+    <button id="reiji-work-toggle"  class="reiji-sound-btn" title="作業音のミュート切替 (あなたのみ)">🎧</button>
+  `;
+  document.body.appendChild(container);
 
-  // localStorage 更新ヘルパー
-  const setMuteAndStore = (kind: 'break' | 'work', v: boolean) => {
-    try {
-      localStorage.setItem(storageKey(userLogin, kind), v ? '1' : '0');
-    } catch {}
-    if (kind === 'break') setMuteBreak(v);
-    else setMuteWork(v);
-  };
+  const breakBtn = document.getElementById('reiji-break-toggle');
+  const workBtn  = document.getElementById('reiji-work-toggle');
 
-  // ランダムに配列からURLを選ぶ
-  const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-
-  // 再生
-  const playUrl = async (url: string) => {
-    try {
-      if (activeAudioRef.current) {
-        activeAudioRef.current.pause();
-        activeAudioRef.current = null;
-      }
-      const a = new Audio(url);
-      activeAudioRef.current = a;
-      // optional: 音量をここで調整 a.volume = 0.9;
-      await a.play().catch((err) => {
-        // 自動再生ポリシーで弾かれた等のエラーを無視
-        console.warn('audio play failed', err);
-      });
-      // 再生完了後に参照をクリア
-      a.addEventListener('ended', () => {
-        if (activeAudioRef.current === a) activeAudioRef.current = null;
-      });
-    } catch (e) {
-      console.error('playUrl error', e);
-    }
-  };
-
-  // 作業中のランダムスケジューラ（セッション終了まで繰り返す）
-  const scheduleWorkRandomPlay = () => {
-    // 範囲の秒数でランダム遅延 (ミリ秒)
-    const { minSec, maxSec } = workPlayWindow;
-    const min = Math.max(0, minSec);
-    const max = Math.max(min, maxSec);
-    const delaySec = Math.random() * (max - min) + min;
-    // Web API の setTimeout は number。Windowの型と合わせるため as any のキャストを用いる場合あり。
-    timeoutRef.current = window.setTimeout(async () => {
-      // ミュートなら何もしない（ただしスケジューラは継続）
-      if (!muteWork) {
-        const url = pickRandom(p3WorkUrls);
-        await playUrl(url);
-      }
-      // 終了していなければ次をスケジュール（作業セッションが続いている前提）
-      scheduleWorkRandomPlay();
-    }, Math.floor(delaySec * 1000));
-  };
-
-  // 休憩中の挙動は既に親で管理しているならここでは何もしない。
-  // もしこのコンポーネントに統合したい場合は同様に schedule を作る。
-  useEffect(() => {
-    // クリーンアップ
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      if (activeAudioRef.current) {
-        activeAudioRef.current.pause();
-        activeAudioRef.current = null;
-      }
-    };
-  }, []);
-
-  // モード切替を監視してスケジュール開始/停止
-  useEffect(() => {
-    // まず既存のタイマーを消す
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    if (isWorkMode) {
-      // 作業モード: スケジュール開始（親が管理していない場合）
-      if (!isManagedByParent) scheduleWorkRandomPlay();
+  function isMuted(key) {
+    return localStorage.getItem(key) === '1';
+  }
+  function setMuted(key, muted) {
+    localStorage.setItem(key, muted ? '1' : '0');
+    updateButtons();
+  }
+  function updateButtons() {
+    if (isMuted(KEY_BREAK)) {
+      breakBtn.classList.add('muted');
+      breakBtn.textContent = '🔇';
+      breakBtn.title = '休憩音はミュート中';
     } else {
-      // 休憩モード: 親で既にやっているなら何もしない。ここで再生したい場合は同様に実装。
-      if (!isManagedByParent && !muteBreak) {
-        // 休憩中に一度だけランダム再生したいなら例:
-        const url = pickRandom(p3BreakUrls);
-        playUrl(url);
-        // もし休憩中も複数回鳴らすなら schedule similar to work
-      }
+      breakBtn.classList.remove('muted');
+      breakBtn.textContent = '🔊';
+      breakBtn.title = '休憩音は有効';
     }
+    if (isMuted(KEY_WORK)) {
+      workBtn.classList.add('muted');
+      workBtn.textContent = '🔇';
+      workBtn.title = '作業音はミュート中';
+    } else {
+      workBtn.classList.remove('muted');
+      workBtn.textContent = '🎧';
+      workBtn.title = '作業音は有効';
+    }
+  }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isWorkMode, muteWork, muteBreak, userLogin]);
+  breakBtn.addEventListener('click', () => setMuted(KEY_BREAK, !isMuted(KEY_BREAK)));
+  workBtn.addEventListener('click',  () => setMuted(KEY_WORK,  !isMuted(KEY_WORK)));
 
-  return (
-    <>
-      {/* UIのスピーカーボタンは別コンポーネントにしても良いですが、ここに簡単に入れます */}
-      <div style={{
-        position: 'absolute',
-        right: 12,
-        top: 12,
-        zIndex: 9999,
-        display: 'flex',
-        gap: 8,
-        alignItems: 'center'
-      }}>
-        <button
-          aria-pressed={muteWork}
-          title={muteWork ? '作業中の音を有効にする' : '作業中の音をミュートする'}
-          onClick={() => setMuteAndStore('work', !muteWork)}
-          style={{
-            width: 40, height: 40, borderRadius: 8, border: 'none',
-            background: muteWork ? '#444' : '#0b84ff', color: 'white', cursor: 'pointer'
-          }}
-        >
-          {/* 簡易アイコン */}
-          {muteWork ? '🔇' : '🔊'}
-        </button>
+  // 再生ヘルパー
+  function playRandomAudio(urls, muteKey) {
+    if (!Array.isArray(urls) || urls.length === 0) return;
+    if (isMuted(muteKey)) return;
+    const url = urls[Math.floor(Math.random() * urls.length)];
+    const audio = new Audio(url);
+    // 必要なら volume を調整: audio.volume = 0.9;
+    audio.play().catch(() => {
+      // 自動再生ブロック等のため再生できない場合は無視
+    });
+  }
 
-        <button
-          aria-pressed={muteBreak}
-          title={muteBreak ? '休憩音を有効にする' : '休憩音をミュートする'}
-          onClick={() => setMuteAndStore('break', !muteBreak)}
-          style={{
-            width: 40, height: 40, borderRadius: 8, border: 'none',
-            background: muteBreak ? '#444' : '#0bbf59', color: 'white', cursor: 'pointer'
-          }}
-        >
-          {muteBreak ? '🔇' : '🔊'}
-        </button>
-      </div>
-    </>
-  );
-}
-  
+  // 作業中ループ
+  let workTimerId = null;
+  function scheduleNextWork() {
+    clearTimeout(workTimerId);
+    const delay = Math.floor(Math.random() * (WORK_MAX_MS - WORK_MIN_MS + 1)) + WORK_MIN_MS;
+    workTimerId = setTimeout(() => {
+      playRandomAudio(p3WorkUrls, KEY_WORK);
+      scheduleNextWork();
+    }, delay);
+  }
+  function startWorkLoop() {
+    if (workTimerId != null) return;
+    scheduleNextWork();
+  }
+  function stopWorkLoop() {
+    if (workTimerId != null) {
+      clearTimeout(workTimerId);
+      workTimerId = null;
+    }
+  }
+
+  // タイマー状態の検出（柔軟に対応）
+  // 既存のタイマー要素に data-state="work" / "break" や .work / .break のクラス、
+  // id="timer" や class="timer" 等が付いているケースを想定して監視する
+  function detectTimerElement() {
+    return document.getElementById('timer')
+      || document.querySelector('[data-timer-state]')
+      || document.querySelector('.timer')
+      || document.querySelector('[data-state="work"], [data-state="break"]')
+      || document.body;
+  }
+
+  let lastDetectedState = null;
+  function readStateFromElement(el) {
+    if (!el) return null;
+    // 優先順: data-state, data-timer-state, class (work/break)
+    const s = el.getAttribute('data-state') || el.getAttribute('data-timer-state') || el.dataset.state;
+    if (s === 'work' || s === 'break') return s;
+    if (el.classList && el.classList.contains('work')) return 'work';
+    if (el.classList && el.classList.contains('break')) return 'break';
+    return null;
+  }
+
+  function handleState(state) {
+    if (state === 'work') {
+      startWorkLoop();
+    } else if (state === 'break') {
+      stopWorkLoop();
+      // 休憩音は既存のコードで鳴っている想定なのでここでは何もしない
+    } else {
+      // 不明な状態 → 停止するのが安全
+      stopWorkLoop();
+    }
+  }
+
+  function observeTimerState() {
+    const el = detectTimerElement();
+    if (!el) return;
+    lastDetectedState = readStateFromElement(el);
+    handleState(lastDetectedState);
+
+    const mo = new MutationObserver((mutations) => {
+      const newState = readStateFromElement(el);
+      if (newState !== lastDetectedState) {
+        lastDetectedState = newState;
+        handleState(newState);
+      }
+    });
+    mo.observe(el, { attributes: true, attributeFilter: ['class', 'data-state', 'data-timer-state'] });
+  }
+
+  // ページロード後に検出開始（既存のタイマー DOM が遅れて生成される可能性を考慮）
+  setTimeout(() => {
+    observeTimerState();
+  }, 500);
+
+  // エクスポーズ（デバッグや任意操作用）
+  window.reijiSoundControls = {
+    startWorkLoop,
+    stopWorkLoop,
+    setBreakMuted: (v) => setMuted(KEY_BREAK, !!v),
+    setWorkMuted: (v)  => setMuted(KEY_WORK,  !!v),
+    isBreakMuted: () => isMuted(KEY_BREAK),
+    isWorkMuted: ()  => isMuted(KEY_WORK)
+  };
+
+  // 初期ボタン状態反映
+  updateButtons();
+})();
+</script>
 </body>
 </html>
