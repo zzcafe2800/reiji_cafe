@@ -98,6 +98,46 @@
   .pomo-progress{height:10px;background:#eee;border-radius:6px;overflow:hidden;width:100%;}
   .pomo-progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd4c4,#ffb38a);width:0%;}
   @media (max-width:520px){#pomodoroPanel{right:6px;top:6px;width:220px;} .menu-item img.menu-thumb{height:90px;} .modal{width:94%;}}
+
+
+/* 注文ボタン横並び用 */
+.order-row{
+  width:100%;
+  display:flex;
+  gap:8px;
+  align-items:stretch;
+  justify-content:center;
+}
+
+/* メイン注文（A）はそのまま */
+.order-btn{
+  flex:1;
+}
+
+/* サブ注文（B） */
+.offline-order{
+  flex:0 0 33%;
+  max-width:80px;
+  aspect-ratio:5 / 3;
+
+  background: linear-gradient(180deg, #ffe8de, #ffbfa5);
+  border: 3px dashed #e6b2a3;
+  color: #5a2e1e;
+
+  font-size:12px;
+  font-weight:700;
+  line-height:1.2;
+
+  box-shadow: 0 4px 0 #a35a42;
+}
+
+.offline-order span{
+  font-size:10px;
+  font-weight:600;
+  opacity:0.9;
+}
+
+  
 </style>
 </head>
 <body>
@@ -115,11 +155,20 @@
       </header>
 
       <div class="content">
-        <div class="order-block">
-          <div id="shiftShort" class="status-line">読み込み中...</div>
-          <button id="orderBtn" class="order-btn disabled">注文</button>
-          <div style="height:12px;"></div>
-      <button id="offlineOrderBtn" class="offline-order"　style="display: none;"><span style="font-size:0.9em;">注文</span></button>
+  <div class="order-block">
+  <div id="shiftShort" class="status-line">読み込み中...</div>
+
+  <div class="order-row">
+    <!-- A：通常注文 -->
+    <button id="orderBtn" class="order-btn disabled">
+      注文
+    </button>
+
+    <!-- B：スタッフ対応なし注文 -->
+    <button id="offlineOrderBtn"
+            class="offline-order">
+      セルフ<br>
+      <span>スタッフ対応なし</span>
 
 
           <div style="position:absolute; left:50%; bottom:23px; transform:translateX(-50%); width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
