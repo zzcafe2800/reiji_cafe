@@ -150,7 +150,7 @@
         <h1></h1>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="small-info">時刻: <span id="nowtime">--:--:--</span></div>
-          <button id="bgmBtn" class="bgm-btn" title="BGM">BGM</button>
+          <button id="bgmBtn" class="bgm-btn" title="BGM">X</button>
         </div>
       </header>
 
@@ -168,7 +168,7 @@
     <button id="offlineOrderBtn"
             class="offline-order">
  
-      <span>アートなし版</span>
+      <span>アート　なし版</span>
 
 
           <div style="position:absolute; left:50%; bottom:23px; transform:translateX(-50%); width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
@@ -523,7 +523,7 @@
   box-shadow:0 8px 18px rgba(0,0,0,.3);
 
   /* 全体半分表示 */
-  transform:scale(0.6);
+  transform:scale(0.8);
   transform-origin:bottom right;
 
   overflow:auto;
@@ -1912,7 +1912,7 @@ function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
 enableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = true; try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); ctx.resume && ctx.resume(); ctx.close && ctx.close(); } catch(e){} hideSoundOverlay(); flushPendingPlays(); });
 disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
 
-bgmBtn.addEventListener('click', ()=> window.open('https://x.gd/6C0VB', '_blank'));
+bgmBtn.addEventListener('click', ()=> window.open('https://x.com/zzcafe_280', '_blank'));
 
 /* ----------------- BOT helpers (art/card generation, overlay) ----------------- */
 let _botOverlayEl = null;
