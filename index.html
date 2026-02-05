@@ -2878,7 +2878,192 @@ document.body.addEventListener("click",{once:true},()=>{
  -->
 
 
+import React, { useEffect, useRef, useState } from 'react';
 
+type Props = {
+  userLogin: string; // 例: "zz2800"
+  isWorkMode: boolean; // 作業中か休憩中か
+  // ランダム再生の範囲（秒） - 作業時に使う
+  workPlayWindow?: { minSec: number; maxSec: number };
+  // 休憩時に既存のランダム挙動があるなら isManagedByParent を true にして親コンポーネントに任せる
+  isManagedByParent?: boolean;
+};
+
+const p3BreakUrls = [
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_4.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_3.mp3'),
+];
+
+const p3WorkUrls = [
+  // 作業用音声ファイル（アセット名は適宜置き換えてください）
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_1.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_2.mp3'),
+  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_work_3.mp3'),
+];
+
+function storageKey(user: string, kind: 'break' | 'work') {
+  return `reiji_cafe_mute_${kind}_${user}`;
+}
+
+export default function TimerAudioManager({
+  userLogin,
+  isWorkMode,
+  workPlayWindow = { minSec: 60, maxSec: 300 }, // デフォルト: 1分〜5分の間隔でランダムに鳴らす
+  isManagedByParent = false,
+}: Props) {
+  const timeoutRef = useRef<number | null>(null);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  // ミュート状態（localStorageに保存）
+  const [muteBreak, setMuteBreak] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(storageKey(userLogin, 'break')) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [muteWork, setMuteWork] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(storageKey(userLogin, 'work')) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  // localStorage 更新ヘルパー
+  const setMuteAndStore = (kind: 'break' | 'work', v: boolean) => {
+    try {
+      localStorage.setItem(storageKey(userLogin, kind), v ? '1' : '0');
+    } catch {}
+    if (kind === 'break') setMuteBreak(v);
+    else setMuteWork(v);
+  };
+
+  // ランダムに配列からURLを選ぶ
+  const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
+
+  // 再生
+  const playUrl = async (url: string) => {
+    try {
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+        activeAudioRef.current = null;
+      }
+      const a = new Audio(url);
+      activeAudioRef.current = a;
+      // optional: 音量をここで調整 a.volume = 0.9;
+      await a.play().catch((err) => {
+        // 自動再生ポリシーで弾かれた等のエラーを無視
+        console.warn('audio play failed', err);
+      });
+      // 再生完了後に参照をクリア
+      a.addEventListener('ended', () => {
+        if (activeAudioRef.current === a) activeAudioRef.current = null;
+      });
+    } catch (e) {
+      console.error('playUrl error', e);
+    }
+  };
+
+  // 作業中のランダムスケジューラ（セッション終了まで繰り返す）
+  const scheduleWorkRandomPlay = () => {
+    // 範囲の秒数でランダム遅延 (ミリ秒)
+    const { minSec, maxSec } = workPlayWindow;
+    const min = Math.max(0, minSec);
+    const max = Math.max(min, maxSec);
+    const delaySec = Math.random() * (max - min) + min;
+    // Web API の setTimeout は number。Windowの型と合わせるため as any のキャストを用いる場合あり。
+    timeoutRef.current = window.setTimeout(async () => {
+      // ミュートなら何もしない（ただしスケジューラは継続）
+      if (!muteWork) {
+        const url = pickRandom(p3WorkUrls);
+        await playUrl(url);
+      }
+      // 終了していなければ次をスケジュール（作業セッションが続いている前提）
+      scheduleWorkRandomPlay();
+    }, Math.floor(delaySec * 1000));
+  };
+
+  // 休憩中の挙動は既に親で管理しているならここでは何もしない。
+  // もしこのコンポーネントに統合したい場合は同様に schedule を作る。
+  useEffect(() => {
+    // クリーンアップ
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+        activeAudioRef.current = null;
+      }
+    };
+  }, []);
+
+  // モード切替を監視してスケジュール開始/停止
+  useEffect(() => {
+    // まず既存のタイマーを消す
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (isWorkMode) {
+      // 作業モード: スケジュール開始（親が管理していない場合）
+      if (!isManagedByParent) scheduleWorkRandomPlay();
+    } else {
+      // 休憩モード: 親で既にやっているなら何もしない。ここで再生したい場合は同様に実装。
+      if (!isManagedByParent && !muteBreak) {
+        // 休憩中に一度だけランダム再生したいなら例:
+        const url = pickRandom(p3BreakUrls);
+        playUrl(url);
+        // もし休憩中も複数回鳴らすなら schedule similar to work
+      }
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWorkMode, muteWork, muteBreak, userLogin]);
+
+  return (
+    <>
+      {/* UIのスピーカーボタンは別コンポーネントにしても良いですが、ここに簡単に入れます */}
+      <div style={{
+        position: 'absolute',
+        right: 12,
+        top: 12,
+        zIndex: 9999,
+        display: 'flex',
+        gap: 8,
+        alignItems: 'center'
+      }}>
+        <button
+          aria-pressed={muteWork}
+          title={muteWork ? '作業中の音を有効にする' : '作業中の音をミュートする'}
+          onClick={() => setMuteAndStore('work', !muteWork)}
+          style={{
+            width: 40, height: 40, borderRadius: 8, border: 'none',
+            background: muteWork ? '#444' : '#0b84ff', color: 'white', cursor: 'pointer'
+          }}
+        >
+          {/* 簡易アイコン */}
+          {muteWork ? '🔇' : '🔊'}
+        </button>
+
+        <button
+          aria-pressed={muteBreak}
+          title={muteBreak ? '休憩音を有効にする' : '休憩音をミュートする'}
+          onClick={() => setMuteAndStore('break', !muteBreak)}
+          style={{
+            width: 40, height: 40, borderRadius: 8, border: 'none',
+            background: muteBreak ? '#444' : '#0bbf59', color: 'white', cursor: 'pointer'
+          }}
+        >
+          {muteBreak ? '🔇' : '🔊'}
+        </button>
+      </div>
+    </>
+  );
+}
   
 </body>
 </html>
