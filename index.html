@@ -2881,7 +2881,7 @@ document.body.addEventListener("click",{once:true},()=>{
   function readInitialState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === 'offline' || saved === 'reorder') return saved;
-    return 'offline'; // デフォルト
+    return 'reorder'; // デフォルト
   }
 
   // 表示を反映する関数
