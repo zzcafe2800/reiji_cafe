@@ -515,7 +515,7 @@
   right:8px;
 
   width:230px;              /* 横サイズ基準 */
-  aspect-ratio:2 / 1;       /* ← 正方形にする */
+  aspect-ratio:1 / 1;       /* ← 正方形にする */
 
   background:#fff7e9;
   border-radius:14px;
@@ -523,7 +523,7 @@
   box-shadow:0 8px 18px rgba(0,0,0,.3);
 
   /* 全体半分表示 */
-  transform:scale(2);
+  transform:scale(0.5);
   transform-origin:bottom right;
 
   overflow:auto;
@@ -555,7 +555,7 @@
 /* スマホ対応 */
 @media(max-width:700px){
   #pomodoroPanel{
-    transform:scale(0.5);
+    transform:scale(0.9);
     transform-origin:bottom right;
   }
 }
