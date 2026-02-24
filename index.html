@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム(0ji,zz用)</title>
+<title>仮想飲食システム（マルチ店舗版）</title>
 <meta name="format-detection" content="telephone=no">
 <style>
   :root{
@@ -12,46 +12,33 @@
   }
   html,body{height:100%;margin:0;font-family:"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;}
   body{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+
   .container{width:100%;max-width:420px;margin:0;position:relative;perspective:2000px;aspect-ratio:3/5;}
   .book{position:relative;width:100%;height:100%;}
   .page{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;}
-  .cover{background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png") center/cover no-repeat;transform-origin:right center;z-index:2;pointer-events:auto;}
-  .cover.open{animation:flip 7.2s ease-in-out forwards;pointer-events:none;}
-  .cover.open.finished{display:none;}
-  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center / cover no-repeat;box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;z-index:1;display:flex;flex-direction:column;overflow:hidden;}
+
+  .inner{position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center / cover no-repeat;
+    box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;
+    z-index:1;display:flex;flex-direction:column;overflow:hidden;
+  }
   header{display:flex;align-items:center;justify-content:space-between;padding:12px;color:var(--dark);}
-  @keyframes flip{0%{transform:rotateY(0deg);box-shadow:0 20px 40px rgba(0,0,0,.25);}40%{transform:rotateY(-55deg);}70%{transform:rotateY(-130deg);}100%{transform:rotateY(-180deg);box-shadow:none;}}
   @media (min-width:768px){.container{width:94vw;margin:12px auto;aspect-ratio:3/5;}}
+
   .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;}
   .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
   .status-line{font-weight:700;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:8px;border:2px solid #f0c6c6;text-align:center;}
-  .order-btn{background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;width:100%;max-width:120px;aspect-ratio:5/3;font-size:clamp(16px,4vw,30px);display:flex;align-items:center;justify-content:center;text-align:center;}
+  .order-row{width:100%;display:flex;gap:8px;align-items:stretch;justify-content:center;}
+  .order-btn{
+    background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);
+    padding:14px 18px;border-radius:12px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;
+    width:100%;max-width:160px;aspect-ratio:5/3;font-size:clamp(16px,4vw,30px);display:flex;align-items:center;justify-content:center;text-align:center;
+  }
   .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
-  /* offline-order button: same visual but wide/horizontal under the order button */
-  .offline-order{
-  background: linear-gradient(180deg, #ffe1d6, #ff9f7a); /* 少し明るめ寄り */
-  border: 4px solid #ffd8d6; /* accentより少し柔らかい色 */
-  color: #3a1f14;
-  padding: 14px 18px;
-  border-radius: 14px;
-  cursor: pointer;
-  box-shadow: 0 6px 0 #8a3b28;
-  user-select: none;
 
-  width: 100%;
-  max-width: 120px;
-  aspect-ratio: 5 / 3;
-
-  font-size: clamp(16px, 4vw, 28px);
-  font-weight: bold;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}  .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
-  .small-pass input{width:100px;padding:4px;}
+  .small-pass{position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:6px;border-radius:6px;border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;}
+  .small-pass input{width:120px;padding:4px;}
   .guest-mini{position:fixed;right:12px;bottom:12px;background:var(--paper);padding:8px;border-radius:8px;border:1px solid #e6d6cc;font-size:13px;box-shadow:0 6px 12px rgba(0,0,0,0.08);}
+
   .staff-full{position:fixed;inset:0;background:linear-gradient(180deg,#fff8f2,#fff3ec);padding:18px;z-index:90;display:none;flex-direction:column;overflow:auto;}
   .staff-full.show{display:flex;}
   .staff-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
@@ -59,128 +46,107 @@
   .big-toggle button{flex:1;padding:12px;border-radius:8px;font-size:16px;border:2px solid #c6b3b3;cursor:pointer;}
   .big-toggle .on{background:#2b8f4a;color:#fff;border-color:#2b8f4a;}
   .big-toggle .off{background:#f0f0f0;color:#666;}
+
   .staff-body{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
   .staff-panel{flex:1;min-width:280px;background:var(--paper);padding:12px;border-radius:8px;border:1px solid #e6d6cc;max-height:520px;overflow:auto;}
-  .order-item{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:center;}
-  .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-  .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;}
-  img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
+  .order-item{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .small-info{font-size:12px;color:var(--muted);}
+  .small{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #d4c0b8;background:#fff;cursor:pointer;}
+  .btn-red{background:#b33;color:#fff;border:1px solid #b33;}
+  .btn-green{background:#2b8f4a;color:#fff;border:1px solid #2b8f4a;}
+
   .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:100;}
   .modal{background:#fff;padding:16px;border-radius:10px;width:780px;max-width:95%;box-shadow:0 8px 30px rgba(0,0,0,0.4);border:6px solid var(--accent);}
-  .art-area{position:relative;width:240px;height:240px;border-radius:6px;overflow:hidden;border:1px solid #d4c0b8;background:#b36e3c;}
-  .art-area canvas{position:absolute;left:0;top:0;width:240px;height:240px;}
-  .card-canvas{border:1px solid #e6d0c6;background:var(--card-skin);border-radius:8px;}
-  .small-info{font-size:12px;color:var(--muted);}
-  .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;}
-  .status-card{width:80%;max-width:720px;background:rgba(255,255,255,0.98);padding:28px;border-radius:12px;border:4px solid var(--accent);text-align:center;font-size:26px;font-weight:700;}
-  .status-sub{font-size:14px;color:#444;margin-top:8px;}
-  .bgm-btn{font-size:12px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.95);border:1px solid #e6d0c6;cursor:pointer;}
+  .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:8px;text-align:center;cursor:pointer;position:relative;}
+  img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:6px;}
+  .star-badge{position:absolute;right:8px;top:8px;background:rgba(0,0,0,0.55);color:#fff;font-size:12px;padding:4px 6px;border-radius:8px;}
+
+  .status-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;padding:18px;}
+  .status-card{width:92%;max-width:720px;background:rgba(255,255,255,0.98);padding:18px;border-radius:12px;border:4px solid var(--accent);text-align:center;font-size:22px;font-weight:800;}
+  .status-sub{font-size:12px;color:#444;margin-top:8px;}
+  .status-art{margin-top:12px;display:flex;justify-content:center;}
+  .status-art img{width:min(360px,80vw);height:auto;border-radius:12px;border:2px solid #e6d0c6;box-shadow:0 8px 18px rgba(0,0,0,0.15);}
+  .review-marquee{margin-top:10px;font-size:12px;color:#333;opacity:.9;}
+
   .sound-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;background:rgba(0,0,0,0.6);color:#fff;flex-direction:column;}
-  .sound-panel{background:#fff;padding:18px;border-radius:12px;color:#111;border:3px solid var(--accent);width:360px;text-align:center;}
-  .jukebox{display:flex;gap:8px;align-items:center}
-  .jukebox img{width:56px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;position:relative;}
-  .jukebox .hint{position:absolute;right:2px;bottom:2px;font-size:9px;background:rgba(255,255,255,0.9);padding:2px;border-radius:3px;}
-  .wrapper{position:relative;display:inline-block;}
+  .sound-panel{background:#fff;padding:18px;border-radius:12px;color:#111;border:3px solid var(--accent);width:360px;max-width:92%;text-align:center;}
+  .bgm-btn{font-size:12px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.95);border:1px solid #e6d0c6;cursor:pointer;}
 
-  /* POMODORO */
-  #pomodoroPanel{position:absolute;right:10px;top:10px;width:260px;max-width:86%;background:rgba(255,255,255,0.98);border:2px solid var(--accent);padding:10px;border-radius:8px;z-index:220;box-shadow:0 10px 30px rgba(0,0,0,0.18);display:none;}
-  #pomodoroPanel.show{display:block;}
-  .pomo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-  .pomo-label{font-size:13px;width:78px;}
-  .pomo-number{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e6d0c6;padding:6px;border-radius:6px;flex:1;}
-  .pomo-number input{border:none;width:56px;font-weight:700;text-align:center;}
-  .pomo-btn{width:28px;height:28px;border-radius:4px;border:1px solid #ccc;background:#fafafa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;user-select:none;}
-  .pomo-start{width:100%;padding:8px;background:linear-gradient(180deg,#6b3,#2b8f4a);color:#fff;border-radius:8px;border:2px solid #2b8f4a;cursor:pointer;font-weight:700;}
-  .pomo-running{display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,#fff8ef,#fff3ec);padding:8px;border-radius:6px;border:1px solid #e6d0c6;}
-  .pomo-controls{display:flex;gap:8px;width:100%;}
-  .pomo-controls button{flex:1;padding:8px;border-radius:6px;border:1px solid #d4c0b8;background:#fff;cursor:pointer;}
-  .pomo-timer{font-size:20px;font-weight:800;}
-  .pomo-progress{height:10px;background:#eee;border-radius:6px;overflow:hidden;width:100%;}
-  .pomo-progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd4c4,#ffb38a);width:0%;}
-  @media (max-width:520px){#pomodoroPanel{right:6px;top:6px;width:220px;} .menu-item img.menu-thumb{height:90px;} .modal{width:94%;}}
+  /* 店選択 */
+  .store-pick{
+    position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.55); padding:16px;
+  }
+  .store-pick .panel{
+    width:min(560px,92vw); background:#fff; border-radius:14px; border:4px solid var(--accent);
+    padding:14px; box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+  .store-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-bottom:1px dashed #e6d0c6;}
+  .store-row:last-child{border-bottom:none;}
+  .store-name{font-weight:800;color:#3a2b20;}
+  .mini-link{font-size:12px;color:#555;text-decoration:underline;cursor:pointer;background:none;border:none;padding:0}
 
-
-/* 注文ボタン横並び用 */
-.order-row{
-  width:100%;
-  display:flex;
-  gap:8px;
-  align-items:stretch;
-  justify-content:center;
-}
-
-/* メイン注文（A）はそのまま */
-.order-btn{
-  flex:1;
-}
-
-/* サブ注文（B） */
-.offline-order{
-  flex:0 0 33%;
-  max-width:80px;
-  aspect-ratio:5 / 3;
-
-  background: linear-gradient(180deg, #ffe8de, #ffbfa5);
-  border: 3px dashed #e6b2a3;
-  color: #5a2e1e;
-
-  font-size:12px;
-  font-weight:700;
-  line-height:1.2;
-
-  box-shadow: 0 4px 0 #a35a42;
-}
-
-.offline-order span{
-  font-size:10px;
-  font-weight:600;
-  opacity:0.9;
-}
-
-  
+  /* 飲食モーダル（簡易） */
+  #modalEat .modal{
+    width:95%;max-width:980px;background:rgba(255,255,255,0.95);
+    border-radius:14px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,0.25);
+  }
+  #eatMainWrap{width:100%;height:520px;border-radius:12px;background:#fffdf8;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:inset 0 0 12px rgba(0,0,0,.15);}
+  #servedImage{max-width:100%;max-height:100%;border-radius:8px;}
+  .side-card{background:rgba(255,255,255,.92);border-radius:12px;padding:10px;box-shadow:0 4px 12px rgba(0,0,0,.12);}
+  .mini-frame{background:#fff;border:6px solid #e8dccd;border-bottom:10px solid #d7c6b2;border-radius:4px;padding:4px;box-shadow:0 4px 10px rgba(0,0,0,.15);}
+  .review-box{margin-top:10px;border:1px solid #e6d0c6;border-radius:10px;padding:10px;background:#fff;}
+  .stars{display:flex;gap:6px;font-size:18px;cursor:pointer;user-select:none;}
+  .stars span{opacity:.35}
+  .stars span.on{opacity:1}
+  .review-box textarea{width:100%;height:70px;resize:none;border:1px solid #e6d0c6;border-radius:10px;padding:8px;font-family:inherit;}
 </style>
 </head>
+
 <body>
+<!-- 店選択 -->
+<div id="storePick" class="store-pick">
+  <div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div>
+        <div style="font-weight:900;font-size:18px;">お店を選ぶ</div>
+        <div class="small-info">来店するお店を選択してください</div>
+      </div>
+      <button id="storePickClose" class="small">閉じる</button>
+    </div>
+    <div id="storeList" style="margin-top:10px;"></div>
+    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+      <button id="makeMyStoreBtn" class="mini-link">自分のお店用を作りたい方</button>
+      <button id="storePickBack" class="small">戻る</button>
+    </div>
+  </div>
+</div>
 
 <div class="container">
   <div class="book">
-    <div class="page cover" id="coverPage"></div>
     <div class="page inner">
       <header>
-        <h1></h1>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div>
+          <h1 id="storeTitle" style="margin:0;font-size:16px;">--</h1>
           <div class="small-info">時刻: <span id="nowtime">--:--:--</span></div>
-          <button id="bgmBtn" class="bgm-btn" title="BGM">X</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="storeChangeBtn" class="bgm-btn" title="店変更">店</button>
+          <button id="xBtn" class="bgm-btn" title="X">X</button>
         </div>
       </header>
 
       <div class="content">
-  <div class="order-block">
-  <div id="shiftShort" class="status-line">読み込み中...</div>
-
-  <div class="order-row">
-    <!-- A：通常注文 -->
-    <button id="orderBtn" class="order-btn disabled">
-      注文
-    </button>
-
-    <!-- B：スタッフ対応なし注文 -->
-<button id="offlineOrderBtn"
-        class="offline-order"
-        style="display:none;">
-  <span>アート　なし版</span>
-
-</button>
-
-
-          <div style="position:absolute; left:50%; bottom:23px; transform:translateX(-50%); width:100%; max-width:360px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
-            <div id="helperSmall" class="small-info">実際の支払いはありません</div>
-            <div id="jukeboxArea" style="display:flex;gap:8px;justify-content:center;"></div>
+        <div class="order-block">
+          <div id="shiftShort" class="status-line">読み込み中...</div>
+          <div class="order-row">
+            <button id="orderBtn" class="order-btn disabled">注文</button>
           </div>
-
+          <div id="helperSmall" class="small-info">実際の支払いはありません</div>
+          <div id="crowdInfo" class="small-info"></div>
         </div>
       </div>
-</div>
     </div>
   </div>
 </div>
@@ -192,35 +158,48 @@
 
 <div class="small-pass">
   <label style="font-size:12px;margin:0">店員用</label>
-  <input id="staffPass" placeholder="　" />
+  <input id="staffPass" placeholder="店パス" />
   <button id="passOk" class="small">OK</button>
 </div>
 
+<!-- staff -->
 <div id="staffFull" class="staff-full" aria-hidden="true">
   <div class="staff-top">
-
-
     <div>
       <strong id="staffBadge">店員</strong>
       <div class="small-info">店員控室</div>
+      <div class="small-info">店：<span id="staffStoreName">--</span></div>
     </div>
     <div>
       <button id="logoutStaff" class="small">退室</button>
     </div>
   </div>
 
-  <div style="margin-top:8px;">
-    <div style="display:flex;gap:8px;align-items:center;">
-      <label>シフト開始時間</label><input id="shiftStart" type="time" />
-      <label>終了時間</label><input id="shiftEnd" type="time" />
+  <div style="margin-top:10px;">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <label>シフト開始</label><input id="shiftStart" type="time" />
+      <label>終了</label><input id="shiftEnd" type="time" />
+      <label>状況</label>
+      <select id="staffStateSel">
+        <option value="waiting">待機中</option>
+        <option value="busy">他方の料理中</option>
+      </select>
       <button id="saveShift" class="small">保存</button>
-        <button id="orderToggleBtn" class="off">・</button>
-
     </div>
 
-    <div class="big-toggle" style="margin-top:8px;">
+    <div class="big-toggle" style="margin-top:10px;">
       <button id="shiftBtn" class="off">シフト中</button>
       <button id="breakBtn" class="off">休憩中</button>
+    </div>
+
+    <div style="margin-top:10px;background:#fff;padding:10px;border-radius:10px;border:1px solid #e6d0c6;">
+      <div style="font-weight:800;">無人時の注文</div>
+      <div class="small-info">※BOT機能はありません。OFFだとシフト0人の時は注文できません。</div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="emptyOrderOn" class="small">ON（注文できる）</button>
+        <button id="emptyOrderOff" class="small">OFF（注文できない）</button>
+        <div class="small-info" style="margin-left:auto;">現在: <span id="emptyOrderState">--</span></div>
+      </div>
     </div>
   </div>
 
@@ -231,41 +210,47 @@
     </div>
 
     <div class="staff-panel">
-      <strong> 注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
+      <strong>注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
       <div id="staffOrderList" class="order-list" style="margin-top:8px"></div>
     </div>
   </div>
 </div>
 
+<!-- sound overlay -->
 <div id="soundOverlay" class="sound-overlay" style="display:none;">
   <div class="sound-panel">
     <h3>効果音など流しますか？</h3>
     <p style="font-size:12px;">音声、効果音が流れます</p>
     <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-      <button id="enableSoundBtn" class="btn-green">OK</button>
+      <button id="enableSoundBtn" class="btn-green small">OK</button>
       <button id="disableSoundBtn" class="small">NO</button>
     </div>
   </div>
 </div>
 
+<!-- order status overlay (art realtime) -->
 <div id="orderStatusOverlay" class="status-overlay">
-  <div class="status-card" id="orderStatusCard">
+  <div class="status-card">
     <div id="orderStatusMain">状態</div>
     <div id="orderStatusSub" class="status-sub">対応されない場合再度注文</div>
+    <div class="status-art"><img id="statusArtImg" alt="" style="display:none;"></div>
+    <div id="statusReview" class="review-marquee" style="display:none;"></div>
   </div>
 </div>
 
+<!-- name modal -->
 <div id="modalName" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
-    <h3>ゲーム内の名前</h3>
+    <h3 id="nameModalTitle">ゲーム内の名前</h3>
     <input id="orderName" placeholder="名前を入力" style="width: 300px; height: 60px;" />
     <div style="margin-top:10px;text-align:right;">
       <button id="cancelOrderName" class="small">キャンセル</button>
-      <button id="okOrderName" class="btn-red">決定</button>
+      <button id="okOrderName" class="btn-red small">決定</button>
     </div>
   </div>
 </div>
 
+<!-- menu modal -->
 <div id="modalMenu" class="modal-back" style="display:none;align-items:center;justify-content:center;">
   <div class="modal">
     <h3>メニューを選択『１日１品まで』</h3>
@@ -276,423 +261,98 @@
   </div>
 </div>
 
-<div id="modalMakeLatte" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
-  <div class="modal" style="width:95%;max-width:920px;">
-    <h3 id="makeTitle">カフェラテ制作（担当：<span id="makerName"></span>）</h3>
+<!-- make modal (art realtime send) -->
+<div id="modalMake" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
+  <div class="modal" style="width:95%;max-width:960px;">
+    <h3 id="makeTitle">制作（担当：<span id="makerName"></span>）</h3>
+
     <div style="display:flex;flex-wrap:wrap;gap:12px;">
-      <div style="flex:1;min-width:280px;">
-        <div style="height:220px;display:flex;align-items:center;justify-content:center;">
-          <div style="width:180px;height:180px;border-radius:12px;background:#fff8f2;display:flex;align-items:center;justify-content:center;border:2px solid #d2b6ab;position:relative;">
-            <div style="position:absolute;left:8px;top:8px;right:8px;bottom:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-              <div id="espressoCup" style="width:120px;height:120px;border-radius:60px;overflow:hidden;position:relative;background:#6b3b24;">
-                <canvas id="latteCanvas" width="120" height="120" style="display:block;"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div style="flex:1;min-width:320px;">
+        <div style="background:#fff8ef;padding:10px;border-radius:10px;border:1px solid #e0c7bb;">
+          <strong>アート（リアルタイム送信）</strong>
+          <div class="small-info">※8秒に1回、変更があった時だけ軽量で送信</div>
 
-        <div style="margin-top:8px;">
-          <label id="espressoLabel">エスプレッソ注ぎ</label>
-          <div style="background:#eee;border-radius:6px;padding:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startEsp" class="small">注ぐ（押し続け）</button>
-              <div style="flex:1;position:relative;">
-                <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
-                  <div id="espBar" style="height:100%;width:0%;background:linear-gradient(90deg,#a7552b,#6b3);"></div>
-                </div>
-              </div>
-              <div id="espPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
-            </div>
-            <div class="small-info">合格ゾーン: 95%〜105%</div>
-          </div>
-        </div>
-
-        <div style="margin-top:8px;">
-          <label id="milkLabel">フームドミルク注ぎ</label>
-          <div style="background:#eee;border-radius:6px;padding:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
-              <div style="flex:1;position:relative;">
-                <div style="height:16px;background:#fff;border-radius:8px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
-                  <div id="milkBar" style="height:100%;width:0%;background:linear-gradient(90deg,#fff,#eee);"></div>
-                </div>
-              </div>
-              <div id="milkPct" style="width:48px;text-align:right;font-weight:700;">0%</div>
-            </div>
-            <div class="small-info">合格ゾーン: 95%〜105%</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="flex:1;min-width:300px;">
-        <div style="background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
-          <strong id="latteArtLabel">アート（似顔絵など）</strong>
           <div style="margin-top:8px;">
-            <div class="art-area" id="artArea">
-              <canvas id="artBg" width="240" height="240"></canvas>
-              <canvas id="artLayer" width="240" height="240"></canvas>
+            <div style="position:relative;width:240px;height:240px;border-radius:10px;overflow:hidden;border:1px solid #d4c0b8;background:#b36e3c;">
+              <canvas id="artBg" width="240" height="240" style="position:absolute;left:0;top:0;"></canvas>
+              <canvas id="artLayer" width="240" height="240" style="position:absolute;left:0;top:0;"></canvas>
             </div>
-            <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+
+            <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
               <label>ツール</label>
               <select id="penMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
               <label>太さ</label>
               <select id="penSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
               <button id="clearArt" class="small">クリア</button>
+              <label style="font-size:12px;">背景</label><input id="artBgColor" type="color" value="#6b3b24"/>
+              <label style="font-size:12px;">ペン</label><input id="artPenColor" type="color" value="#ffffff"/>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
-              <label style="font-size:12px;">背景色</label><input id="artBgColor" type="color" value="#6b3b24"/>
-              <label style="font-size:12px;">ペン色</label><input id="artPenColor" type="color" value="#ffffff"/>
-            </div>
-            <div style="margin-top:8px;text-align:right;">
-              <button id="saveArt" class="btn-green" disabled>アート保存</button>
+
+            <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;align-items:center;">
+              <div id="rtState" class="small-info" style="margin-right:auto;"></div>
+              <button id="saveArt" class="small btn-green">アート保存</button>
+              <button id="deliverBtn" class="small btn-red">提供する</button>
+              <button id="cancelMake" class="small">中止</button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div style="margin-top:10px;background:#fff8ef;padding:8px;border-radius:8px;border:1px solid #e0c7bb;">
-          <strong>メッセージカード（応援等々…）</strong>
-          <div style="margin-top:6px;">
-            <canvas id="cardCanvas" class="card-canvas" width="320" height="120"></canvas>
+      <div style="flex:1;min-width:320px;">
+        <div style="background:#fff;padding:10px;border-radius:10px;border:1px solid #e6d0c6;">
+          <strong>現在の注文</strong>
+          <div id="makeOrderInfo" class="small-info" style="margin-top:6px;"></div>
+          <div style="margin-top:10px;">
+            <strong>ランダム口コミ（参考表示）</strong>
+            <div id="makeRandomReview" class="small-info" style="margin-top:6px;">--</div>
           </div>
-          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
-            <label>ツール</label>
-            <select id="cardMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
-            <label>太さ</label>
-            <select id="cardSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
-            <button id="clearCard" class="small">クリア</button>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
-            <label style="font-size:12px;">背景色</label><input id="cardBgColor" type="color" value="#fff2e6"/>
-            <label style="font-size:12px;">ペン色</label><input id="cardPenColor" type="color" value="#000000"/>
-          </div>
-          <div style="margin-top:8px;text-align:right;">
-            <button id="saveCard" class="small" disabled>保存</button>
-          </div>
-        </div>
-
-        <div style="margin-top:8px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
-          <div id="taskStatusSmall" class="small-info" style="margin-right:auto"></div>
-          <button id="completeMake" class="btn-red" disabled>提供する</button>
-          <button id="cancelMake" class="small">中止</button>
         </div>
       </div>
     </div>
+
   </div>
 </div>
 
-
-
-
-  
-
-
-
-
-
-
-<!-- 既存の modalEat をこれに丸ごと置き換え -->
+<!-- eat modal -->
 <div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
-  <style>
-    /* ===== 全体背景 ===== */
-    #modalEat .modal{
-      width:95%;
-      max-width:960px;
-      background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;
-      border-radius:14px;
-      padding:14px;
-      box-shadow:0 12px 30px rgba(0,0,0,0.25);
-    }
-
-    /* タイトル目立たせない */
-    #modalEat h3{
-      font-size:14px;
-      color:#fff;
-      opacity:.7;
-      margin:0 0 6px 6px;
-      font-weight:500;
-    }
-
-    /* ===== 写真フォルダー風 ===== */
-    .photo-folder{
-      background:#f6efe7;
-      border-radius:12px;
-      padding:10px;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,.1);
-    }
-
-    /* 写真立て */
-    .photo-frame{
-      background:#fff;
-      border:10px solid #e8dccd;
-      border-bottom:16px solid #d7c6b2;
-      border-radius:6px;
-      box-shadow:0 6px 14px rgba(0,0,0,.25);
-      padding:6px;
-      position:relative;
-      transform:rotate(-1deg);
-    }
-
-    /* ===== メイン表示 ===== */
-    #eatMainWrap{
-      width:100%;
-      height:520px;
-      border-radius:12px;
-      background:#fffdf8;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      overflow:hidden;
-      box-shadow:inset 0 0 12px rgba(0,0,0,.15);
-    }
-
-    #servedImage{
-      max-width:100%;
-      max-height:100%;
-      border-radius:8px;
-    }
-
-    /* ===== コメント吹き出し ===== */
-    #eatSoundInfo{
-      font-weight:600;
-      padding:.6em .9em;
-      background:#fff;
-      border-radius:14px;
-      box-shadow:0 3px 10px rgba(0,0,0,.15);
-      position:relative;
-    }
-
-    #eatSoundInfo:after{
-      content:"";
-      position:absolute;
-      left:16px;
-      bottom:-8px;
-      border:8px solid transparent;
-      border-top-color:#fff;
-    }
-
-    /* ===== 木目ボタン ===== */
-    .wood-btn{
-      background:linear-gradient(#c9a57a,#a67c52);
-      color:#fff;
-      border:none;
-      border-radius:10px;
-      padding:6px 12px;
-      font-weight:600;
-      box-shadow:0 3px 6px rgba(0,0,0,.25);
-      cursor:pointer;
-    }
-
-    .wood-btn.small{ font-size:12px; }
-
-    /* ===== サイドカード ===== */
-    .side-card{
-      background:rgba(255,255,255,.92);
-      border-radius:12px;
-      padding:8px;
-      box-shadow:0 4px 12px rgba(0,0,0,.15);
-    }
-
-    /* ===== アート＆カードを写真配置風に ===== */
-    .photo-stack{
-      display:flex;
-      gap:8px;
-      justify-content:center;
-      margin-top:8px;
-    }
-
-    .mini-frame{
-      background:#fff;
-      border:6px solid #e8dccd;
-      border-bottom:10px solid #d7c6b2;
-      border-radius:4px;
-      padding:4px;
-      box-shadow:0 4px 10px rgba(0,0,0,.2);
-    }
-
-    /* ===== タイマー：レトロ時計 ===== */
-#pomodoroPanel{
-  position:absolute;
-  bottom:8px;
-  right:8px;
-
-  width:230px;              /* 横サイズ基準 */
-  aspect-ratio:1 / 1;       /* ← 正方形にする */
-
-  background:#fff7e9;
-  border-radius:14px;
-  padding:10px;
-  box-shadow:0 8px 18px rgba(0,0,0,.3);
-
-  /* 全体半分表示 */
-  transform:scale(0.8);
-  transform-origin:bottom right;
-
-  overflow:auto;
-  cursor:grab;
-}
-
-/* タイマー表示 */
-.pomo-timer{
-  font-family:monospace;
-  font-size:26px;
-  text-align:center;
-  background:#222;
-  color:#7cff7c;
-  padding:6px;
-  border-radius:6px;
-  letter-spacing:2px;
-}
-
-
-/* 設定ボタン */
-.pomo-btn,
-#startPomoBtn,
-#stopPomoBtn,
-#pausePomoBtn,
-#skipPomoBtn{
-  font-size:14px;
-}
-
-/* スマホ対応 */
-@media(max-width:700px){
-  #pomodoroPanel{
-    transform:scale(0.7);
-    transform-origin:bottom right;
-  }
-}
-  </style>
-
   <div class="modal">
-    <h3>飲食</h3>
-
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <!-- ===== メイン表示 ===== -->
-      <div style="flex:1;min-width:420px;" class="photo-folder">
-        <div class="photo-frame">
-          <div id="eatMainWrap">
-            <img id="servedImage" src="" alt="商品画像" />
-
-            <div id="serveHint" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,0.9);padding:8px;border-radius:8px;display:none;">
-              長押しで音を鳴らし、離すと次へ
-            </div>
-
-            <!-- ===== タイマー（既存機能維持） ===== -->
-            <div id="pomodoroPanel" aria-hidden="true">
-              <div id="pomoSettings">
-                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                  <div>ポロドーモタイマー</div>
-                  <div id="pomoCountDisplay">1 / 1</div>
-                </div>
-
-                <div class="pomo-row">
-                  <div>ループ</div>
-                  <div class="pomo-number">
-                    <button class="pomo-btn" id="loopDown">-</button>
-                    <input id="loopCount" type="number" value="2" min="1" max="10"/>
-                    <button class="pomo-btn" id="loopUp">+</button>
-                  </div>
-                </div>
-
-                <div class="pomo-row">
-                  <div>作業</div>
-                  <div class="pomo-number">
-                    <button id="workDown">-</button>
-                    <input id="workMin" type="number" value="1"/>
-                    <button id="workUp">+</button>
-                  </div>
-                </div>
-
-                <div class="pomo-row">
-                  <div>休憩</div>
-                  <div class="pomo-number">
-                    <button id="breakDown">-</button>
-                    <input id="breakMin" type="number" value="5"/>
-                    <button id="breakUp">+</button>
-                  </div>
-                </div>
-
-                <div style="text-align:right;margin-top:8px;">
-                  <button id="startPomoBtn" class="wood-btn">再生 ▶</button>
-                </div>
-              </div>
-
-              <div id="pomoRunning" style="display:none;">
-                <div id="pomoLoopCounter">1 / 1</div>
-                <div id="pomoPhaseLabel">作業中</div>
-                <div class="pomo-timer" id="pomoTimerText">00:00:00</div>
-
-                <div class="pomo-controls" style="display:flex;gap:6px;margin-top:6px;">
-                  <button id="stopPomoBtn">■</button>
-                  <button id="pausePomoBtn">⏸</button>
-                  <button id="skipPomoBtn">⏭</button>
-                </div>
-
-                <div id="pomoHint" style="font-size:12px;text-align:center;margin-top:4px;">
-                  作業した分完食に近づくよ！
-                </div>
-              </div>
-            </div>
-          </div>
+      <div style="flex:1;min-width:420px;">
+        <div id="eatMainWrap">
+          <img id="servedImage" src="" alt="商品画像" />
         </div>
-
-        <!-- コメント -->
-        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-          <div id="eatSoundInfo">
-            ↑ タイマーを使って飲食（クリック）
-          </div>
-
-          <button id="saveAllBtn" class="wood-btn small" style="margin-left:auto">
-            画像保存
-          </button>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+          <button id="saveAllBtn" class="small">画像保存</button>
+          <div id="eatRandomReview" class="small-info" style="margin-left:auto;"></div>
         </div>
       </div>
 
-      <!-- ===== サイド ===== -->
-      <div style="width:320px;">
+      <div style="width:340px;max-width:92vw;">
         <div class="side-card">
+          <div style="display:flex;gap:8px;">
+            <div class="mini-frame"><canvas id="servedArtMini" width="220" height="220"></canvas></div>
+          </div>
 
-          <div class="photo-stack">
-            <div class="mini-frame">
-              <canvas id="servedArtMini" width="220" height="220"></canvas>
+          <div class="review-box">
+            <div style="font-weight:900;">口コミ</div>
+            <div class="small-info">※他の方に見られます</div>
+            <div class="stars" id="reviewStars" aria-label="rating">
+              <span data-n="1">☆</span><span data-n="2">☆</span><span data-n="3">☆</span><span data-n="4">☆</span><span data-n="5">☆</span>
+            </div>
+            <textarea id="reviewText" placeholder="対応や待ち時間など（他の方に見られます）"></textarea>
+            <div style="margin-top:8px;display:flex;justify-content:flex-end;gap:8px;">
+              <button id="submitReviewBtn" class="small btn-green">送信</button>
             </div>
           </div>
 
-          <div class="photo-stack">
-            <div class="mini-frame">
-              <canvas id="servedCardMini" width="260" height="120"></canvas>
-            </div>
+          <div style="margin-top:10px;text-align:right;">
+            <button id="homeFromEat" class="small">ホームへ</button>
           </div>
-
-          <div style="margin-top:8px;text-align:right;">
-            <button id="homeFromEat" class="wood-btn small">
-              ホームへ
-            </button>
-          </div>
-
         </div>
       </div>
     </div>
   </div>
 </div>
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-  
 
 <script type="module">
 /* ===== Firebase imports ===== */
@@ -708,10 +368,13 @@ import {
   onSnapshot,
   query,
   orderBy,
-  getDoc
+  getDoc,
+  setDoc,
+  limit,
+  where
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* ===== Firebase config（新サーバー） ===== */
+/* ===== Firebase config ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyBJe7_PGeOEkCyC1NxaTMc5bjelQwv2OaU",
   authDomain: "insyoku-f9aee.firebaseapp.com",
@@ -722,52 +385,109 @@ const firebaseConfig = {
   measurementId: "G-QET0N3KP2L"
 };
 
-/* ===== 初期化 ===== */
 let app, auth, db;
 try {
-  app  = initializeApp(firebaseConfig);
+  app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db   = getFirestore(app);
-  signInAnonymously(auth).catch(e=>{ console.warn("anonymous sign-in failed", e); });
+  db = getFirestore(app);
+  signInAnonymously(auth).catch(()=>{});
 } catch(e){
-  console.warn("Firebase init failed - offline mode", e);
+  console.warn("Firebase init failed", e);
   db = null;
 }
 
-/* DOM refs */
+/* ===== Utils ===== */
+function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function getAssetUrl(path){
+  if (!path) return '';
+  if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
+  try { return new URL(path).href; } catch(e){ return path; }
+}
+function nowInJST(){
+  const s = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+  return new Date(s);
+}
+function isNowWithinShift(start,end,dateObj){
+  if (!start || !end) return false;
+  const [sh,sm] = start.split(':').map(Number);
+  const [eh,em] = end.split(':').map(Number);
+  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
+  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
+  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
+  return dateObj >= sDate && dateObj <= eDate;
+}
+function formatStars(avg){
+  if (!avg) return "☆☆☆☆☆";
+  const n = Math.round(avg);
+  return "★★★★★☆☆☆☆☆".slice(5-n, 10-n);
+}
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+/* ===== DOM ===== */
 const nowtimeEl = document.getElementById('nowtime');
+const storeTitle = document.getElementById('storeTitle');
+const xBtn = document.getElementById('xBtn');
+const storeChangeBtn = document.getElementById('storeChangeBtn');
+
 const orderBtn = document.getElementById('orderBtn');
-const offlineOrderBtn = document.getElementById('offlineOrderBtn');
 const shiftShort = document.getElementById('shiftShort');
+const crowdInfo = document.getElementById('crowdInfo');
+
+const storePick = document.getElementById('storePick');
+const storeList = document.getElementById('storeList');
+const storePickClose = document.getElementById('storePickClose');
+const storePickBack = document.getElementById('storePickBack');
+const makeMyStoreBtn = document.getElementById('makeMyStoreBtn');
+
 const staffPass = document.getElementById('staffPass');
 const passOk = document.getElementById('passOk');
-const modalName = document.getElementById('modalName');
-const orderName = document.getElementById('orderName');
-const okOrderName = document.getElementById('okOrderName');
-const cancelOrderName = document.getElementById('cancelOrderName');
-const modalMenu = document.getElementById('modalMenu');
-const menuGrid = document.getElementById('menuGrid');
-const backMenu = document.getElementById('backMenu');
+
 const staffFull = document.getElementById('staffFull');
 const staffBadge = document.getElementById('staffBadge');
+const staffStoreName = document.getElementById('staffStoreName');
 const logoutStaff = document.getElementById('logoutStaff');
 const shiftBtn = document.getElementById('shiftBtn');
 const breakBtn = document.getElementById('breakBtn');
 const shiftStart = document.getElementById('shiftStart');
 const shiftEnd = document.getElementById('shiftEnd');
+const staffStateSel = document.getElementById('staffStateSel');
 const saveShift = document.getElementById('saveShift');
 const shiftList = document.getElementById('shiftList');
 const staffOrderList = document.getElementById('staffOrderList');
 const pendingTasksSmall = document.getElementById('pendingTasksSmall');
 
-const modalMakeLatte = document.getElementById('modalMakeLatte');
+const emptyOrderOn = document.getElementById('emptyOrderOn');
+const emptyOrderOff = document.getElementById('emptyOrderOff');
+const emptyOrderState = document.getElementById('emptyOrderState');
+
+const soundOverlay = document.getElementById('soundOverlay');
+const enableSoundBtn = document.getElementById('enableSoundBtn');
+const disableSoundBtn = document.getElementById('disableSoundBtn');
+
+const orderStatusOverlay = document.getElementById('orderStatusOverlay');
+const orderStatusMain = document.getElementById('orderStatusMain');
+const orderStatusSub = document.getElementById('orderStatusSub');
+const statusArtImg = document.getElementById('statusArtImg');
+const statusReview = document.getElementById('statusReview');
+
+const modalName = document.getElementById('modalName');
+const nameModalTitle = document.getElementById('nameModalTitle');
+const orderName = document.getElementById('orderName');
+const okOrderName = document.getElementById('okOrderName');
+const cancelOrderName = document.getElementById('cancelOrderName');
+
+const modalMenu = document.getElementById('modalMenu');
+const menuGrid = document.getElementById('menuGrid');
+const backMenu = document.getElementById('backMenu');
+
+const modalMake = document.getElementById('modalMake');
+const makeTitle = document.getElementById('makeTitle');
 const makerName = document.getElementById('makerName');
-const startEsp = document.getElementById('startEsp');
-const espBar = document.getElementById('espBar');
-const espPct = document.getElementById('espPct');
-const startMilk = document.getElementById('startMilk');
-const milkBar = document.getElementById('milkBar');
-const milkPct = document.getElementById('milkPct');
+const makeOrderInfo = document.getElementById('makeOrderInfo');
+const makeRandomReview = document.getElementById('makeRandomReview');
+const deliverBtn = document.getElementById('deliverBtn');
+const cancelMake = document.getElementById('cancelMake');
 
 const artBg = document.getElementById('artBg');
 const artLayer = document.getElementById('artLayer');
@@ -779,628 +499,700 @@ const clearArt = document.getElementById('clearArt');
 const saveArt = document.getElementById('saveArt');
 const artBgColor = document.getElementById('artBgColor');
 const artPenColor = document.getElementById('artPenColor');
-
-const cardCanvas = document.getElementById('cardCanvas');
-const cardCtx = cardCanvas.getContext('2d');
-const cardMode = document.getElementById('cardMode');
-const cardSize = document.getElementById('cardSize');
-const clearCard = document.getElementById('clearCard');
-const saveCard = document.getElementById('saveCard');
-const cardBgColor = document.getElementById('cardBgColor');
-const cardPenColor = document.getElementById('cardPenColor');
-
-const taskStatusSmall = document.getElementById('taskStatusSmall');
-const completeMake = document.getElementById('completeMake');
-const cancelMake = document.getElementById('cancelMake');
+const rtState = document.getElementById('rtState');
 
 const modalEat = document.getElementById('modalEat');
 const servedImage = document.getElementById('servedImage');
 const servedArtMini = document.getElementById('servedArtMini');
-const servedCardMini = document.getElementById('servedCardMini');
-const eatNext = document.getElementById('eatNext');
+const servedArtMiniCtx = servedArtMini.getContext('2d');
 const saveAllBtn = document.getElementById('saveAllBtn');
 const homeFromEat = document.getElementById('homeFromEat');
-const orderStatusOverlay = document.getElementById('orderStatusOverlay');
-const orderStatusMain = document.getElementById('orderStatusMain');
-const orderStatusSub = document.getElementById('orderStatusSub');
-const bgmBtn = document.getElementById('bgmBtn');
-const jukeboxArea = document.getElementById('jukeboxArea');
 
-const soundOverlay = document.getElementById('soundOverlay');
-const enableSoundBtn = document.getElementById('enableSoundBtn');
-const disableSoundBtn = document.getElementById('disableSoundBtn');
+const reviewStars = document.getElementById('reviewStars');
+const reviewText = document.getElementById('reviewText');
+const submitReviewBtn = document.getElementById('submitReviewBtn');
+const eatRandomReview = document.getElementById('eatRandomReview');
 
-const makeTitle = document.getElementById('makeTitle');
-const espressoLabelEl = document.getElementById('espressoLabel');
-const milkLabelEl = document.getElementById('milkLabel');
-const latteArtLabelEl = document.getElementById('latteArtLabel');
-
-const pomoPanel = document.getElementById('pomodoroPanel');
-const pomoSettings = document.getElementById('pomoSettings');
-const pomoRunning = document.getElementById('pomoRunning');
-const loopCountInput = document.getElementById('loopCount');
-const workMinInput = document.getElementById('workMin');
-const breakMinInput = document.getElementById('breakMin');
-const loopUp = document.getElementById('loopUp');
-const loopDown = document.getElementById('loopDown');
-const workUp = document.getElementById('workUp');
-const workDown = document.getElementById('workDown');
-const breakUp = document.getElementById('breakUp');
-const breakDown = document.getElementById('breakDown');
-const startPomoBtn = document.getElementById('startPomoBtn');
-const pomoLoopCounter = document.getElementById('pomoLoopCounter');
-const pomoPhaseLabel = document.getElementById('pomoPhaseLabel');
-const pomoTimerText = document.getElementById('pomoTimerText');
-const pomoProgressBar = document.getElementById('pomoProgressBar');
-const stopPomoBtn = document.getElementById('stopPomoBtn');
-const pausePomoBtn = document.getElementById('pausePomoBtn');
-const skipPomoBtn = document.getElementById('skipPomoBtn');
-const pomoCountDisplay = document.getElementById('pomoCountDisplay');
-
-let servedSequence = [], servedSequenceIndex = 0;
-
-/* helper for raw GitHub -> URL */
-function getAssetUrl(path){
-  if (!path) return '';
-  if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
-  try { return new URL(path).href; } catch(e){ return path; }
-}
-
-/* audio assets */
+/* ===== Audio assets ===== */
 const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'));
-const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'));
-const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookdbgm.mp3'));
-const audioRate = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/rate.mp3'));
-const audioJ = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/J.mp3'));
-const audioE = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/E.mp3'));
-const audioC = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/C.mp3'));
-const audioK = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/K.mp3'));
+const audioDelivered = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/ps.mp3')); // <- 要望: 提供時にps.mp3
+// クリック等の許可が必要なブラウザがあるので、初回に許可を取る
+const state = {
+  audioUnlocked:false,
+  currentStoreId:null,
+  currentStore:null,
+  staffs:[],
+  orders:[],
+  menuStats:{}, // menuId -> {avg,count}
+  recentReviewsByMenu:{}, // menuId -> [{text,rating}]
+  currentUser:{ role:'guest', staffId:null, staffName:null },
+  currentOrderIdForClient:null,
+  clientId:null,
+  emptyOrderAllowed:true, // store setting
+  activeSignalsUnsub:null,
+  unsubStaffs:null,
+  unsubOrders:null,
+  unsubReviews:null,
+  unsubMenuStats:null
+};
 
-/* Pomodoro sounds */
-const audioPiroStart = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro.mp3'));
-const audioPiroBreak = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro1.mp3'));
-const audioPiroToggle = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/piro3.mp3'));
-
-/* p3 pool */
-const p3Urls = [
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_1.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_2.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_4.mp3'),
-  getAssetUrl('@zzcafe2800/reiji_cafe/main/p3_5.mp3')
-];
-const p3Pool = p3Urls.map(url => new Audio(url));
-
-/* signals collection for broadcast sounds (minimized writes: one doc per signal) */
-const signalsCol = db ? collection(db, 'signals') : null;
-
-/* firestore collections if db available */
-const staffsCol = db ? collection(db, 'staffs') : null;
-const ordersCol = db ? collection(db, 'orders') : null;
-
-/* app state */
-const state = { staffs:[], orders:[], currentUser:{role:'guest', staffId:null}, currentOrderIdForClient:null, audioUnlocked:false, pendingPlayQueue:[] };
-
-/* dismissed orders local set */
-const dismissedOrdersStored = JSON.parse(localStorage.getItem('reiji_dismissed_orders') || '[]');
-const dismissedOrders = new Set(dismissedOrdersStored);
-
-/* client id (local) */
 let clientId = localStorage.getItem('reiji_clientId');
 if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
+state.clientId = clientId;
 
-/* MENU definitions and per-menu random art images for BOT */
-const MENUS = {
-  rate: {
-    id: 'rate', title: 'カフェ・ラテ', imageBase: '@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
-    artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'カフェラテ制作', espressoLabel:'エスプレッソ注ぎ', milkLabel:'フームドミルク注ぎ', latteArtLabel:'ラテアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png' ]
+/* ===== Stores & Menus config =====
+  - STORES: お店名 / X / staffPass / menuSetId
+  - MENU_SETS: 店に出すメニューID一覧
+  - MENUS: メニュー定義（画像ベース等）
+*/
+const STORES = [
+  {
+    id:'reiji',
+    name:'0時カフェ',
+    staffPass:'1232',
+    xUrl:'https://x.com/zzcafe_280',
+    menuSetId:'set_reiji',
+    background:'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg'
   },
-  asa: {
-    id: 'asa', title: '食テロ', imageBase: '@zzcafe2800/reiji_cafe/main/asa', frameCount:4, lastFrameRandom:false,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
-    artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'あさごはん', espressoLabel:'ウィンナー焼き', milkLabel:'味噌汁', latteArtLabel:'ノリアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png' ]
-  },
-
-   tyoko: {
-    id: 'tyoko', title: 'ケーキ（バレンタイン限定）', imageBase: '@zzcafe2800/reiji_cafe/main/tyoko', frameCount:4, lastFrameRandom:false,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
-    artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'チョコケーキ', espressoLabel:'チョコ', milkLabel:'スポンジ', latteArtLabel:'チョコアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png' ]
-  },
-
-
-    pafe: {
-    id: 'pafe', title: 'パフェ(新メニュー）', imageBase: '@zzcafe2800/reiji_cafe/main/pafe', frameCount:3, lastFrameRandom:false,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/rate.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/rate1.mp3',
-    artBg:'#6b3b24', artPen:'#ffffff', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'パフェ制作', espressoLabel:'クリーム注ぎ', milkLabel:'トッピング', latteArtLabel:'クリームアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/rate_art1.png' ]
-  },
-  omu: {
-    id: 'omu', title: 'オムライス', imageBase: '@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
-    longPressSound:'@zzcafe2800/reiji_cafe/main/omu.mp3', clickSound:'@zzcafe2800/reiji_cafe/main/omu1.mp3',
-    artBg:'#ffd66b', artPen:'#ff0000', cardBg:'#fff2e6', cardPen:'#000000',
-    ui:{ makeTitle:'オムライス制作', espressoLabel:'ケチャップライス', milkLabel:'卵で包む', latteArtLabel:'ケチャップアート' },
-    botArtPool: [ '@zzcafe2800/reiji_cafe/main/omu_art1.png' ]
+  {
+    id:'zz',
+    name:'zzカフェ',
+    staffPass:'0000',
+    xUrl:'https://x.com/zzcafe_280',
+    menuSetId:'set_zz',
+    background:'https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg'
   }
+];
+
+const MENU_SETS = {
+  set_reiji: ['rate','omu','pafe','asa','tyoko'],
+  set_zz: ['rate','omu']
 };
-MENUS.random = { id:'random', title:'ランダム', imageBase:'@zzcafe2800/reiji_cafe/main/random', frameCount:1, lastFrameRandom:false, artBg:'#cccccc', artPen:'#000000', cardBg:'#fff2e6', cardPen:'#000000', ui:{ makeTitle:'ランダム' }, botArtPool: [] };
 
-/* --- utility helpers --- */
-function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
-function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function showModal(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
-function hideModal(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
-function playTone(freq=440,dur=0.12){ try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type='sine'; o.frequency.value=freq; o.connect(g); g.connect(ctx.destination); g.gain.value=0.12; o.start(); setTimeout(()=>{ o.stop(); ctx.close(); }, dur*1000); }catch(e){} }
+const MENUS = {
+  rate: { id:'rate', title:'カフェ・ラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate', frameCount:6, artBg:'#6b3b24', artPen:'#ffffff' },
+  omu:  { id:'omu',  title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu',  frameCount:6, artBg:'#ffd66b', artPen:'#ff0000' },
+  pafe: { id:'pafe', title:'パフェ',     imageBase:'@zzcafe2800/reiji_cafe/main/pafe', frameCount:3, artBg:'#6b3b24', artPen:'#ffffff' },
+  asa:  { id:'asa',  title:'食テロ',     imageBase:'@zzcafe2800/reiji_cafe/main/asa',  frameCount:4, artBg:'#6b3b24', artPen:'#ffffff' },
+  tyoko:{ id:'tyoko',title:'ケーキ',     imageBase:'@zzcafe2800/reiji_cafe/main/tyoko',frameCount:4, artBg:'#6b3b24', artPen:'#ffffff' }
+};
 
-/* JST now for shift checks */
-function nowInJST(){
-  const s = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
-  return new Date(s);
-}
+/* ===== Firestore paths per store ===== */
+function storesRoot(){ return collection(db,'stores'); }
+function storeDoc(storeId){ return doc(db,'stores',storeId); }
+function staffsCol(storeId){ return collection(db,'stores',storeId,'staffs'); }
+function ordersCol(storeId){ return collection(db,'stores',storeId,'orders'); }
+function reviewsCol(storeId){ return collection(db,'stores',storeId,'reviews'); }
+function menuStatsCol(storeId){ return collection(db,'stores',storeId,'menuStats'); }
+function signalsCol(storeId){ return collection(db,'stores',storeId,'signals'); }
 
-/* flush pending plays */
-function flushPendingPlays(){
-  while(state.pendingPlayQueue.length){
-    const req = state.pendingPlayQueue.shift();
-    if (req.type === 'tyaimu'){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){} }
-    if (req.type === 'cook'){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
-    if (req.type === 'delivered'){ try{ audioCookdbgm.currentTime=0; audioCookdbgm.play().catch(()=>{}); } catch(e){} }
-  }
-}
-
-/* ----------------- Realtime listeners (if db present) ----------------- */
-function startRealtime(){
-  if (!db) {
-    try {
-      const s = JSON.parse(localStorage.getItem('reiji_state_staffs') || '[]');
-      const o = JSON.parse(localStorage.getItem('reiji_state_orders') || '[]');
-      state.staffs = s;
-      state.orders = o;
-      renderShiftShort();
-      renderShiftList();
-      renderOrderLists();
-      updateOrderButtonState();
-    } catch(e){}
-    return;
-  }
-  try {
-    const q = query(staffsCol, orderBy('createdAt','asc'));
-    onSnapshot(q, snap=>{
-      state.staffs = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-      renderShiftShort();
-      renderShiftList();
-      updateOrderButtonState();
-      updateStaffToggleUI();
-      try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
-    }, e=>console.warn(e));
-  } catch(e){ console.warn(e); }
-  try {
-    const q2 = query(ordersCol, orderBy('createdAt','asc'));
-    onSnapshot(q2, snap=>{
-      state.orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-      renderOrderLists();
-      updateClientOverlay();
-      try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
-    }, e=>console.warn(e));
-  } catch(e){ console.warn(e); }
-
-  // signal listener: play tyaimu when a 'tyaimu' signal is added
-  if (signalsCol){
-    let lastSignalTs = 0;
-    const qsig = query(signalsCol, orderBy('ts','asc'));
-    onSnapshot(qsig, snap=>{
-      snap.docs.forEach(docSnap=>{
-        const data = docSnap.data();
-        if (!data || !data.ts) return;
-        if (data.ts <= lastSignalTs) return;
-        lastSignalTs = data.ts;
-        if (data.type === 'tyaimu'){
-          try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
-        }
-      });
-    }, e=>console.warn('signals listen', e));
-  }
-}
-
-/* ----------------- SHIFT & STAFF UI ----------------- */
+/* ===== UI basics ===== */
 setInterval(()=> nowtimeEl.textContent = nowInJST().toLocaleTimeString(), 1000);
 
-function isNowWithinShift(start,end,dateObj){
-  if (!start || !end) return false;
-  const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
-  const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
-  const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
-  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
-  return dateObj >= sDate && dateObj <= eDate;
+function show(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
+function hide(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
+
+/* ===== Store Picker ===== */
+function openStorePicker(){
+  storeList.innerHTML = '';
+  STORES.forEach(s=>{
+    const row = document.createElement('div');
+    row.className='store-row';
+    row.innerHTML = `
+      <div>
+        <div class="store-name">${escapeHtml(s.name)}</div>
+        <div class="small-info">メニュー:${escapeHtml(s.menuSetId)}</div>
+      </div>
+      <button class="small btn-green">来店</button>
+    `;
+    row.querySelector('button').onclick = ()=>{ selectStore(s.id); };
+    storeList.appendChild(row);
+  });
+  storePick.style.display='flex';
+}
+function closeStorePicker(){ storePick.style.display='none'; }
+storePickClose.onclick = closeStorePicker;
+storePickBack.onclick = closeStorePicker;
+storeChangeBtn.onclick = openStorePicker;
+makeMyStoreBtn.onclick = ()=>{
+  alert('開発中です');
+};
+
+/* ===== Store select & listeners ===== */
+async function selectStore(storeId){
+  const s = STORES.find(x=>x.id===storeId);
+  if (!s){ alert('店が見つかりません'); return; }
+  state.currentStoreId = storeId;
+  state.currentStore = s;
+
+  storeTitle.textContent = s.name;
+  staffStoreName.textContent = s.name;
+  xBtn.onclick = ()=> window.open(s.xUrl || 'https://x.com', '_blank');
+
+  // background (optional)
+  if (s.background){
+    document.documentElement.style.background = `url("${s.background}") center center / cover no-repeat`;
+    document.body.style.background = `url("${s.background}") center center / cover no-repeat`;
+  }
+
+  closeStorePicker();
+
+  // Ensure store settings doc exists
+  if (db){
+    const ref = storeDoc(storeId);
+    const snap = await getDoc(ref).catch(()=>null);
+    if (!snap || !snap.exists()){
+      await setDoc(ref, { name:s.name, emptyOrderAllowed:true, createdAt:Date.now() }).catch(()=>{});
+    }
+  }
+
+  // unsubscribe old listeners
+  state.unsubStaffs && state.unsubStaffs();
+  state.unsubOrders && state.unsubOrders();
+  state.unsubReviews && state.unsubReviews();
+  state.unsubMenuStats && state.unsubMenuStats();
+  state.activeSignalsUnsub && state.activeSignalsUnsub();
+
+  // load store setting
+  await loadStoreSetting();
+
+  // start listeners
+  startStaffsListener();
+  startOrdersListener();
+  startMenuStatsListener();
+  startSignalsListener();
+
+  // build menu UI
+  buildMenu();
+
+  // reflect button state
+  updateOrderButtonState();
+}
+
+async function loadStoreSetting(){
+  if (!db || !state.currentStoreId) { state.emptyOrderAllowed = true; emptyOrderState.textContent='ON'; return; }
+  try{
+    const snap = await getDoc(storeDoc(state.currentStoreId));
+    if (snap.exists()){
+      const d = snap.data();
+      state.emptyOrderAllowed = !!d.emptyOrderAllowed;
+      emptyOrderState.textContent = state.emptyOrderAllowed ? 'ON' : 'OFF';
+    }
+  }catch(e){}
+}
+async function setEmptyOrderAllowed(val){
+  state.emptyOrderAllowed = !!val;
+  emptyOrderState.textContent = state.emptyOrderAllowed ? 'ON' : 'OFF';
+  if (db && state.currentStoreId){
+    await updateDoc(storeDoc(state.currentStoreId), { emptyOrderAllowed: state.emptyOrderAllowed }).catch(()=>{});
+  }
+  updateOrderButtonState();
+}
+emptyOrderOn.onclick = ()=> setEmptyOrderAllowed(true);
+emptyOrderOff.onclick = ()=> setEmptyOrderAllowed(false);
+
+/* ===== Sound overlay ===== */
+function showSoundOverlay(){ soundOverlay.style.display='flex'; }
+function hideSoundOverlay(){ soundOverlay.style.display='none'; }
+enableSoundBtn.onclick = ()=>{
+  state.audioUnlocked = true;
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    ctx.resume && ctx.resume();
+    ctx.close && ctx.close();
+  }catch(e){}
+  hideSoundOverlay();
+};
+disableSoundBtn.onclick = ()=>{
+  state.audioUnlocked = false;
+  hideSoundOverlay();
+};
+showSoundOverlay();
+
+/* ===== Staffs listener ===== */
+function startStaffsListener(){
+  if (!db || !state.currentStoreId){
+    state.staffs = [];
+    renderShiftShort();
+    renderShiftList();
+    updateOrderButtonState();
+    return;
+  }
+  const q1 = query(staffsCol(state.currentStoreId), orderBy('createdAt','asc'));
+  state.unsubStaffs = onSnapshot(q1, snap=>{
+    state.staffs = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderShiftShort();
+    renderShiftList();
+    updateOrderButtonState();
+  });
+}
+
+function getHumanActiveStaffs(){
+  const now = nowInJST();
+  return state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
 }
 
 function renderShiftShort(){
-  const now = nowInJST();
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (humanActive.length){
-    shiftShort.textContent = 'シフト：' + humanActive.map(s=>`${s.name} (${s.shiftStart}〜${s.shiftEnd})`).join(' / ');
-    state._botActive = false;
-    return;
+  const active = getHumanActiveStaffs();
+  if (active.length){
+    shiftShort.textContent = 'シフト：' + active.map(s=>{
+      const st = (s.staffState === 'busy') ? '他方の料理中' : '待機中';
+      return `${s.name}（${st}）`;
+    }).join(' / ');
+  } else {
+    shiftShort.textContent = 'シフト：無人';
   }
-  // No human staff: BOT active
-  state._botActive = true;
-  shiftShort.textContent = 'シフト：店員A（無人）';
+  // crowd
+  const pending = (state.orders||[]).filter(o=> o.state==='waiting' || o.state==='inprogress').length;
+  crowdInfo.textContent = pending ? `混み具合：注文 ${pending} 件` : '混み具合：空いてます';
 }
 
 function renderShiftList(){
   shiftList.innerHTML = '';
   const now = nowInJST();
-  state.staffs.forEach(s => {
+  state.staffs.forEach(s=>{
     const div = document.createElement('div');
     const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
-    const html = `<strong>${escapeHtml(s.name)}</strong> ${s.shiftStart||''}〜${s.shiftEnd||''} ${s.onShift?'<span style="color:green">シフト中</span>':'<span style="color:gray">-</span>'} ${s.breaking?'<span style="color:orange">休憩中</span>':''} ${onNow?'<span class="small-info">（現在この時間）</span>':''}`;
-    div.innerHTML = html;
-    const delBtn = document.createElement('button'); delBtn.textContent = '削除'; delBtn.className='small'; delBtn.style.marginLeft='8px';
-    delBtn.addEventListener('click', async ()=>{
-      if (!s.id) return;
-      if (db){
-        try { await deleteDoc(doc(db,'staffs',s.id)); } catch(e){ console.warn('staff delete failed', e); }
-      } else {
-        state.staffs = state.staffs.filter(x=>x.id !== s.id);
-        try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
-        renderShiftList();
-        renderShiftShort();
-      }
-    });
-    div.appendChild(delBtn);
+    const st = (s.staffState === 'busy') ? '他方の料理中' : '待機中';
+    div.innerHTML = `
+      <strong>${escapeHtml(s.name)}</strong>
+      <span class="small-info"> ${escapeHtml(st)} / ${escapeHtml(s.shiftStart||'--:--')}〜${escapeHtml(s.shiftEnd||'--:--')}</span>
+      ${s.onShift?'<span style="color:green"> シフト中</span>':'<span style="color:gray"> -</span>'}
+      ${s.breaking?'<span style="color:orange"> 休憩中</span>':''}
+      ${onNow?'<span class="small-info">（現在この時間）</span>':''}
+    `;
+    const del = document.createElement('button');
+    del.className='small';
+    del.textContent='削除';
+    del.style.marginLeft='8px';
+    del.onclick = async ()=>{
+      if (!db) return;
+      await deleteDoc(doc(db,'stores',state.currentStoreId,'staffs',s.id)).catch(()=>{});
+    };
+    div.appendChild(del);
     shiftList.appendChild(div);
   });
 }
 
-/* updateStaffToggleUI */
-function updateStaffToggleUI(){
-  if (state.currentUser && state.currentUser.role === 'staff' && state.currentUser.staffId){
-    const my = state.staffs.find(s=>s.id === state.currentUser.staffId);
-    if (my){
-      if (my.onShift && !my.breaking){ shiftBtn.classList.add('on'); shiftBtn.classList.remove('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
-      else if (my.breaking){ breakBtn.classList.add('on'); breakBtn.classList.remove('off'); shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); }
-      else { shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off'); }
-    }
-  } else {
-    shiftBtn.classList.remove('on'); shiftBtn.classList.add('off'); breakBtn.classList.remove('on'); breakBtn.classList.add('off');
+/* ===== Orders listener ===== */
+function startOrdersListener(){
+  if (!db || !state.currentStoreId){
+    state.orders = [];
+    renderOrderLists();
+    return;
   }
+  const q2 = query(ordersCol(state.currentStoreId), orderBy('createdAt','asc'));
+  state.unsubOrders = onSnapshot(q2, snap=>{
+    state.orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderOrderLists();
+    renderShiftShort();
+    updateClientOverlay();
+  });
 }
 
-/* ----------------- ORDERS (staff view) ----------------- */
 function renderOrderLists(){
   staffOrderList.innerHTML = '';
-  state.orders.forEach(o=>{
-    if (!o) return;
-    if (o.state === 'cancelled' || o.state === 'delivered' || o.state === 'served') return;
-    const div = document.createElement('div'); div.className = 'order-item';
-    const left = document.createElement('div'); left.innerHTML = `<strong>${escapeHtml(o.name)}</strong><div class="small-info">${escapeHtml(o.item)} - 状態:${escapeHtml(o.state)} - 作成:${new Date(o.createdAt||0).toLocaleTimeString()}</div>`;
+  const list = state.orders.filter(o => o.state !== 'delivered' && o.state !== 'cancelled');
+  list.forEach(o=>{
+    const div = document.createElement('div');
+    div.className='order-item';
+    const left = document.createElement('div');
+    const itemTitle = MENUS[o.item]?.title || o.item;
+    left.innerHTML = `
+      <strong>${escapeHtml(o.name)}</strong>
+      <div class="small-info">${escapeHtml(itemTitle)} / 状態:${escapeHtml(o.state)}</div>
+    `;
     const right = document.createElement('div');
-    const tasks = computeOrderTasks(o);
-    if (tasks.length) { const span = document.createElement('span'); span.className='small-info'; span.textContent = '未: ' + tasks.join(', '); right.appendChild(span); }
+
     if (o.state === 'waiting'){
-      const btn = document.createElement('button'); btn.textContent='対応'; btn.className='small btn-green';
+      const btn = document.createElement('button');
+      btn.className='small btn-green';
+      btn.textContent='対応';
       btn.onclick = ()=> assignOrderToCurrentStaff(o.id);
       right.appendChild(btn);
     } else if (o.state === 'inprogress'){
-      const info = document.createElement('div'); info.className='small-info'; info.textContent = `担当:${escapeHtml(o.assignedToName||o.assignedTo||'')}`;
+      const info = document.createElement('div');
+      info.className='small-info';
+      info.textContent = `担当:${o.assignedToName||''}`;
       right.appendChild(info);
-      const makeBtn = document.createElement('button'); makeBtn.textContent='制作開始'; makeBtn.className='small';
+      const makeBtn = document.createElement('button');
+      makeBtn.className='small';
+      makeBtn.textContent='制作';
       makeBtn.onclick = ()=> openMakeModal(o);
       right.appendChild(makeBtn);
-    } else if (o.state === 'done'){
-      const provideBtn = document.createElement('button'); provideBtn.textContent='提供'; provideBtn.className='small btn-green';
-      provideBtn.onclick = ()=> openMakeModal(o);
-      right.appendChild(provideBtn);
     }
-    div.appendChild(left); div.appendChild(right);
+
+    div.appendChild(left);
+    div.appendChild(right);
     staffOrderList.appendChild(div);
   });
-  pendingTasksSmall.textContent = (state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length ? ` 未処理:${(state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length}` : '';
+
+  const pending = (state.orders||[]).filter(o=> o.state==='waiting' || o.state==='inprogress').length;
+  pendingTasksSmall.textContent = pending ? ` 未処理:${pending}` : '';
 }
 
-function computeOrderTasks(order){
-  const pending = [];
-  if (!order) return pending;
-  if (order.state === 'waiting') pending.push('対応待ち');
-  if (order.state === 'inprogress' || order.state === 'done'){
-    if (!order.artStrokes && !order.artDataUrl) pending.push('アート');
-    if (!order.cardStrokes && !order.cardDataUrl) pending.push('カード');
-  }
-  return pending;
+/* ===== Reviews / Menu stats =====
+  - menuStats: {avg,count} を stores/{storeId}/menuStats/{menuId} に保存
+  - submit時にクライアント側で軽く更新（厳密性は多少ズレる可能性あり）
+*/
+function startMenuStatsListener(){
+  if (!db || !state.currentStoreId) return;
+  const q = query(menuStatsCol(state.currentStoreId), orderBy('updatedAt','desc'));
+  state.unsubMenuStats = onSnapshot(q, snap=>{
+    const stats = {};
+    snap.docs.forEach(d=>{
+      stats[d.id] = d.data();
+    });
+    state.menuStats = stats;
+    // menu表示更新（星バッジ）
+    buildMenu();
+  });
+
+  // recent reviews (軽量表示用): 最新200
+  const q2 = query(reviewsCol(state.currentStoreId), orderBy('ts','desc'), limit(200));
+  state.unsubReviews = onSnapshot(q2, snap=>{
+    const byMenu = {};
+    snap.docs.forEach(d=>{
+      const r = d.data();
+      if (!r || !r.menuId) return;
+      if (!byMenu[r.menuId]) byMenu[r.menuId] = [];
+      byMenu[r.menuId].push({ text:r.text||'', rating:r.rating||0 });
+    });
+    state.recentReviewsByMenu = byMenu;
+  });
 }
 
-/* ----------------- STAFF LOGIN & MODAL CANCEL FIX ----------------- */
-passOk.addEventListener('click', ()=> {
-  if (staffPass.value === '1232'){ showStaffNameModal(); } else alert('パスワードが違います');
-});
-function showStaffNameModal(){
-  showModal(modalName);
-  cancelOrderName.onclick = () => { hideModal(modalName); orderName.value=''; };
-  okOrderName.onclick = async ()=>{
-    const name = orderName.value.trim(); if (!name) { alert('名前'); return; }
-    hideModal(modalName);
-    try {
-      if (db){
-        const ref = await addDoc(staffsCol, { name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() });
-        enterStaffFull(name, ref.id);
-      } else {
-        const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
-        state.staffs.push(s);
-        try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
-        enterStaffFull(name, s.id);
-      }
-    } catch(e){
-      console.warn(e);
-      const s = { id: uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, breaking:false, createdAt: Date.now() };
-      state.staffs.push(s);
-      enterStaffFull(name, s.id);
-    }
-  };
+function pickRandomReviewText(menuId){
+  const arr = state.recentReviewsByMenu[menuId] || [];
+  if (!arr.length) return null;
+  const r = arr[Math.floor(Math.random()*arr.length)];
+  const stars = "★★★★★☆☆☆☆☆".slice(5-(r.rating||0), 10-(r.rating||0));
+  const txt = (r.text||'').trim();
+  if (!txt) return `${stars}`;
+  return `${stars} ${txt.slice(0, 40)}${txt.length>40?'…':''}`;
 }
-function enterStaffFull(name, staffId){ state.currentUser = { role:'staff', staffId }; staffBadge.textContent = name; staffFull.classList.add('show'); renderShiftList(); renderOrderLists(); updateStaffToggleUI(); }
-logoutStaff.addEventListener('click', async ()=> {
-  const id = state.currentUser.staffId;
-  if (id){
-    if (db){
-      try { await deleteDoc(doc(db,'staffs',id)); } catch(e){}
-    } else {
-      state.staffs = state.staffs.filter(s=>s.id!==id);
-      try { localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); } catch(e){}
-    }
-  }
-  state.currentUser = { role:'guest', staffId:null }; staffFull.classList.remove('show');
-});
 
-/* shift toggle */
-shiftBtn.addEventListener('click', async ()=> {
-  const id = state.currentUser.staffId; if (!id) return;
-  if (db){
-    try { await updateDoc(doc(db,'staffs',id), { onShift:true, breaking:false }); } catch(e){}
-  } else {
-    const s = state.staffs.find(x=>x.id===id); if (s){ s.onShift=true; s.breaking=false; try{ localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); }catch(e){}; renderShiftList(); renderShiftShort(); }
-  }
-  updateStaffToggleUI();
-});
-breakBtn.addEventListener('click', async ()=> {
-  const id = state.currentUser.staffId; if (!id) return;
-  if (db){
-    try { await updateDoc(doc(db,'staffs',id), { onShift:false, breaking:true }); } catch(e){}
-  } else {
-    const s = state.staffs.find(x=>x.id===id); if (s){ s.onShift=false; s.breaking=true; try{ localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); }catch(e){}; renderShiftList(); renderShiftShort(); }
-  }
-  updateStaffToggleUI();
-});
-saveShift.addEventListener('click', async ()=> {
-  const id = state.currentUser.staffId; if (!id) return;
-  const payload = { shiftStart:shiftStart.value || '09:00', shiftEnd:shiftEnd.value || '17:00' };
-  if (db){
-    try { await updateDoc(doc(db,'staffs',id), payload); } catch(e){ console.warn(e); }
-  } else {
-    const s = state.staffs.find(x=>x.id===id); if (s){ Object.assign(s, payload); try{ localStorage.setItem('reiji_state_staffs', JSON.stringify(state.staffs)); }catch(e){}; renderShiftList(); renderShiftShort(); }
-  }
-});
-
-/* ----------------- MENU & ORDERING (including fixes) ----------------- */
+/* ===== Menu build ===== */
 async function buildMenu(){
   menuGrid.innerHTML = '';
-  if (MENUS.random){
-    const it = MENUS.random;
-    const div = document.createElement('div'); div.className='menu-item';
-    const img = document.createElement('img'); img.className='menu-thumb';
-    const url = getAssetUrl(it.imageBase + '.png');
-    try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
-    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
-    div.addEventListener('click', ()=> chooseRandomAndOrder());
-    menuGrid.appendChild(div);
-  }
-  for(const id in MENUS){
-    if (id === 'random') continue;
+  const store = state.currentStore;
+  if (!store) return;
+  const setId = store.menuSetId;
+  const ids = MENU_SETS[setId] || [];
+
+  for (const id of ids){
     const it = MENUS[id];
+    if (!it) continue;
+
     const div = document.createElement('div'); div.className='menu-item';
     const img = document.createElement('img'); img.className='menu-thumb';
-    const url = getAssetUrl(it.imageBase + '1.png');
-    try { const res = await fetch(url); if (res.ok){ const blob = await res.blob(); img.src = URL.createObjectURL(blob); } else img.src = makePlaceholder(it.title); } catch(e){ img.src = makePlaceholder(it.title); }
-    div.appendChild(img); div.appendChild(document.createElement('div')).textContent = it.title;
-    div.addEventListener('click', ()=> onMenuSelect(it));
+    img.src = getAssetUrl(it.imageBase + '1.png');
+
+    const stat = state.menuStats[it.id];
+    const avg = stat?.avg || 0;
+    const badge = document.createElement('div');
+    badge.className='star-badge';
+    badge.textContent = avg ? `${formatStars(avg)} ${avg.toFixed(1)}` : '☆☆☆☆☆';
+    div.appendChild(badge);
+
+    div.appendChild(img);
+    const label = document.createElement('div');
+    label.textContent = it.title;
+    div.appendChild(label);
+
+    div.onclick = ()=> onMenuSelect(it);
     menuGrid.appendChild(div);
   }
 }
-function makePlaceholder(title){ const c=document.createElement('canvas');c.width=320;c.height=240;const ctx=c.getContext('2d');ctx.fillStyle='#fff8ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#6b3b24';ctx.beginPath();ctx.arc(160,110,60,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='20px sans-serif';ctx.fillText(title,100,200);return c.toDataURL(); }
 
-/* chooseRandomAndOrder: fix bug by selecting actual menu object list */
-function chooseRandomAndOrder(){
-  const menuList = Object.keys(MENUS).filter(k=>k!=='random').map(k=>MENUS[k]);
-  if (!menuList.length){ alert('ランダム対象のメニューがありません'); return; }
-  const chosenMenu = menuList[Math.floor(Math.random() * menuList.length)];
-  onMenuSelect(chosenMenu);
+/* ===== Order button enable logic =====
+  - BOTなし
+  - emptyOrderAllowed=false かつ active staff = 0 のとき disable
+*/
+function updateOrderButtonState(){
+  const active = getHumanActiveStaffs();
+  const canOrder = state.emptyOrderAllowed ? true : (active.length > 0);
+  if (canOrder){
+    orderBtn.classList.remove('disabled');
+  } else {
+    orderBtn.classList.add('disabled');
+  }
 }
 
-/* orderBtn click: broadcast tyaimu to ALL clients + local behavior */
-orderBtn.addEventListener('click', async ()=> {
+/* ===== Modals ===== */
+function showModal(el){ el.style.display='flex'; el.setAttribute('aria-hidden','false'); }
+function hideModal(el){ el.style.display='none'; el.setAttribute('aria-hidden','true'); }
+
+/* ===== Client order flow ===== */
+orderBtn.onclick = ()=>{
   if (orderBtn.classList.contains('disabled')) return;
-
-  // Broadcast tyaimu signal to Firestore so all clients will play it (if db available)
-  if (db && signalsCol){
-    try {
-      await addDoc(signalsCol, { type:'tyaimu', ts: Date.now() });
-    } catch(e){ console.warn('signal write failed', e); }
-  }
-  // Play locally too
-  try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); } catch(e){}
-
-  // open name modal
+  nameModalTitle.textContent = 'ゲーム内の名前（客）';
+  orderName.value = '';
   showModal(modalName);
-  okOrderName.onclick = () => {
-    const name = orderName.value.trim();
-    if (!name) { alert('名前を入力してください'); return; }
-    hideModal(modalName);
-    buildMenu(); showModal(modalMenu);
-  };
-});
-backMenu.addEventListener('click', ()=> hideModal(modalMenu));
+};
+cancelOrderName.onclick = ()=>{
+  hideModal(modalName);
+  orderName.value = '';
+};
+okOrderName.onclick = ()=>{
+  const name = orderName.value.trim();
+  if (!name){ alert('名前を入力してください'); return; }
+  hideModal(modalName);
+  showModal(modalMenu);
 
-/* offline-order button click: opens menu but forces BOT delivery (local) */
-offlineOrderBtn.addEventListener('click', ()=>{
-  showModal(modalName);
-  okOrderName.onclick = () => {
-    const name = orderName.value.trim();
-    if (!name) { alert('名前を入力してください'); return; }
-    hideModal(modalName);
-    buildMenu();
-    // When menu open, we need to mark that selection should be offline-BOT regardless of staff
-    // We'll set a flag on the modal element
-    modalMenu.dataset.forceBot = '1';
-    showModal(modalMenu);
-  };
-});
+  // tyaium: 「メニュー画像を押した時だけ」鳴らしたい→ここで信号送る（押した本人 + その店のスタッフ）
+  sendTyaimuSignalToMeAndActiveStaffs();
+};
 
-/* onMenuSelect: when called from offline-order flow (modalMenu.dataset.forceBot==='1'), BOT provides locally regardless of human staff */
-async function onMenuSelect(item){
-  hideModal(modalMenu);
-  // clear force flag
-  const forceBot = modalMenu.dataset.forceBot === '1';
-  delete modalMenu.dataset.forceBot;
+backMenu.onclick = ()=> hideModal(modalMenu);
 
-  const name = orderName.value.trim() || '名無し';
-  if (item.password && item.password.length){
-    const entered = prompt('パスワードを入力してください');
-    if (entered === null) return;
-    if (entered !== item.password){ alert('パスワードが違います'); return; }
-    try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{});}catch(e){}
-  }
-
-  const createdAt = Date.now(); const expiresAt = createdAt + 5*60*1000;
-  const orderObj = { name, item:item.id, itemImageBase: item.imageBase, state:'waiting', createdAt, expiresAt, assignedTo:null, assignedToName:null, artStrokes:null, cardStrokes:null, artMeta:null, cardMeta:null, artDataUrl:null, cardDataUrl:null, servedImageData:null, clientId };
-
-  // If forceBot is true, always use BOT local delivery regardless of human staff
-  if (forceBot){
-    state._botActive = true;
-    shiftShort.textContent = 'シフト：ろぼスタッフ';
-    showBotOverlayForClient();
-    const servedResult = await botProduce(orderObj, item, name);
-    // store locally as delivered order (no Firestore write)
-    orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; orderObj.artDataUrl = servedResult.artDataUrl; orderObj.cardDataUrl = servedResult.cardDataUrl;
-    state.orders.push(orderObj);
-    state.currentOrderIdForClient = orderObj.id;
-    try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
-    hideBotOverlayForClient();
-    await showClientServed(orderObj);
+/* tyaimu signal */
+async function sendTyaimuSignalToMeAndActiveStaffs(){
+  if (!db || !state.currentStoreId) {
+    // local
+    if (state.audioUnlocked){ try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); }catch(e){} }
     return;
   }
-
-  // Normal flow: check humanActive
-  const now = nowInJST();
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if (!humanActive.length){
-    // BOT fallback (automatic)
-    state._botActive = true;
-    shiftShort.textContent = 'シフト：ろぼスタッフ';
-    showBotOverlayForClient();
-    const servedResult = await botProduce(orderObj, item, name);
-    if (db){
-      try {
-        const ref = await addDoc(ordersCol, { ...orderObj, state:'delivered', deliveredAt: Date.now(), servedImageData: servedResult.servedImageData, artDataUrl: servedResult.artDataUrl, cardDataUrl: servedResult.cardDataUrl });
-        state.currentOrderIdForClient = ref.id;
-      } catch(e){
-        console.warn('bot order write failed', e);
-        orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; orderObj.artDataUrl = servedResult.artDataUrl; orderObj.cardDataUrl = servedResult.cardDataUrl;
-        state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; try{ localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
-      }
-    } else {
-      orderObj.id = uid('o'); orderObj.state = 'delivered'; orderObj.servedImageData = servedResult.servedImageData; orderObj.artDataUrl = servedResult.artDataUrl; orderObj.cardDataUrl = servedResult.cardDataUrl;
-      state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; try{ localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
-    }
-    hideBotOverlayForClient();
-    await showClientServed(orderObj);
-    return;
-  }
-
-  // Human staff present: submit order to Firestore or local list
-  try {
-    if (db){
-      const ref = await addDoc(ordersCol, orderObj);
-      state.currentOrderIdForClient = ref.id;
-      showClientStatus('現在対応待ち中');
-      scheduleOrderTimeout(ref.id, expiresAt);
-    } else {
-      orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; showClientStatus('現在対応待ち中'); try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
-    }
-  } catch(e){
-    console.warn('add order failed', e);
-    orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id; showClientStatus('現在対応待ち中');
-  }
+  const activeStaffs = getHumanActiveStaffs();
+  const targets = [state.clientId, ...activeStaffs.map(s=>s.clientId).filter(Boolean)];
+  // no duplicates
+  const uniq = Array.from(new Set(targets));
+  try{
+    await addDoc(signalsCol(state.currentStoreId), { type:'tyaimu', to: uniq, ts: Date.now() });
+  }catch(e){}
 }
 
-/* scheduleOrderTimeout (same behavior, offline supported) */
-async function scheduleOrderTimeout(orderId, expiresAt){
-  const remaining = (expiresAt || 0) - Date.now();
-  if (remaining <= 0) return;
-  setTimeout(async ()=>{
-    try {
-      if (!db){
-        const o = state.orders.find(x=>x.id===orderId);
-        if (o && o.state === 'waiting'){ o.state='cancelled'; o.cancelReason='スタッフの応答がないため現在注文を取り消しになります'; try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}; renderOrderLists(); }
-        return;
-      }
-      const snap = await getDoc(doc(db,'orders',orderId));
-      if (snap.exists()){
-        const o = snap.data();
-        if (o.state === 'waiting'){
-          await updateDoc(doc(db,'orders',orderId), { state:'cancelled', cancelReason:'スタッフの応答がないため現在注文を取り消しになります' });
+/* signals listener: play only if to includes my clientId */
+function startSignalsListener(){
+  if (!db || !state.currentStoreId) return;
+  const q = query(signalsCol(state.currentStoreId), orderBy('ts','asc'), limit(200));
+  let lastTs = 0;
+  state.activeSignalsUnsub = onSnapshot(q, snap=>{
+    snap.docs.forEach(ds=>{
+      const s = ds.data();
+      if (!s || !s.ts || s.ts <= lastTs) return;
+      lastTs = s.ts;
+      if (s.type === 'tyaimu'){
+        const to = s.to || [];
+        if (Array.isArray(to) && to.includes(state.clientId)){
+          if (state.audioUnlocked){
+            try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); }catch(e){}
+          }
         }
       }
-    } catch(e){ console.warn(e); }
-  }, remaining);
+    });
+  });
 }
 
-/* assign order to staff */
-async function assignOrderToCurrentStaff(orderId){
-  const staffId = state.currentUser.staffId; if (!staffId) { alert('スタッフとしてログインしてください'); return; }
-  const s = state.staffs.find(x=>x.id===staffId);
-  try {
-    if (db){
-      await updateDoc(doc(db,'orders',orderId), { state:'inprogress', assignedTo: staffId, assignedToName: s.name });
-      if (!state.audioUnlocked) state.pendingPlayQueue.push({ type:'cook' });
-      else { try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
-    } else {
-      const o = state.orders.find(x=>x.id===orderId);
-      if (o){ o.state='inprogress'; o.assignedTo=staffId; o.assignedToName=s.name; try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}; renderOrderLists(); }
+/* ===== Create order ===== */
+async function onMenuSelect(menuItem){
+  hideModal(modalMenu);
+  const customerName = orderName.value.trim();
+  if (!customerName){ alert('名前がありません'); return; }
+
+  // もし emptyOrderAllowed=false で 無人なら弾く（メニュー出てても）
+  const active = getHumanActiveStaffs();
+  if (!state.emptyOrderAllowed && active.length === 0){
+    alert('現在無人のため注文できません');
+    return;
+  }
+
+  const createdAt = Date.now();
+  const orderObj = {
+    name: customerName,
+    item: menuItem.id,
+    state: 'waiting',
+    createdAt,
+    assignedTo: null,
+    assignedToName: null,
+    clientId: state.clientId,
+    // realtime art preview:
+    artPreviewJpg: null,
+    artBg: menuItem.artBg || '#6b3b24',
+    deliveredAt: null,
+    servedImageUrl: getAssetUrl(menuItem.imageBase + '1.png')
+  };
+
+  if (!db || !state.currentStoreId){
+    alert('Firestoreが利用できません');
+    return;
+  }
+  try{
+    const ref = await addDoc(ordersCol(state.currentStoreId), orderObj);
+    state.currentOrderIdForClient = ref.id;
+    showClientStatus('現在対応待ち中', null, menuItem.id);
+  }catch(e){
+    console.warn(e);
+    alert('注文に失敗しました');
+  }
+}
+
+/* ===== Client overlay ===== */
+function showClientStatus(text, artJpgDataUrl, menuId){
+  orderStatusMain.textContent = text;
+  orderStatusSub.textContent = 'そのままでお待ちください';
+  orderStatusOverlay.style.display = 'flex';
+
+  const rev = menuId ? pickRandomReviewText(menuId) : null;
+  if (rev){
+    statusReview.style.display='block';
+    statusReview.textContent = '口コミ: ' + rev;
+  } else {
+    statusReview.style.display='none';
+  }
+
+  if (artJpgDataUrl){
+    statusArtImg.style.display='block';
+    statusArtImg.src = artJpgDataUrl;
+  } else {
+    statusArtImg.style.display='none';
+    statusArtImg.src = '';
+  }
+}
+function hideClientStatus(){
+  orderStatusOverlay.style.display = 'none';
+  statusArtImg.style.display='none';
+  statusReview.style.display='none';
+}
+
+/* ===== Client overlay update from orders ===== */
+async function updateClientOverlay(){
+  const id = state.currentOrderIdForClient;
+  if (!id) return;
+  const o = state.orders.find(x=>x.id===id);
+  if (!o) return;
+
+  if (o.state === 'waiting'){
+    showClientStatus('現在対応待ち中', null, o.item);
+  } else if (o.state === 'inprogress'){
+    // realtime art preview
+    showClientStatus('現在調理中…', o.artPreviewJpg || null, o.item);
+  } else if (o.state === 'delivered'){
+    hideClientStatus();
+    await showClientServed(o);
+    // 提供時: スマホならバイブ、PCも音
+    if (state.audioUnlocked){
+      try{ audioDelivered.currentTime=0; audioDelivered.play().catch(()=>{}); }catch(e){}
     }
-  } catch(e){ console.warn(e); }
+    try{
+      if (navigator.vibrate) navigator.vibrate([200,80,200]);
+    }catch(e){}
+  } else if (o.state === 'cancelled'){
+    showClientStatus('注文がキャンセルされました', null, o.item);
+    setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient=null; }, 4000);
+  }
 }
 
-/* ----------------- STROKES & CANVASES (unchanged logic) ----------------- */
-/* (for brevity we keep the same reliable implementation as previous versions) */
+/* ===== Staff login ===== */
+passOk.onclick = ()=>{
+  const store = state.currentStore;
+  if (!store){ alert('先にお店を選んでください'); return; }
+  const pass = staffPass.value;
+  if (pass !== store.staffPass){ alert('パスワードが違います'); return; }
 
-function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
-function denormPoint(p, canvas){ return { x: (p.x || 0) * canvas.width, y: (p.y || 0) * canvas.height }; }
+  nameModalTitle.textContent = '店員の名前';
+  orderName.value = '';
+  showModal(modalName);
 
+  okOrderName.onclick = async ()=>{
+    const name = orderName.value.trim();
+    if (!name){ alert('名前'); return; }
+    hideModal(modalName);
+
+    if (!db) return;
+    try{
+      const ref = await addDoc(staffsCol(state.currentStoreId), {
+        name,
+        clientId: state.clientId,
+        shiftStart:'09:00',
+        shiftEnd:'17:00',
+        onShift:true,
+        breaking:false,
+        staffState:'waiting', // 待機中 / busy
+        createdAt: Date.now()
+      });
+      enterStaffFull(name, ref.id);
+    }catch(e){
+      console.warn(e);
+      alert('店員ログイン失敗');
+    }
+  };
+
+  // cancel must work
+  cancelOrderName.onclick = ()=>{
+    hideModal(modalName);
+    orderName.value = '';
+    // 戻す（客側用のデフォルトに復元）
+    okOrderName.onclick = null;
+  };
+};
+
+function enterStaffFull(name, staffId){
+  state.currentUser = { role:'staff', staffId, staffName:name };
+  staffBadge.textContent = name;
+  staffFull.classList.add('show');
+}
+
+logoutStaff.onclick = async ()=>{
+  const id = state.currentUser.staffId;
+  if (db && id && state.currentStoreId){
+    await deleteDoc(doc(db,'stores',state.currentStoreId,'staffs',id)).catch(()=>{});
+  }
+  state.currentUser = { role:'guest', staffId:null, staffName:null };
+  staffFull.classList.remove('show');
+};
+
+/* shift toggle */
+shiftBtn.onclick = async ()=>{
+  if (!db) return;
+  const id = state.currentUser.staffId; if (!id) return;
+  await updateDoc(doc(db,'stores',state.currentStoreId,'staffs',id), { onShift:true, breaking:false }).catch(()=>{});
+};
+breakBtn.onclick = async ()=>{
+  if (!db) return;
+  const id = state.currentUser.staffId; if (!id) return;
+  await updateDoc(doc(db,'stores',state.currentStoreId,'staffs',id), { onShift:false, breaking:true }).catch(()=>{});
+};
+
+saveShift.onclick = async ()=>{
+  if (!db) return;
+  const id = state.currentUser.staffId; if (!id) return;
+  const payload = {
+    shiftStart: shiftStart.value || '09:00',
+    shiftEnd: shiftEnd.value || '17:00',
+    staffState: staffStateSel.value || 'waiting'
+  };
+  await updateDoc(doc(db,'stores',state.currentStoreId,'staffs',id), payload).catch(()=>{});
+};
+
+/* ===== Assign order ===== */
+async function assignOrderToCurrentStaff(orderId){
+  if (!db) return;
+  const staffId = state.currentUser.staffId;
+  if (!staffId){ alert('スタッフとしてログインしてください'); return; }
+  const s = state.staffs.find(x=>x.id===staffId);
+  await updateDoc(doc(db,'stores',state.currentStoreId,'orders',orderId), {
+    state:'inprogress',
+    assignedTo: staffId,
+    assignedToName: s?.name || ''
+  }).catch(()=>{});
+}
+
+/* ===== Realtime Art (Fix eraser bug) =====
+  - bg canvas = 背景固定
+  - layer canvas = 描画/消しゴム（透明消去）
+  - 保存時: 背景 + layerを合成して jpeg/png を作る（消しゴムで背景が消えない）
+*/
 function initArtCanvas(bgColor){
   artBgCtx.clearRect(0,0,artBg.width,artBg.height);
   artBgCtx.fillStyle = bgColor || artBgColor.value || '#6b3b24';
   artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
+
   artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
-  artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
+  artLayerCtx.lineCap='round';
+  artLayerCtx.lineJoin='round';
 }
-function initCardCanvas(bgColor){
-  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.fillStyle = bgColor || cardBgColor.value || getComputedStyle(document.documentElement).getPropertyValue('--card-skin')||'#fff2e6';
-  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.lineCap='round'; cardCtx.lineJoin='round';
-}
-
-let artStrokes = []; let currentArtStroke = null; let artDrawing = false;
-let cardStrokes = []; let currentCardStroke = null; let cardDrawing = false;
-
-let savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
-let savedArtMeta = null, savedCardMeta = null;
-let savedArtStrokesLocal = null, savedCardStrokesLocal = null;
+initArtCanvas();
 
 function getEventPos(e, canvas){
   const r = canvas.getBoundingClientRect();
@@ -1410,1500 +1202,294 @@ function getEventPos(e, canvas){
   return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
 }
 
-/* art handlers */
+let artDrawing=false;
+let dirty=false;
+
+function drawSegment(p1,p2, tool, w, color){
+  if (tool === 'draw'){
+    artLayerCtx.globalCompositeOperation='source-over';
+    artLayerCtx.strokeStyle = color || '#fff';
+    artLayerCtx.lineWidth = w;
+  } else {
+    // erase only on layer
+    artLayerCtx.globalCompositeOperation='destination-out';
+    artLayerCtx.lineWidth = w;
+  }
+  artLayerCtx.beginPath();
+  artLayerCtx.moveTo(p1.x,p1.y);
+  artLayerCtx.lineTo(p2.x,p2.y);
+  artLayerCtx.stroke();
+  artLayerCtx.globalCompositeOperation='source-over';
+}
+
+let lastPoint=null;
+
 artLayer.addEventListener('mousedown', (e)=>{
-  artDrawing = true; const p = getEventPos(e, artLayer);
-  const tool = penMode.value; const w = parseInt(penSize.value, 10);
-  currentArtStroke = { tool, width: w, points: [ normPointInCanvas(p, artLayer) ] , pen: artPenColor.value || '#ffffff' };
+  artDrawing=true;
+  lastPoint = getEventPos(e, artLayer);
 });
-artLayer.addEventListener('mousemove', (e)=>{ if (!artDrawing || !currentArtStroke) return; const p = getEventPos(e, artLayer); currentArtStroke.points.push(normPointInCanvas(p, artLayer)); renderLatestArtStrokeSegment(currentArtStroke); });
-artLayer.addEventListener('mouseup', ()=>{ if (!artDrawing) return; artDrawing = false; if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke = null; saveArt.disabled = false; updateTaskStatus(); } });
-artLayer.addEventListener('mouseleave', ()=>{ if (artDrawing){ artDrawing=false; if (currentArtStroke){ artStrokes.push(currentArtStroke); currentArtStroke=null; saveArt.disabled=false; updateTaskStatus(); } } });
-artLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-artLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-artLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); });
-
-function renderLatestArtStrokeSegment(stroke){
-  if (!stroke || stroke.points.length < 2) return;
-  const p1 = denormPoint(stroke.points[stroke.points.length-2], artLayer);
-  const p2 = denormPoint(stroke.points[stroke.points.length-1], artLayer);
-  if (stroke.tool === 'draw'){ artLayerCtx.globalCompositeOperation='source-over'; artLayerCtx.strokeStyle=stroke.pen || artPenColor.value || '#ffffff'; artLayerCtx.lineWidth=stroke.width; }
-  else { artLayerCtx.globalCompositeOperation='destination-out'; artLayerCtx.lineWidth=stroke.width; }
-  artLayerCtx.beginPath(); artLayerCtx.moveTo(p1.x,p1.y); artLayerCtx.lineTo(p2.x,p2.y); artLayerCtx.stroke();
-}
-
-/* card handlers */
-cardCanvas.addEventListener('mousedown', (e)=>{ cardDrawing = true; const p = getEventPos(e, cardCanvas); const tool = cardMode.value; const w = parseInt(cardSize.value,10); currentCardStroke = { tool, width: w, points: [ normPointInCanvas(p, cardCanvas) ], pen: cardPenColor.value || '#000000' }; });
-cardCanvas.addEventListener('mousemove', (e)=>{ if (!cardDrawing || !currentCardStroke) return; const p = getEventPos(e, cardCanvas); currentCardStroke.points.push(normPointInCanvas(p, cardCanvas)); renderLatestCardStrokeSegment(currentCardStroke); });
-cardCanvas.addEventListener('mouseup', ()=>{ if (!cardDrawing) return; cardDrawing = false; if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke = null; saveCard.disabled = false; updateTaskStatus(); } });
-cardCanvas.addEventListener('mouseleave', ()=>{ if (cardDrawing){ cardDrawing=false; if (currentCardStroke){ cardStrokes.push(currentCardStroke); currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); } } });
-cardCanvas.addEventListener('touchstart',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-cardCanvas.addEventListener('touchmove',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mousemove', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
-cardCanvas.addEventListener('touchend',(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent('mouseup')); });
-
-function renderLatestCardStrokeSegment(stroke){
-  if (!stroke || stroke.points.length < 2) return;
-  const p1 = denormPoint(stroke.points[stroke.points.length-2], cardCanvas);
-  const p2 = denormPoint(stroke.points[stroke.points.length-1], cardCanvas);
-  if (stroke.tool === 'draw'){ cardCtx.globalCompositeOperation='source-over'; cardCtx.strokeStyle=stroke.pen || cardPenColor.value || '#000'; cardCtx.lineWidth=stroke.width; }
-  else { cardCtx.globalCompositeOperation='destination-out'; cardCtx.lineWidth=stroke.width; }
-  cardCtx.beginPath(); cardCtx.moveTo(p1.x,p1.y); cardCtx.lineTo(p2.x,p2.y); cardCtx.stroke();
-}
-
-/* clear handlers */
-clearArt.addEventListener('click', ()=>{ initArtCanvas(); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
-clearCard.addEventListener('click', ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
-
-/* saveArt / saveCard (as before) */
-saveArt.addEventListener('click', ()=>{
-  const scale = 2; const tmp = document.createElement('canvas'); tmp.width = artLayer.width * scale; tmp.height = artLayer.height * scale; const t = tmp.getContext('2d');
-  t.fillStyle = artBgColor.value || '#6b3b24'; t.fillRect(0,0,tmp.width,tmp.height);
-  t.lineCap = 'round'; t.lineJoin = 'round';
-  const strokes = JSON.parse(JSON.stringify(artStrokes || []));
-  for (const s of strokes){
-    t.beginPath(); t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    t.strokeStyle = s.pen || artPenColor.value || '#fff'; t.lineWidth = (s.width || 6) * scale;
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
-    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
-  }
-  savedArtDataUrlLocal = tmp.toDataURL('image/png');
-  savedArtMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#ffffff', scale };
-  savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes || []));
-  saveArt.disabled = true;
-  updateTaskStatus();
-  alert('アートを保存しました。');
+artLayer.addEventListener('mousemove', (e)=>{
+  if (!artDrawing) return;
+  const p = getEventPos(e, artLayer);
+  const tool = penMode.value;
+  const w = parseInt(penSize.value,10);
+  const color = artPenColor.value || '#fff';
+  drawSegment(lastPoint, p, tool, w, color);
+  lastPoint = p;
+  dirty=true;
 });
-
-saveCard.addEventListener('click', ()=>{
-  const scale = 2; const tmp = document.createElement('canvas'); tmp.width = cardCanvas.width * scale; tmp.height = cardCanvas.height * scale; const t = tmp.getContext('2d');
-  t.fillStyle = cardBgColor.value || '#fff2e6'; t.fillRect(0,0,tmp.width,tmp.height);
-  t.lineCap = 'round'; t.lineJoin = 'round';
-  const strokes = JSON.parse(JSON.stringify(cardStrokes || []));
-  for (const s of strokes){
-    t.beginPath(); t.globalCompositeOperation = s.tool === 'draw' ? 'source-over' : 'destination-out';
-    t.strokeStyle = s.pen || cardPenColor.value || '#000'; t.lineWidth = (s.width || 4) * scale;
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p = pts[i]; const x = p.x * tmp.width; const y = p.y * tmp.height; if (i===0) t.moveTo(x,y); else t.lineTo(x,y); }
-    t.stroke(); t.closePath(); t.globalCompositeOperation='source-over';
-  }
-  savedCardDataUrlLocal = tmp.toDataURL('image/png');
-  savedCardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000000', scale };
-  savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes || []));
-  saveCard.disabled = true;
-  updateTaskStatus();
-  alert('カードを保存しました。。');
+window.addEventListener('mouseup', ()=>{
+  if (artDrawing){ artDrawing=false; lastPoint=null; }
 });
+artLayer.addEventListener('touchstart', (e)=>{ e.preventDefault(); artDrawing=true; lastPoint=getEventPos(e, artLayer); }, {passive:false});
+artLayer.addEventListener('touchmove', (e)=>{ e.preventDefault(); if(!artDrawing) return; const p=getEventPos(e, artLayer); const tool=penMode.value; const w=parseInt(penSize.value,10); drawSegment(lastPoint,p,tool,w,artPenColor.value); lastPoint=p; dirty=true; }, {passive:false});
+artLayer.addEventListener('touchend', (e)=>{ e.preventDefault(); artDrawing=false; lastPoint=null; }, {passive:false});
 
-/* pouring and latte visuals unchanged */
-let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
-function resetPouring(){ if (espInterval){ clearInterval(espInterval); espInterval=null; } if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } espBar.style.width='0%'; espPct.textContent='0%'; milkBar.style.width='0%'; milkPct.textContent='0%'; espDone=false; milkDone=false; startEsp.disabled=false; startMilk.disabled=true; taskStatusSmall.textContent='未完了: 注ぎ'; }
-resetPouring();
-function startAutoPour(barEl, pctEl, onOverflow){ let pct=0; const it=setInterval(()=>{ pct = Math.min(130,pct + Math.random()*4 + 1); barEl.style.width = pct + '%'; pctEl.textContent = Math.round(pct) + '%'; if (pct >= 120){ clearInterval(it); onOverflow(); } }, 100); return { it, getPct: ()=> pct }; }
-
-startEsp.addEventListener('mousedown', ()=>{ if (espInterval) return; startEsp.textContent='注ぎ中...'; const res = startAutoPour(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); espInterval = res.it; });
-startEsp.addEventListener('mouseup', ()=>{ if (espInterval){ clearInterval(espInterval); espInterval=null; } startEsp.textContent='注ぐ（押し続け）'; const pct = parseFloat(espBar.style.width)||0; if (pct>=95 && pct<=105){ espDone=true; playTone(523,0.12); latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
-startMilk.addEventListener('mousedown', ()=>{ if (milkInterval) return; startMilk.textContent='注ぎ中...'; const res = startAutoPour(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初からやり直しになります'); resetPouring(); }); milkInterval = res.it; });
-startMilk.addEventListener('mouseup', ()=>{ if (milkInterval){ clearInterval(milkInterval); milkInterval=null; } startMilk.textContent='注ぐ（押し続け）'; const pct = parseFloat(milkBar.style.width)||0; if (pct>=95 && pct<=105){ milkDone=true; playTone(660,0.12); latteFillMilk(); updateTaskStatus(); } else { alert('合格ラインを外しました。最初からやり直しになります'); resetPouring(); } });
-startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); });
-startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); });
-startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); });
-startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); });
-
-const latteCanvas = document.getElementById('latteCanvas'); const latteCtx = latteCanvas.getContext('2d');
-function latteClear(){ latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height); latteCtx.fillStyle='#6b3b24'; latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill(); }
-function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
-function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
-latteClear();
-
-/* updateTaskStatus */
-function updateTaskStatus(){ const parts=[]; if (!espDone || !milkDone) parts.push('注ぎ'); if (!savedArtStrokesLocal && (!artStrokes || !artStrokes.length)) parts.push('アート'); if (!savedCardStrokesLocal && (!cardStrokes || !cardStrokes.length)) parts.push('カード'); taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(', ') : 'すべて完了'; completeMake.disabled = parts.length !== 0; }
-
-/* openMakeModal (per-order isolation) */
-let currentMakingOrderId = null;
-let currentOrderObj = null;
-async function openMakeModal(order){
-  currentMakingOrderId = order.id;
-  currentOrderObj = order;
-  makerName.textContent = order.assignedToName || order.assignedTo || '';
-  const cfg = MENUS[order.item] || MENUS['rate'];
-  makeTitle.textContent = (cfg.ui && cfg.ui.makeTitle) ? cfg.ui.makeTitle + '（担当：' + (order.assignedToName || order.assignedTo || '') + '）' : '制作（担当）';
-  espressoLabelEl.textContent = (cfg.ui && cfg.ui.espressoLabel) || 'エスプレッソ注ぎ';
-  milkLabelEl.textContent = (cfg.ui && cfg.ui.milkLabel) || 'フームドミルク注ぎ';
-  latteArtLabelEl.textContent = (cfg.ui && cfg.ui.latteArtLabel) || 'ラテアート';
-
-  artStrokes = (order.artStrokes && Array.isArray(order.artStrokes)) ? JSON.parse(JSON.stringify(order.artStrokes)) : [];
-  cardStrokes = (order.cardStrokes && Array.isArray(order.cardStrokes)) ? JSON.parse(JSON.stringify(order.cardStrokes)) : [];
-
-  savedArtDataUrlLocal = order.artDataUrl || null;
-  savedCardDataUrlLocal = order.cardDataUrl || null;
-  savedArtMeta = order.artMeta || null;
-  savedCardMeta = order.cardMeta || null;
-
-  const artBgColorToUse = (savedArtMeta && savedArtMeta.bg) || cfg.artBg || artBgColor.value;
-  const cardBgColorToUse = (savedCardMeta && savedCardMeta.bg) || cfg.cardBg || cardBgColor.value;
-  initArtCanvas(artBgColorToUse);
-  initCardCanvas(cardBgColorToUse);
-  if (artStrokes && artStrokes.length) replayStrokesOnCanvasImmediate(artStrokes, artLayer, artLayerCtx, savedArtMeta);
-  if (cardStrokes && cardStrokes.length) replayStrokesOnCanvasImmediate(cardStrokes, cardCanvas, cardCtx, savedCardMeta);
-  currentArtStroke = null; currentCardStroke = null; artDrawing=false; cardDrawing=false;
-  saveArt.disabled = !(artStrokes && artStrokes.length); saveCard.disabled = !(cardStrokes && cardStrokes.length);
-  updateTaskStatus();
-  modalMakeLatte.style.display = 'flex';
-}
-
-/* replay helper */
-function replayStrokesOnCanvasImmediate(strokes, canvasEl, ctx, meta){
-  if (!strokes || !strokes.length) return;
-  for (const s of strokes){
-    ctx.beginPath();
-    ctx.lineWidth = (s.width || 3) * ((canvasEl.width / (meta?.origWidth || canvasEl.width)));
-    if (s.tool === 'draw'){ ctx.globalCompositeOperation='source-over'; ctx.strokeStyle = s.pen || (meta?.penDefault) || '#000'; } else { ctx.globalCompositeOperation='destination-out'; }
-    const pts = s.points || [];
-    for (let i=0;i<pts.length;i++){ const p=pts[i]; const den = denormPoint(p, canvasEl); if (i===0) ctx.moveTo(den.x, den.y); else ctx.lineTo(den.x, den.y); }
-    ctx.stroke(); ctx.closePath(); ctx.globalCompositeOperation='source-over';
-  }
-}
-
-/* completeMake (minimized writes) */
-completeMake.addEventListener('click', async ()=>{
-  if (!currentMakingOrderId){ alert('対象の注文がありません'); return; }
-  const artStrokesToSave = artStrokes || [];
-  const cardStrokesToSave = cardStrokes || [];
-  const artMetaToSave = savedArtMeta || (artStrokesToSave.length ? { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: artLayer.width*2, savedHeight: artLayer.height*2, bg: artBgColor.value || '#6b3b24', penDefault: artPenColor.value || '#fff', scale:2 } : null);
-  const cardMetaToSave = savedCardMeta || (cardStrokesToSave.length ? { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: cardCanvas.width*2, savedHeight: cardCanvas.height*2, bg: cardBgColor.value || '#fff2e6', penDefault: cardPenColor.value || '#000', scale:2 } : null);
-
-  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200; const tctx = tmp.getContext('2d');
-  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  tctx.drawImage(latteCanvas, 450,300,300,300);
-  if (savedArtDataUrlLocal){
-    const img = new Image(); img.src = savedArtDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 440,120,320,320);
-  } else if (artStrokesToSave.length){
-    const artTmp = document.createElement('canvas'); artTmp.width=600; artTmp.height=600; const actx = artTmp.getContext('2d');
-    actx.fillStyle = artMetaToSave?.bg || '#6b3b24'; actx.fillRect(0,0,artTmp.width,artTmp.height);
-    replayStrokesOnCanvasImmediate(artStrokesToSave, artTmp, actx, artMetaToSave);
-    tctx.drawImage(artTmp, 440,120,320,320);
-  }
-  if (savedCardDataUrlLocal){
-    const img = new Image(); img.src = savedCardDataUrlLocal; await new Promise(r=>{ img.onload=r; img.onerror=r; }); tctx.drawImage(img, 430,700,340,160);
-  } else if (cardStrokesToSave.length){
-    const cardTmp = document.createElement('canvas'); cardTmp.width=520; cardTmp.height=240; const cctx = cardTmp.getContext('2d');
-    cctx.fillStyle = cardMetaToSave?.bg || '#fff2e6'; cctx.fillRect(0,0,cardTmp.width,cardTmp.height);
-    replayStrokesOnCanvasImmediate(cardStrokesToSave, cardTmp, cctx, cardMetaToSave);
-    tctx.drawImage(cardTmp, 430,700,340,160);
-  }
-  const servedDataUrl = tmp.toDataURL('image/png');
-
-  try {
-    if (db){
-      await updateDoc(doc(db,'orders',currentMakingOrderId), {
-        state: 'delivered',
-        deliveredAt: Date.now(),
-        servedImageData: servedDataUrl,
-        artStrokes: artStrokesToSave,
-        cardStrokes: cardStrokesToSave,
-        artMeta: artMetaToSave || null,
-        cardMeta: cardMetaToSave || null,
-        artDataUrl: savedArtDataUrlLocal || null,
-        cardDataUrl: savedCardDataUrlLocal || null
-      });
-    } else {
-      const o = state.orders.find(x=>x.id===currentMakingOrderId);
-      if (o){ o.state='delivered'; o.servedImageData = servedDataUrl; o.artStrokes = artStrokesToSave; o.cardStrokes = cardStrokesToSave; try{ localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); }catch(e){} }
-    }
-    modalMakeLatte.style.display = 'none';
-    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
-    artStrokes = []; cardStrokes = []; currentArtStroke=null; currentCardStroke=null;
-    savedArtDataUrlLocal = savedCardDataUrlLocal = null; savedArtMeta = savedCardMeta = null;
-    currentMakingOrderId = null; currentOrderObj = null;
-    alert('提供しました（Firestoreへ保存）');
-  } catch(e){
-    console.warn('completeMake failed', e);
-    modalMakeLatte.style.display = 'none';
-    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
-    currentMakingOrderId = null;
-    alert('提供に失敗しました（Firestore更新エラー）');
-  }
-});
-
-/* ----------------- Client overlay handling ----------------- */
-function showClientStatus(text){ orderStatusMain.textContent = text; orderStatusSub.textContent = '数分そのままでお待ちください'; orderStatusOverlay.style.display = 'flex'; }
-function hideClientStatus(){ orderStatusOverlay.style.display = 'none'; }
-
-function updateClientOverlay(){
-  if (state.currentOrderIdForClient && dismissedOrders.has(state.currentOrderIdForClient)){ state.currentOrderIdForClient = null; return; }
-  if (!state.currentOrderIdForClient) return;
-  const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
-  if (!o) return;
-  if (o.state === 'waiting'){ showClientStatus('現在対応待ち中'); }
-  else if (o.state === 'inprogress'){
-    showClientStatus('現在調理中…');
-    if (state.audioUnlocked){ try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); } catch(e){} }
-    else state.pendingPlayQueue.push({ type:'cook' });
-  }
-  else if (o.state === 'delivered'){
-    showClientServed(o);
-    hideClientStatus();
-    try{ audioCookbgm.pause(); audioCookbgm.currentTime = 0; } catch(e){}
-  } else if (o.state === 'cancelled'){
-    showClientStatus('スタッフの応答がないため現在注文を取り消しになります');
-    setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient = null; }, 10000);
-  }
-}
-
-/* showClientServed (robust) */
-async function showClientServed(order){
-  if (!order) return;
-  const ord = order.id ? order : (await fetchOrderById(order.id)) || order;
-  if (ord.servedImageData){
-    servedImage.src = ord.servedImageData;
-  } else {
-    const baseUrl = getAssetUrl(ord.itemImageBase + '1.png');
-    servedImage.src = baseUrl;
-  }
-
-  const artCtx = servedArtMini.getContext('2d');
-  artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
-  artCtx.fillStyle = (ord.artMeta && ord.artMeta.bg) || MENUS[ord.item]?.artBg || '#6b3b24';
-  artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
-  if (ord.clientId === clientId){
-    if (ord.artStrokes && ord.artStrokes.length){ replayStrokesOnCanvasImmediate(ord.artStrokes, servedArtMini, artCtx, ord.artMeta); }
-    else if (ord.artDataUrl){ const img = new Image(); img.src = ord.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height); }
-  } else {
-    if (ord.artDataUrl){ const img = new Image(); img.src = ord.artDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height); }
-  }
-
-  const cardCtxMini = servedCardMini.getContext('2d');
-  cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
-  cardCtxMini.fillStyle = (ord.cardMeta && ord.cardMeta.bg) || MENUS[ord.item]?.cardBg || '#fff2e6';
-  cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
-  if (ord.clientId === clientId){
-    if (ord.cardStrokes && ord.cardStrokes.length){ replayStrokesOnCanvasImmediate(ord.cardStrokes, servedCardMini, cardCtxMini, ord.cardMeta); }
-    else if (ord.cardDataUrl){ const img = new Image(); img.src = ord.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height); }
-  } else {
-    if (ord.cardDataUrl){ const img = new Image(); img.src = ord.cardDataUrl; await new Promise(r=>{ img.onload=r; img.onerror=r; }); cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height); }
-  }
-
-  const cfg = MENUS[ord.item] || MENUS['rate'];
-  const frames = await preloadFrames(cfg.imageBase, cfg.frameCount || 6, cfg.lastFrameRandom);
-  servedSequence = frames.slice(); servedSequenceIndex = 0;
-  if (servedSequence.length) servedImage.src = servedSequence[0];
-
-  POMO.currentMenuKey = ord.item || 'rate';
-  modalEat.style.display = 'flex';
-}
-
-/* preloadFrames - prefer no-leading-zero pattern first */
-async function preloadFrames(basePath, frameCount=6, lastRandom=false){
-  const frames = [];
-  for (let i=1;i<=frameCount;i++){
-    const variants = [
-      `${basePath}${i}.png`,
-      `${basePath}${String(i).padStart(2,'')}.png`,
-      `${basePath}_${i}.png`,
-      `${basePath}_${String(i).padStart(2,'')}.png`
-    ];
-    for (const v of variants){
-      try {
-        const url = getAssetUrl(v);
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const blob = await res.blob();
-        frames.push(URL.createObjectURL(blob));
-        break;
-      } catch(e){ continue; }
-    }
-  }
-  return frames;
-}
-
-/* ----------------- Pomodoro (client only) - unchanged core logic but robust */ 
-const POMO = {
-  running: false, phase: 'idle', loopTotal: 1, loopIndex: 0, workMin: 25, breakMin: 5,
-  remainingMs: 0, tickInterval: null, lastTickTs: 0, currentMenuKey: 'rate', frameCount:6,
-  scheduledP3Timers: [], lastP3Index:-1, lastMessageIndex:-1, messageTimer:null
+clearArt.onclick = ()=>{
+  initArtCanvas(artBgColor.value);
+  dirty=true;
 };
 
-function formatTime(ms){ if (ms<0) ms=0; let s=Math.floor(ms/1000); const h=Math.floor(s/3600); s=s%3600; const m=Math.floor(s/60); const sec=s%60; return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
-const POMO_MESSAGES = {  work: [
-  '無理しすぎないでくださいね、集中は甘い飲み物と相性いいんです',
-  '今の集中、ちゃんと成果になるよ',
-  'そのキーボードの音、がんばってる証拠♪',
-  '今日は“進める日”って顔してます',
-  '一息つくのも、作業のうちですよ',
-  'ちゃんと一歩進んでます、大丈夫です',
+artBgColor.oninput = ()=>{
+  initArtCanvas(artBgColor.value);
+  dirty=true;
+};
 
-  '集中力は約25分が一区切り、短く休むと長持ちするんです',
-  '画面を見続けたら、20秒だけ遠くを見ると目が楽になりますよ',
-  '水分が足りないと、脳もちょっとサボりがちなんです',
-  '姿勢を正すだけで、思考スピードが上がることもあるらしいよ',
-  '詰まったら紙に書くと、頭の中が整理されやすいんだって',
-  'BGMは歌詞なしの方が、集中しやすいよね',
+/* ===== Make modal / realtime send (8秒ごと・変更時のみ・軽量JPEG) ===== */
+let currentMakeOrderId=null;
+let currentMakeOrder=null;
+let rtTimer=null;
+let lastSentHash='';
 
-  'このカフェ、作業が進むと評判なんです（たぶん）',
-  '今の一行、あとで見たら「よく書いたな」ってなったりして',
-  '締切って、近づくほどドキドキしますよね',
-  '頑張ってる人ほど、自分に厳しいんだと思います',
-  'コーヒーは魔法じゃないけど、気分は上げてくれます',
-  '静かな時間って、意外と贅沢♪',
-
-  '夜は無理しすぎないでくださいね、思考も眠くなるよ',
-  '今日はここまで、って決めるのも大事‼',
-  '少し疲れてる顔です、目だけ休ませませんか？',
-  '深夜の集中は強いけど、朝の自分に優しくしてあげてくださいね',
-  '温かい飲み物、思考も丸くなりますよ',
-
-  '完璧じゃなくていいんです、進むのが大事',
-  'その作業、きっと誰かに届くよ',
-  '今日は“積み上げた日”だね',
-  '迷ってる時間も、無駄じゃないですよ',
-  'ここまで来た自分、褒めてね',
-  '続けてること自体が、もうすごいんご'
-],
-  break: [
-  'おつかれさま、いいタイミングの休憩ですね',
-  '今は何もしなくて大丈夫',
-  'ちょっと肩の力、抜きましょう',
-  'ここまでちゃんと進んでます',
-  '休むのも作業の一部',
-  '一息入れるの、大切',
-  '今のペース、悪くないですよ',
-  '目を閉じるだけでも回復します',
-  '飲み物、冷めないうちにどうぞ',
-  '今は考えなくていい時間です',
-
-  '深呼吸、ゆっくりで大丈夫',
-  'スマホ見すぎ注意、目が休憩中です',
-  '何もしない時間、意外と大事',
-  '今の自分、ちょっと労ってあげてください',
-  '区切りまでよくがんばりました',
-  'この静けさ、味わっていきましょう',
-  '気分転換、成功です',
-  '戻る準備は、あとでいいですよ',
-  '今日はちゃんと進んでます',
-  'ぼーっとするのも才能です',
-
-  '今は休憩席、作業禁止ですよ',
-  '頭を空っぽにする時間♪',
-  '温かい飲み物、正解～♪',
-  '今のうちに姿勢、楽にしましょう',
-  '目を休ませると、次が楽ですよ',
-  '少し離れると、見え方変わります',
-  '今は充電中～',
-  '何も生まれなくていい時間も必要だよね',
-  '戻ったとき、きっと続きが書けます',
-  'この余白、きっと大切'
-]};
-
-function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
-  const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6);
-  if (!totalMs || totalMs <= 0) return 1;
-  const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
-  const from = 2; const to = fc; const idx = Math.floor(from + (to - from) * ratio);
-  return Math.min(fc, Math.max(1, idx));
+function canvasToJpegDataUrl(canvas, quality=0.45){
+  // layer+bg合成を一時canvasに
+  const tmp = document.createElement('canvas');
+  tmp.width = canvas.width;
+  tmp.height = canvas.height;
+  const t = tmp.getContext('2d');
+  // bg
+  t.drawImage(artBg,0,0,tmp.width,tmp.height);
+  // layer
+  t.drawImage(artLayer,0,0,tmp.width,tmp.height);
+  return tmp.toDataURL('image/jpeg', quality);
 }
-function pickBreakFrame(menuKey){ const menu = MENUS[menuKey]; const fc = (menu && menu.frameCount) ? menu.frameCount : (POMO.frameCount || 6); if (fc <= 1) return 1; const choices = [Math.max(1, fc-1), fc]; return choices[Math.floor(Math.random() * choices.length)]; }
-
-function setServedImageFrame(menuKey, frameIndex){
-  const menu = MENUS[menuKey]; if (!menu) return;
-  const candidates = [
-    `${menu.imageBase}${frameIndex}.png`,
-    `${menu.imageBase}${String(frameIndex).padStart(2,'0')}.png`,
-    `${menu.imageBase}_${frameIndex}.png`,
-    `${menu.imageBase}_${String(frameIndex).padStart(2,'0')}.png`
-  ];
-  (async ()=>{
-    for (const c of candidates){
-      try {
-        const url = getAssetUrl(c);
-        const res = await fetch(url, { method:'HEAD' });
-        if (res.ok){ servedImage.src = url; return; }
-      } catch(e){}
-    }
-    servedImage.src = getAssetUrl(menu.imageBase + '1.png');
-  })();
+function quickHash(str){
+  // 軽い比較用（完全でなくてOK）
+  let h=0;
+  for(let i=0;i<str.length;i++){ h = ((h<<5)-h) + str.charCodeAt(i); h|=0; }
+  return String(h);
 }
 
-function clearScheduledP3(){ if (!POMO.scheduledP3Timers) POMO.scheduledP3Timers=[]; for(const t of POMO.scheduledP3Timers) clearTimeout(t); POMO.scheduledP3Timers = []; POMO.lastP3Index=-1; }
-function scheduleBreakRandomSounds(){ clearScheduledP3(); function scheduleNext(){ if (POMO.phase !== 'break') return; const interval = 12000 + Math.floor(Math.random() * (20000)); const timer = setTimeout(()=>{ let idxCandidates = p3Pool.map((_,i)=>i); if (POMO.lastP3Index >= 0 && idxCandidates.length > 1) idxCandidates = idxCandidates.filter(i => i !== POMO.lastP3Index); const idx = idxCandidates[Math.floor(Math.random() * idxCandidates.length)]; POMO.lastP3Index = idx; try { const a = new Audio(p3Pool[idx].src); a.play().catch(()=>{}); } catch(e){} scheduleNext(); }, interval); POMO.scheduledP3Timers.push(timer); } scheduleNext(); }
+async function openMakeModal(order){
+  if (!db) return;
+  currentMakeOrderId = order.id;
+  currentMakeOrder = order;
+  makerName.textContent = order.assignedToName || '';
+  makeTitle.textContent = `制作（担当：${order.assignedToName || ''}）`;
+  makeOrderInfo.textContent = `${order.name} / ${MENUS[order.item]?.title || order.item}`;
+  makeRandomReview.textContent = pickRandomReviewText(order.item) || '—';
 
-function rotatePomoMessage(){ const phase = (POMO.phase === 'work') ? 'work' : (POMO.phase === 'break' ? 'break' : null); if (!phase) { document.getElementById('eatSoundInfo').textContent = '—'; return; } const pool = POMO_MESSAGES[phase] || []; if (!pool.length) { document.getElementById('eatSoundInfo').textContent = phase === 'work' ? '作業中' : '休憩中'; return; } let idxs = pool.map((_,i)=>i); if (POMO.lastMessageIndex >= 0 && idxs.length > 1) idxs = idxs.filter(i=>i!==POMO.lastMessageIndex); const idx = idxs[Math.floor(Math.random()*idxs.length)]; POMO.lastMessageIndex = idx; document.getElementById('eatSoundInfo').textContent = (phase === 'work' ? '作業中: ' : '休憩中: ') + pool[idx]; }
+  // init art colors by menu
+  const cfg = MENUS[order.item] || MENUS.rate;
+  artBgColor.value = cfg.artBg || '#6b3b24';
+  artPenColor.value = cfg.artPen || '#ffffff';
+  initArtCanvas(artBgColor.value);
+  dirty = true;
+  lastSentHash = '';
 
-function startPomoTick(){ if (POMO.tickInterval) return; POMO.lastTickTs = Date.now(); POMO.tickInterval = setInterval(()=> { const now = Date.now(); const delta = now - POMO.lastTickTs; POMO.lastTickTs = now; if (POMO.phase === 'paused' || POMO.phase === 'idle') return; POMO.remainingMs -= delta; if (POMO.remainingMs <= 0){ if (POMO.phase === 'work'){ POMO.phase = 'break'; audioPiroBreak && audioPiroBreak.play().catch(()=>{}); POMO.remainingMs = (POMO.breakMin * 60 * 1000); const bf = pickBreakFrame(POMO.currentMenuKey || 'rate'); setServedImageFrame(POMO.currentMenuKey || 'rate', bf); scheduleBreakRandomSounds(); } else if (POMO.phase === 'break'){ clearScheduledP3(); POMO.loopIndex++; if (POMO.loopIndex >= POMO.loopTotal){ stopPomo(true); return; } else { POMO.phase = 'work'; POMO.remainingMs = (POMO.workMin * 60 * 1000); setServedImageFrame(POMO.currentMenuKey || 'rate', 2); audioPiroStart && audioPiroStart.play().catch(()=>{}); } } renderPomoUI(); } else { if (POMO.phase === 'work'){ const total = (POMO.workMin * 60 * 1000); const elapsed = total - POMO.remainingMs; const idx = getWorkFrameIndex(POMO.currentMenuKey || 'rate', elapsed, total); setServedImageFrame(POMO.currentMenuKey || 'rate', idx); } renderPomoUI(); } }, 250); if (POMO.messageTimer) clearInterval(POMO.messageTimer); POMO.messageTimer = setInterval(()=>{ rotatePomoMessage(); }, 20000); rotatePomoMessage(); }
+  showModal(modalMake);
 
-function stopPomoTick(){ if (POMO.tickInterval){ clearInterval(POMO.tickInterval); POMO.tickInterval=null; } clearScheduledP3(); if (POMO.messageTimer){ clearInterval(POMO.messageTimer); POMO.messageTimer = null; } }
-
-function renderPomoUI(){ if (!POMO.running){ pomoSettings.style.display = 'block'; pomoRunning.style.display = 'none'; pomoPanel.setAttribute('aria-hidden','false'); document.getElementById('eatSoundInfo').textContent = '—'; return; } pomoSettings.style.display = 'none'; pomoRunning.style.display = 'block'; pomoPanel.setAttribute('aria-hidden','false'); pomoLoopCounter.textContent = `${POMO.loopIndex + 1} / ${POMO.loopTotal}`; pomoPhaseLabel.textContent = (POMO.phase === 'work') ? '作業中' : (POMO.phase === 'break' ? '休憩中' : (POMO.phase === 'paused' ? '一時停止' : '待機')); pomoTimerText.textContent = formatTime(POMO.remainingMs); if (POMO.phase === 'work'){ const total = (POMO.workMin * 60 * 1000); const elapsed = Math.max(0, total - POMO.remainingMs); const pct = Math.min(100, Math.floor((elapsed / total) * 100)); pomoProgressBar.style.width = `${pct}%`; } else if (POMO.phase === 'break'){ const total = (POMO.breakMin * 60 * 1000); const elapsed = Math.max(0, total - POMO.remainingMs); const pct = Math.min(100, Math.floor((elapsed / total) * 100)); pomoProgressBar.style.width = `${pct}%`; } else { pomoProgressBar.style.width = `0%`; } if (POMO.phase === 'paused'){ pausePomoBtn.textContent = '▶'; } else { pausePomoBtn.textContent = '⏸'; } }
-
-function startPomo(){ const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1'))); const wmin = Math.max(1, Math.min(200, parseInt(workMinInput.value || '25'))); const bmin = Math.max(1, Math.min(200, parseInt(breakMinInput.value || '5'))); POMO.loopTotal = loops; POMO.loopIndex = 0; POMO.workMin = wmin; POMO.breakMin = bmin; POMO.running = true; POMO.phase = 'work'; POMO.remainingMs = (wmin * 60 * 1000); POMO.currentMenuKey = POMO.currentMenuKey || 'rate'; const menu = MENUS[POMO.currentMenuKey] || MENUS['rate']; POMO.frameCount = menu.frameCount || 6; audioPiroStart && audioPiroStart.play().catch(()=>{}); setServedImageFrame(POMO.currentMenuKey, 2); clearScheduledP3(); startPomoTick(); renderPomoUI(); }
-function togglePausePomo(){ if (!POMO.running) return; if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; audioPiroToggle && audioPiroToggle.play().catch(()=>{}); startPomoTick(); } else { POMO._prevPhase = POMO.phase; POMO.phase = 'paused'; stopPomoTick(); audioPiroToggle && audioPiroToggle.play().catch(()=>{}); } renderPomoUI(); }
-function stopPomo(returnToSettings){ POMO.running = false; POMO.phase = 'idle'; POMO.remainingMs = 0; clearScheduledP3(); stopPomoTick(); if (returnToSettings){ pomoSettings.style.display='block'; pomoRunning.style.display='none'; } renderPomoUI(); }
-function skipPomo(){ if (!POMO.running) return; if (POMO.phase === 'work'){ POMO.remainingMs = 0; } else if (POMO.phase === 'break'){ POMO.remainingMs = 0; } else if (POMO.phase === 'paused'){ POMO.phase = POMO._prevPhase || 'work'; POMO.remainingMs = 0; } }
-
-function wireHoldButton(buttonEl, inputEl, delta, min, max){
-  let timer = null; let holdStart = 0; let currentInterval = 500;
-  function doStep(){ let v = parseInt(inputEl.value || '0'); v += delta; if (typeof min === 'number') v = Math.max(min, v); if (typeof max === 'number') v = Math.min(max, v); inputEl.value = v; updatePomoCountDisplay(); }
-  function startHold(){ holdStart = Date.now(); currentInterval = 500; doStep(); timer = setTimeout(function repeat(){ const held = Date.now() - holdStart; const t = Math.min(1, held / 2000); currentInterval = Math.max(80, Math.floor(500 - (420 * t))); doStep(); timer = setTimeout(repeat, currentInterval); }, currentInterval); }
-  function stopHold(){ if (timer){ clearTimeout(timer); timer = null; } }
-  buttonEl.addEventListener('mousedown', (e)=>{ e.preventDefault(); startHold(); });
-  buttonEl.addEventListener('touchstart', (e)=>{ e.preventDefault(); startHold(); });
-  window.addEventListener('mouseup', stopHold);
-  window.addEventListener('touchend', stopHold);
-  buttonEl.addEventListener('click', (e)=>{ e.preventDefault(); doStep(); });
-}
-function updatePomoCountDisplay(){ const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value || '1'))); pomoCountDisplay.textContent = `${loops} / ${loops}`; }
-wireHoldButton(loopUp, loopCountInput, +1, 1, 10);
-wireHoldButton(loopDown, loopCountInput, -1, 1, 10);
-wireHoldButton(workUp, workMinInput, +1, 1, 200);
-wireHoldButton(workDown, workMinInput, -1, 1, 200);
-wireHoldButton(breakUp, breakMinInput, +1, 1, 200);
-wireHoldButton(breakDown, breakMinInput, -1, 1, 200);
-startPomoBtn.addEventListener('click', ()=>{ if (!POMO.running){ startPomo(); startPomoBtn.textContent = '実行中'; }});
-stopPomoBtn.addEventListener('click', ()=>{ stopPomo(true); startPomoBtn.textContent = '再生 ▶'; });
-pausePomoBtn.addEventListener('click', ()=>{ togglePausePomo(); });
-skipPomoBtn.addEventListener('click', ()=>{ skipPomo(); });
-function openPomodoroForMenu(menuKey){ POMO.currentMenuKey = menuKey || 'rate'; loopCountInput.value = POMO.loopTotal || 1; workMinInput.value = POMO.workMin || 25; breakMinInput.value = POMO.breakMin || 5; updatePomoCountDisplay(); pomoPanel.classList.add('show'); pomoPanel.style.display = 'block'; pomoSettings.style.display = POMO.running ? 'none' : 'block'; pomoRunning.style.display = POMO.running ? 'block' : 'none'; renderPomoUI(); }
-document.addEventListener('click', (e)=>{ if (!pomoPanel.contains(e.target) && !servedImage.contains(e.target)){ if (!POMO.running){ pomoPanel.classList.remove('show'); pomoPanel.style.display='none'; } } });
-servedImage.addEventListener('click', ()=>{ const currentMenu = POMO.currentMenuKey || 'rate'; openPomodoroForMenu(currentMenu); });
-
-/* ----------------- Save & home flows ----------------- */
-saveAllBtn.addEventListener('click', ()=>{
-  const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const t = tmp.getContext('2d');
-  t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
-  const mainImg = new Image(); mainImg.crossOrigin = 'anonymous'; mainImg.src = servedImage.src;
-  mainImg.onload = ()=> {
-    t.drawImage(mainImg, 150,100,900,600);
-    t.drawImage(servedArtMini, 860,120,220,220);
-    t.drawImage(servedCardMini, 860,360,260,120);
-    const a = document.createElement('a'); a.href = tmp.toDataURL('image/png'); a.download = 'served_save.png'; a.click();
-  };
-  mainImg.onerror = ()=> { alert('画像の読み込みに失敗しました'); };
-});
-
-homeFromEat.addEventListener('click', async ()=>{
-  const curId = state.currentOrderIdForClient;
-  if (curId){
-    if (db){
-      try {
-        const o = state.orders.find(x => x.id === curId);
-        if (o && o.clientId === clientId){
-          await updateDoc(doc(db,'orders',curId), { artStrokes: null, cardStrokes: null, artDataUrl: null, cardDataUrl: null, servedImageData: null, artMeta: null, cardMeta: null });
-        }
-      } catch(e){ console.warn('clear art data failed', e); }
-    } else {
-      const o = state.orders.find(x => x.id === curId);
-      if (o && o.clientId === clientId){
-        o.artStrokes = null; o.cardStrokes = null; o.artDataUrl = null; o.cardDataUrl = null; o.servedImageData = null; o.artMeta = null; o.cardMeta = null;
-        try { localStorage.setItem('reiji_state_orders', JSON.stringify(state.orders)); } catch(e){}
-      }
-    }
-    dismissedOrders.add(curId);
-    try { localStorage.setItem('reiji_dismissed_orders', JSON.stringify(Array.from(dismissedOrders))); } catch(e){}
-    state.currentOrderIdForClient = null;
-  }
-  modalEat.style.display = 'none';
-});
-
-/* ----------------- J/E/C/K jukebox ----------------- */
-function buildJukebox(){
-  const list = [
-    { id:'J', img:'@zzcafe2800/reiji_cafe/main/J.png', audio: audioJ },
-    { id:'E', img:'@zzcafe2800/reiji_cafe/main/E.png', audio: audioE },
-    { id:'C', img:'@zzcafe2800/reiji_cafe/main/C.png', audio: audioC },
-    { id:'K', img:'@zzcafe2800/reiji_cafe/main/K.png', audio: audioK },
-  ];
-  jukeboxArea.innerHTML = '';
-  for (const it of list){
-    const wrap = document.createElement('div'); wrap.className='wrapper';
-    const img = document.createElement('img'); img.src = getAssetUrl(it.img); img.alt = it.id;
-    img.title = it.id; img.style.width = '56px';
-    img.addEventListener('click', ()=>{ try { it.audio.currentTime = 0; it.audio.play().catch(()=>{}); } catch(e){} });
-    const hint = document.createElement('div'); hint.className='hint'; hint.textContent = '';
-    wrap.appendChild(img); wrap.appendChild(hint);
-    jukeboxArea.appendChild(wrap);
-  }
+  // start realtime timer: 8s
+  stopRealtimeTimer();
+  rtTimer = setInterval(async ()=>{
+    if (!currentMakeOrderId) return;
+    if (!dirty) { rtState.textContent='リアルタイム: 変化なし'; return; }
+    const jpg = canvasToJpegDataUrl(artLayer, 0.40); // 低画質
+    const h = quickHash(jpg);
+    if (h === lastSentHash){ dirty=false; rtState.textContent='リアルタイム: 同一'; return; }
+    lastSentHash = h;
+    dirty=false;
+    rtState.textContent='リアルタイム: 送信...';
+    await updateDoc(doc(db,'stores',state.currentStoreId,'orders',currentMakeOrderId), {
+      artPreviewJpg: jpg,
+      artBg: artBgColor.value || '#6b3b24',
+      artUpdatedAt: Date.now()
+    }).catch(()=>{});
+    rtState.textContent='リアルタイム: OK';
+  }, 8000);
 }
 
-/* updateOrderButtonState: JST-based */
-function updateOrderButtonState(){
-  const now = nowInJST();
-  const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  // per requirement: orders allowed if human staff present OR BOT will handle -> always enable;
-  orderBtn.classList.remove('disabled');
+function stopRealtimeTimer(){
+  if (rtTimer){ clearInterval(rtTimer); rtTimer=null; }
 }
 
-/* Sound overlay */
-function showSoundOverlay(){ soundOverlay.style.display = 'flex'; }
-function hideSoundOverlay(){ soundOverlay.style.display = 'none'; }
-enableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = true; try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); ctx.resume && ctx.resume(); ctx.close && ctx.close(); } catch(e){} hideSoundOverlay(); flushPendingPlays(); });
-disableSoundBtn.addEventListener('click', ()=> { state.audioUnlocked = false; hideSoundOverlay(); });
+cancelMake.onclick = ()=>{
+  stopRealtimeTimer();
+  hideModal(modalMake);
+  currentMakeOrderId=null;
+  currentMakeOrder=null;
+};
 
-bgmBtn.addEventListener('click', ()=> window.open('https://x.com/zzcafe_280', '_blank'));
+saveArt.onclick = async ()=>{
+  if (!db || !currentMakeOrderId) return;
+  const jpg = canvasToJpegDataUrl(artLayer, 0.55);
+  await updateDoc(doc(db,'stores',state.currentStoreId,'orders',currentMakeOrderId), {
+    artPreviewJpg: jpg,
+    artBg: artBgColor.value || '#6b3b24',
+    artSavedAt: Date.now()
+  }).catch(()=>{});
+  alert('アートを保存しました');
+};
 
-/* ----------------- BOT helpers (art/card generation, overlay) ----------------- */
-let _botOverlayEl = null;
-function showBotOverlayForClient(){
-  if (_botOverlayEl) return;
-  const o = document.createElement('div'); o.style.position='fixed'; o.style.inset='0'; o.style.zIndex='1000'; o.style.background='rgba(0,0,0,0.4)'; o.style.display='flex'; o.style.alignItems='center'; o.style.justifyContent='center';
-  const card = document.createElement('div'); card.style.background='#fff'; card.style.padding='20px'; card.style.borderRadius='10px'; card.style.border='4px solid var(--accent)'; card.style.fontWeight='700'; card.textContent = 'BOTが対応中です…';
-  o.appendChild(card); document.body.appendChild(o); _botOverlayEl = o;
-}
-function hideBotOverlayForClient(){ if (!_botOverlayEl) return; _botOverlayEl.remove(); _botOverlayEl = null; }
+deliverBtn.onclick = async ()=>{
+  if (!db || !currentMakeOrderId) return;
+  // 提供: delivered
+  await updateDoc(doc(db,'stores',state.currentStoreId,'orders',currentMakeOrderId), {
+    state:'delivered',
+    deliveredAt: Date.now()
+  }).catch(()=>{});
+  stopRealtimeTimer();
+  hideModal(modalMake);
+  currentMakeOrderId=null;
+  currentMakeOrder=null;
+  alert('提供しました');
+};
 
-/* botProduce: returns { servedImageData, artDataUrl, cardDataUrl } */
-async function botProduce(orderObj, menuItem, customerName){
-  const cfg = menuItem;
-  let artDataUrl = null;
-  if (cfg.botArtPool && cfg.botArtPool.length){
-    const choice = cfg.botArtPool[Math.floor(Math.random() * cfg.botArtPool.length)];
-    const url = getAssetUrl(choice);
-    try {
-      const res = await fetch(url);
-      if (res.ok){ const blob = await res.blob(); artDataUrl = URL.createObjectURL(blob); }
-    } catch(e){ console.warn('bot art fetch fail', e); }
-  }
-  // compose card canvas with 3 lines (styled)
-  const cardCanvasTmp = document.createElement('canvas'); cardCanvasTmp.width = 520; cardCanvasTmp.height = 240; const cctx = cardCanvasTmp.getContext('2d');
-  cctx.fillStyle = cfg.cardBg || '#fff2e6'; cctx.fillRect(0,0,cardCanvasTmp.width,cardCanvasTmp.height);
-  cctx.strokeStyle = '#d4c0b8'; cctx.lineWidth = 4; roundRect(cctx,8,8,cardCanvasTmp.width-16,cardCanvasTmp.height-16,12); cctx.stroke();
-  cctx.fillStyle = '#000'; cctx.textAlign = 'center';
-  cctx.font = '28px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif'; cctx.fillText('どうぞ', cardCanvasTmp.width/2, 70);
-  cctx.font = '22px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif'; cctx.fillText('ごゆっくり～☕', cardCanvasTmp.width/2, 110);
-  cctx.font = '30px "Hiragino Kaku Gothic ProN", Meiryo, sans-serif'; const displayName = (customerName || '名無し') + 'さん'; cctx.fillText(displayName, cardCanvasTmp.width/2, 160);
-  const cardDataUrl = cardCanvasTmp.toDataURL('image/png');
+/* ===== Served UI ===== */
+async function showClientServed(order){
+  // メニュー画像（とりあえず1枚）
+  const cfg = MENUS[order.item] || MENUS.rate;
+  servedImage.src = getAssetUrl(cfg.imageBase + '1.png');
 
-  const tmp = document.createElement('canvas'); tmp.width = 1200; tmp.height = 1200; const tctx = tmp.getContext('2d');
-  tctx.fillStyle = '#fff8ef'; tctx.fillRect(0,0,tmp.width,tmp.height);
-  tctx.fillStyle = '#6b3b24'; tctx.beginPath(); tctx.arc(600,400,180,0,Math.PI*2); tctx.fill();
-  if (artDataUrl){
+  // art mini
+  servedArtMiniCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
+  // bg
+  servedArtMiniCtx.fillStyle = order.artBg || cfg.artBg || '#6b3b24';
+  servedArtMiniCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
+  // preview img
+  if (order.artPreviewJpg){
     const img = new Image();
-    img.src = artDataUrl;
-    await new Promise(res=>{ img.onload=res; img.onerror=res; });
-    tctx.drawImage(img, 430,220,340,340);
+    img.src = order.artPreviewJpg;
+    await new Promise(r=>{ img.onload=r; img.onerror=r; });
+    // cover-fit
+    const cw=servedArtMini.width, ch=servedArtMini.height;
+    const iw=img.width||1, ih=img.height||1;
+    const s = Math.max(cw/iw, ch/ih);
+    const dw=iw*s, dh=ih*s;
+    const dx=(cw-dw)/2, dy=(ch-dh)/2;
+    servedArtMiniCtx.drawImage(img, dx, dy, dw, dh);
   }
-  const cardImg = new Image(); cardImg.src = cardDataUrl; await new Promise(res=>{ cardImg.onload=res; cardImg.onerror=res; });
-  tctx.drawImage(cardImg, 430,720,340,160);
-  const servedImageData = tmp.toDataURL('image/png');
-  return { servedImageData, artDataUrl, cardDataUrl };
-}
-function roundRect(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath(); }
 
-/* ----------------- Utility fetchOrderById ----------------- */
-async function fetchOrderById(id){
-  const s = state.orders.find(x=>x.id===id);
-  if (s) return s;
-  if (!db) return null;
-  try { const snap = await getDoc(doc(db,'orders',id)); if (snap.exists()) return { id: snap.id, ...snap.data() }; } catch(e){ console.warn(e); }
-  return null;
+  // random review small
+  eatRandomReview.textContent = pickRandomReviewText(order.item) ? ('口コミ: ' + pickRandomReviewText(order.item)) : '';
+
+  // review state reset
+  setRating(0);
+  reviewText.value = '';
+
+  showModal(modalEat);
 }
 
-/* ----------------- Cover open animation removal ----------------- */
-const coverPage = document.getElementById('coverPage');
-if (coverPage){
-  function openCover(){ coverPage.classList.add('open'); coverPage.addEventListener('animationend', ()=>{ coverPage.classList.add('finished'); try{ coverPage.remove(); }catch(e){} }, { once:true }); }
-  document.addEventListener('click', function onFirst(){ openCover(); document.removeEventListener('click', onFirst); }, { once:true });
+/* ===== Save image fix (no squish) ===== */
+function drawImageContain(ctx, img, x, y, w, h){
+  const iw = img.width||1, ih = img.height||1;
+  const s = Math.min(w/iw, h/ih);
+  const dw = iw*s, dh = ih*s;
+  const dx = x + (w-dw)/2;
+  const dy = y + (h-dh)/2;
+  ctx.drawImage(img, dx, dy, dw, dh);
 }
 
-/* ----------------- Init ----------------- */
-buildJukebox();
-buildMenu().catch(()=>{});
-initArtCanvas(); initCardCanvas();
-startRealtime();
-showSoundOverlay();
+saveAllBtn.onclick = async ()=>{
+  const id = state.currentOrderIdForClient;
+  const o = state.orders.find(x=>x.id===id);
+  if (!o) return;
 
-/* End */
+  const tmp = document.createElement('canvas');
+  tmp.width = 1200;
+  tmp.height = 900;
+  const t = tmp.getContext('2d');
+  t.fillStyle = '#fff8ef';
+  t.fillRect(0,0,tmp.width,tmp.height);
+
+  // main image
+  const main = new Image();
+  main.crossOrigin='anonymous';
+  main.src = servedImage.src;
+  await new Promise(r=>{ main.onload=r; main.onerror=r; });
+  drawImageContain(t, main, 60, 40, 760, 760);
+
+  // art mini
+  t.drawImage(servedArtMini, 860, 60, 280, 280);
+
+  const a = document.createElement('a');
+  a.href = tmp.toDataURL('image/png');
+  a.download = 'served_save.png';
+  a.click();
+};
+
+/* ===== Home from eat ===== */
+homeFromEat.onclick = ()=>{
+  hideModal(modalEat);
+  state.currentOrderIdForClient = null;
+};
+
+/* ===== Review UI ===== */
+let currentRating = 0;
+function setRating(n){
+  currentRating = n;
+  [...reviewStars.querySelectorAll('span')].forEach(sp=>{
+    const k = parseInt(sp.dataset.n,10);
+    sp.classList.toggle('on', k <= n);
+    sp.textContent = (k <= n) ? '★' : '☆';
+  });
+}
+reviewStars.onclick = (e)=>{
+  const sp = e.target.closest('span');
+  if (!sp) return;
+  setRating(parseInt(sp.dataset.n,10));
+};
+
+submitReviewBtn.onclick = async ()=>{
+  const id = state.currentOrderIdForClient;
+  const o = state.orders.find(x=>x.id===id);
+  if (!o){ alert('注文が見つかりません'); return; }
+  const txt = (reviewText.value || '').trim();
+  const rating = clamp(currentRating,0,5);
+  if (!rating && !txt){ alert('星かコメントを入れてください'); return; }
+  if (!db) return;
+
+  await addDoc(reviewsCol(state.currentStoreId), {
+    menuId: o.item,
+    text: txt,
+    rating,
+    ts: Date.now()
+  }).catch(()=>{});
+
+  // menuStats をクライアント側で軽く更新（厳密性より手軽さ優先）
+  const statRef = doc(db,'stores',state.currentStoreId,'menuStats',o.item);
+  try{
+    const snap = await getDoc(statRef);
+    let avg=0, count=0;
+    if (snap.exists()){
+      const d = snap.data();
+      avg = d.avg || 0;
+      count = d.count || 0;
+    }
+    const newCount = count + 1;
+    const newAvg = ((avg * count) + rating) / newCount;
+    await setDoc(statRef, { avg:newAvg, count:newCount, updatedAt: Date.now() }, { merge:true });
+  }catch(e){}
+
+  alert('口コミを送信しました');
+};
+
+/* ===== Start ===== */
+openStorePicker();
+
+/* orders overlay update trigger (also when no realtime) */
+orderStatusOverlay.addEventListener('click', ()=>{ /* tap to close? */ });
+
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  <script>
-document.getElementById("enableSoundBtn")?.addEventListener("click", () => {
-  const cover = document.querySelector(".cover");
-  if (cover) {
-    cover.classList.add("open");
-  }
-});
-</script>
-<script>
-const cover = document.querySelector(".cover");
-
-cover.addEventListener("animationend", () => {
-  cover.classList.add("finished");
-});
-</script>
-
-
-
-
-
-<!-- BGM コントロール UI -->
-<style>
-#bgmControl{
-  position:fixed;
-  top:10px;
-  left:10px;
-  z-index:9999;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:10px 14px;
-  background:rgba(255,255,255,0.75);
-  backdrop-filter:blur(8px);
-  border-radius:16px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.15);
-  font-family:"Segoe UI","Hiragino Kaku Gothic ProN","Meiryo",sans-serif;
-  color:#444;
-}
-
-#bgmControl button{
-  border:none;
-  background:#fff;
-  border-radius:12px;
-  padding:6px 10px;
-  font-size:16px;
-  cursor:pointer;
-  box-shadow:0 2px 6px rgba(0,0,0,0.15);
-  transition:transform 0.1s, box-shadow 0.1s;
-}
-#bgmControl button:hover{
-  transform:translateY(-1px);
-  box-shadow:0 4px 10px rgba(0,0,0,0.2);
-}
-
-#bgmTime{
-  font-size:14px;
-  min-width:95px;
-  text-align:center;
-}
-
-#bgmTitle{
-  font-size:14px;
-  max-width:180px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  opacity:0.85;
-}
-
-#bgmVolume{
-  width:90px;
-}
-</style>
-
-<div id="bgmControl">
-  <button id="bgmPlayBtn" title="再生 / 次の曲">▶</button>
-  <button id="bgmLoopBtn" title="ループ">🔁</button>
-
-  <div id="bgmTime">00:00 / 00:00</div>
-  <div id="bgmTitle">---</div>
-
-  <input id="bgmVolume" type="range" min="0" max="100" value="50">
-</div>
-
-<script>
-/* ===== 曲リスト（表示名をここで設定） ===== */
-const audioList = [
-  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/sie.mp3",  title:"静かなカフェ風BGM" },
-  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/rara.mp3", title:"ゆるり午後の時間風BGM" },
-  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/riri.mp3", title:"月明かり風BGM" },
-  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/ruru.mp3", title:"夜更けの読書席風BGM" },
-  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/rere.mp3", title:"雨音ブレンド風BGM" },
-  { url:"https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/roro.mp3", title:"最後の一杯風BGM" }
-];
-
-/* ===== 状態 ===== */
-let currentTrackIndex = 0;
-let isLoop = false;
-
-/* ===== Audio ===== */
-const audio = new Audio();
-audio.volume = 0.75; // 初期50%（最大1.5の半分）
-audio.loop = false;
-
-/* ===== シャッフル ===== */
-function shuffleArray(array){
-  for(let i=array.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [array[i],array[j]]=[array[j],array[i]];
-  }
-  return array;
-}
-let shuffledList = shuffleArray([...audioList]);
-
-/* ===== UI取得 ===== */
-const playBtn  = document.getElementById("bgmPlayBtn");
-const loopBtn  = document.getElementById("bgmLoopBtn");
-const timeEl   = document.getElementById("bgmTime");
-const titleEl  = document.getElementById("bgmTitle");
-const volumeEl = document.getElementById("bgmVolume");
-
-/* ===== 再生 ===== */
-function playTrack(index){
-  currentTrackIndex = index;
-  audio.src = shuffledList[currentTrackIndex].url;
-  titleEl.textContent = shuffledList[currentTrackIndex].title;
-  audio.play();
-  playBtn.textContent = "⏭";
-}
-
-/* ===== 次の曲 ===== */
-function nextTrack(){
-  currentTrackIndex++;
-  if(currentTrackIndex >= shuffledList.length){
-    shuffledList = shuffleArray([...audioList]);
-    currentTrackIndex = 0;
-  }
-  playTrack(currentTrackIndex);
-}
-
-/* ===== 時間表示 ===== */
-function formatTime(sec){
-  if(isNaN(sec)) return "00:00";
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-}
-audio.addEventListener("timeupdate",()=>{
-  timeEl.textContent =
-    `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
-});
-
-/* ===== ボタン ===== */
-playBtn.addEventListener("click",()=>{
-  if(audio.paused){
-    playTrack(currentTrackIndex);
-  }else{
-    nextTrack();
-  }
-});
-
-loopBtn.addEventListener("click",()=>{
-  isLoop = !isLoop;
-  audio.loop = isLoop;
-  loopBtn.style.opacity = isLoop ? "1" : "0.4";
-});
-
-/* ===== 音量バー（0〜100 → 0〜1.5） ===== */
-volumeEl.addEventListener("input",()=>{
-  audio.volume = (volumeEl.value / 100) * 1.5;
-});
-
-/* ===== 曲終了 ===== */
-audio.addEventListener("ended",()=>{
-  if(!isLoop) nextTrack();
-});
-
-/* ===== 初回ユーザー操作後に再生 ===== */
-document.body.addEventListener("click",{once:true},()=>{
-  playTrack(0);
-});
-</script>
-
-
-
-
-
-
-<!-- 
-  新機能スクリプト（単独で末尾に置くだけで動くように設計）
-  - const MENU に商品を定義すると、ホームの注文ボタン下にアイテムボタン群を生成します。
-  - クリックすると「作業画面（オフライン・個別表示）」が開き、GIF群をシャッフルして順に再生します。
-  - GIFごとに「経過秒で再生するMP3セット」を登録可能（複数）。GIFが表示されてから指定秒後にMP3を再生します.
-  - 休憩ボタン（左下）：登録されたペア（テキスト＋gif＋mp3）をランダムで再生。重複しないようデッキ管理。再生中は押せない。
-  - 一定間隔でランダムにMP3を再生（別途設定）。再生済みは全プレイまで再度選ばれない。
-  - 休憩が未押下で一定時間経過したら（コードで設定可能）自動で音を流す仕組みあり。
-  - GIFのダブルクリックで別のMP3列（doubleClickSounds）を順にランダムで再生（重複管理）。
-  - GIFを長押しして左右に動かす（なでなでジェスチャ）と petSounds を順次再生（重複管理）。
-  - 全て「そのウィンドウを開いているその一人だけ」に作用します（サーバ不要）。
-  - 追加は MENU オブジェクトに項目を追加するだけで使えます（下に sample souda を含む）。
-  - 実際の mp3/gif URL はサンプルで書いてあります。実パスに置き換えてください。
-
-
-/* IIFE で囲む */
-(() => {
-  // ------- 設定：ここを編集して商品を追加する -------
- /* const MENU = {
-    // sample item "souda"
-    souda: {
-      id: 'souda',
-      title: '応援ちゃん（作り途中）',
-      thumb: '@zzcafe2800/reiji_cafe/main/souda.png', // サムネイル（表示用）
-      // gifs: 各 gif は url と triggers 配列を持てる（trigger: { afterSec, mp3Url }）
-      gifs: [
-        { url: '@zzcafe2800/reiji_cafe/files/souda_anim1.gif', triggers: [ { afterSec: 2, mp3: '@zzcafe2800/reiji_cafe/files/souda1.mp3' } ] },
-        { url: '@zzcafe2800/reiji_cafe/files/souda_anim2.gif', triggers: [ { afterSec: 4, mp3: '@zzcafe2800/reiji_cafe/files/souda2.mp3' } ] },
-        { url: '@zzcafe2800/reiji_cafe/files/souda_anim3.gif', triggers: [] }
-      ],
-      // 休憩（左下）で再生するペア群（text, gif, mp3）
-      restPairs: [
-        { text: 'ひとやすみ...', gif: '@zzcafe2800/reiji_cafe/files/souda_rest1.gif', mp3: '@zzcafe2800/reiji_cafe/files/souda_rest1.mp3' },
-        { text: 'おやすみソーダ', gif: '@zzcafe2800/reiji_cafe/files/souda_rest2.gif', mp3: '@zzcafe2800/reiji_cafe/files/souda_rest2.mp3' }
-      ],
-      // periodic random mp3s while screen open (30s-300s range default)
-      periodicSounds: [
-        '@zzcafe2800/reiji_cafe/files/souda_ping1.mp3',
-        '@zzcafe2800/reiji_cafe/files/souda_ping2.mp3'
-      ],
-      periodicMinSec: 30,
-      periodicMaxSec: 300,
-      // inactivity groups: if rest not pressed within min..max minutes, play random from sounds.
-      inactivityGroups: [
-        { minMin: 1, maxMin: 2, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle1.mp3'] }, // demo: 1-2 minutes
-        { minMin: 3, maxMin: 5, sounds: ['@zzcafe2800/reiji_cafe/files/souda_idle2.mp3'] }
-      ],
-      // double-click sounds (⑥)
-      doubleClickSounds: [
-        '@zzcafe2800/reiji_cafe/files/souda_dbl1.mp3',
-        '@zzcafe2800/reiji_cafe/files/souda_dbl2.mp3'
-      ],
-      // pet (long-press + horizontal move) sounds (⑦)
-      petSounds: [
-        '@zzcafe2800/reiji_cafe/files/souda_pet1.mp3',
-        '@zzcafe2800/reiji_cafe/files/souda_pet2.mp3'
-      ],
-      // additional UI texts if needed
-      ui: {
-        homeButtonText: 'ホームへ',
-        restButtonText: '休憩',
-      }
-    },
-
-    // 他のアイテムも同じ構造で追加可能
-    // aisu: { ... }
-  };
-  // ------- 設定ここまで -------
-
-  // ユーティリティ
-  function rawUrl(path){ if (!path) return ''; if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1); try{return new URL(path).href;} catch(e){return path;} }
-  function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
-
-  // シャッフルデッキ（重複しない until exhausted）
-  function makeDeck(arr){
-    const items = arr.slice();
-    let pool = [];
-    return {
-      draw: () => {
-        if (!pool.length) pool = items.slice();
-        const idx = Math.floor(Math.random()*pool.length);
-        return pool.splice(idx,1)[0];
-      },
-      reset: () => { pool = items.slice(); },
-      empty: () => pool.length===0
-    };
-  }
-
-  // Audio play helper (returns promise)
-  function playAudioOnce(url){
-    return new Promise((resolve) => {
-      if (!url) return resolve();
-      const a = new Audio(rawUrl(url));
-      a.onended = () => resolve();
-      a.onerror = () => resolve();
-      a.play().catch(()=> resolve());
-    });
-  }
-
-  // Non-overlapping sequencer for a list (ensures each played once before repeat)
-  function makeSequencer(list){
-    const deck = makeDeck(list);
-    return {
-      next: () => deck.draw(),
-      reset: () => deck.reset()
-    };
-  }
-
-  // Create modal UI elements and mount to body
-  function createUI(){
-    // container modal
-    const modal = document.createElement('div');
-    modal.id = 'itemFeatureModal';
-    Object.assign(modal.style, {
-      position:'fixed', inset:0, display:'none', background:'rgba(0,0,0,0.8)', zIndex:9999, alignItems:'center', justifyContent:'center', padding:'12px'
-    });
-  modal.innerHTML = `
-      <div id="itemFeatureInner" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-        <div id="itemFeatureStage" style="max-width:1100px;max-height:90vh;width:100%;height:90vh;background:#fff;border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;">
-          <img id="itemFeatureGif" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;display:block;">
-          <div id="overlayText" style="position:absolute;top:12%;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.85);padding:8px 12px;border-radius:8px;display:none;font-size:18px;"></div>
-          <div id="tempOverlayGif" style="position:absolute;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;"><img id="tempGifImg" src="" style="max-width:80%;max-height:80%;object-fit:contain;border-radius:8px;"></div>
-          <button id="itemHomeBtn" style="position:absolute;right:16px;bottom:16px;padding:8px 12px;border-radius:8px;background:#fff;border:1px solid #ccc;cursor:pointer;">ホームへ</button>
-          <button id="itemRestBtn" style="position:absolute;left:16px;bottom:16px;padding:8px 12px;border-radius:8px;background:#fff;border:1px solid #ccc;cursor:pointer;">休憩</button>
-        </div>
-       </div> 
-    `;
-    document.body.appendChild(modal);
-
-    return {
-      modal,
-      gifEl: modal.querySelector('#itemFeatureGif'),
-      overlayText: modal.querySelector('#overlayText'),
-      tempOverlay: modal.querySelector('#tempOverlayGif'),
-      tempOverlayImg: modal.querySelector('#tempGifImg'),
-      homeBtn: modal.querySelector('#itemHomeBtn'),
-      restBtn: modal.querySelector('#itemRestBtn')
-    };
-  }
-
-  // --- 新しいホームUI（星型カルーセル）を注入する --- //
-  function injectItemButtons(){
-    // CONFIG: ここを変えると見た目サイズや内側画像スケールを調整できます
-    const STAR_SIZE_PX = 120;   // 星全体の外枠サイズ（px）
-    const INNER_SCALE = 0.86;   // 星内部に収める画像の相対スケール（0..1）
-    const ARROW_SIZE_PX = 28;   // 矢印ボタンサイズ
-    const BOTTOM_OFFSET_PX = 130; // 画面下からの位置（px）
-    const FONT_FAMILY = "system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, 'Noto Sans JP', sans-serif";
-
-    // find existing orderBtn to place near it; if not present, append to body
-    const orderBtn = document.getElementById('orderBtn');
-    // Remove any previous wrapper created by older scripts
-    const old = document.getElementById('starCarouselContainer');
-    if (old) old.remove();
-
-    // create container (fixed near bottom, centered)
-    const container = document.createElement('div');
-    container.id = 'starCarouselContainer';
-    Object.assign(container.style, {
-      position: 'fixed',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      bottom: BOTTOM_OFFSET_PX + 'px',
-      zIndex: 9998,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      pointerEvents: 'auto',
-      userSelect: 'none',
-      fontFamily: FONT_FAMILY
-    });
-
-    // create left arrow
-    const leftBtn = document.createElement('button');
-    leftBtn.type = 'button';
-    leftBtn.innerHTML = '◀';
-    Object.assign(leftBtn.style, {
-      width: ARROW_SIZE_PX + 'px',
-      height: ARROW_SIZE_PX + 'px',
-      borderRadius: '6px',
-      border: 'none',
-      background: 'rgba(255,255,255,0.9)',
-      boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: (ARROW_SIZE_PX*0.6) + 'px',
-      cursor: 'pointer',
-      padding: '0'
-    });
-
-    // create right arrow
-    const rightBtn = document.createElement('button');
-    rightBtn.type = 'button';
-    rightBtn.innerHTML = '▶';
-    Object.assign(rightBtn.style, {
-      width: ARROW_SIZE_PX + 'px',
-      height: ARROW_SIZE_PX + 'px',
-      borderRadius: '6px',
-      border: 'none',
-      background: 'rgba(255,255,255,0.9)',
-      boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: (ARROW_SIZE_PX*0.6) + 'px',
-      cursor: 'pointer',
-      padding: '0'
-    });
-
-    // create name label above star
-    const nameWrap = document.createElement('div');
-    nameWrap.style.display = 'flex';
-    nameWrap.style.flexDirection = 'column';
-    nameWrap.style.alignItems = 'center';
-    nameWrap.style.gap = '6px';
-
-    const nameLabel = document.createElement('div');
-    nameLabel.style.fontSize = '13px';
-    nameLabel.style.color = '#fff';
-    nameLabel.style.textShadow = '0 1px 2px rgba(0,0,0,0.6)';
-    nameLabel.style.maxWidth = (STAR_SIZE_PX * 1.6) + 'px';
-    nameLabel.style.textAlign = 'center';
-    nameLabel.style.whiteSpace = 'nowrap';
-    nameLabel.style.overflow = 'hidden';
-    nameLabel.style.textOverflow = 'ellipsis';
-    nameLabel.style.fontWeight = '600';
-
-    // star SVG container
-    const starWrapper = document.createElement('div');
-    starWrapper.style.width = STAR_SIZE_PX + 'px';
-    starWrapper.style.height = STAR_SIZE_PX + 'px';
-    starWrapper.style.display = 'flex';
-    starWrapper.style.alignItems = 'center';
-    starWrapper.style.justifyContent = 'center';
-    starWrapper.style.cursor = 'pointer';
-    starWrapper.style.filter = 'drop-shadow(0 4px 10px rgba(0,0,0,0.25))';
-
-    // Build SVG star with clip path - unique id per page to avoid conflicts
-    const clipId = 'starClip_' + Math.random().toString(36).slice(2,9);
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS,'svg');
-    svg.setAttribute('viewBox','0 0 100 100');
-    svg.setAttribute('width','100%');
-    svg.setAttribute('height','100%');
-    svg.style.display = 'block';
-
-    const defs = document.createElementNS(svgNS,'defs');
-    const clipPath = document.createElementNS(svgNS,'clipPath');
-    clipPath.setAttribute('id', clipId);
-    const starPoly = document.createElementNS(svgNS,'polygon');
-    // 5-point star polygon (normalized 0..100)
-    starPoly.setAttribute('points', '50,2 61,38 98,38 68,58 79,95 50,73 21,95 32,58 2,38 39,38');
-    clipPath.appendChild(starPoly);
-    defs.appendChild(clipPath);
-
-    // star outline path for stroke
-    const outline = document.createElementNS(svgNS,'polygon');
-    outline.setAttribute('points', starPoly.getAttribute('points'));
-    outline.setAttribute('fill', 'none');
-    outline.setAttribute('stroke', 'rgba(255,255,255,0.95)');
-    outline.setAttribute('stroke-width', '4');
-    outline.setAttribute('stroke-linejoin','round');
-    outline.setAttribute('vector-effect','non-scaling-stroke');
-
-    // image element (will be updated)
-    const imgEl = document.createElementNS(svgNS,'image');
-    imgEl.setAttributeNS('http://www.w3.org/1999/xlink','href','');
-    // place image centered and scaled a bit larger than clip area based on INNER_SCALE
-    const innerSize = 100 * INNER_SCALE;
-    const offset = (100 - innerSize) / 2;
-    imgEl.setAttribute('x', offset.toString());
-    imgEl.setAttribute('y', offset.toString());
-    imgEl.setAttribute('width', innerSize.toString());
-    imgEl.setAttribute('height', innerSize.toString());
-    imgEl.setAttribute('preserveAspectRatio','xMidYMid slice');
-    imgEl.setAttribute('clip-path', 'url(#' + clipId + ')');
-
-    // a subtle gradient background behind star
-    const bg = document.createElementNS(svgNS,'rect');
-    bg.setAttribute('x','0'); bg.setAttribute('y','0'); bg.setAttribute('width','100'); bg.setAttribute('height','100');
-    bg.setAttribute('fill','rgba(255,255,255,0.05)');
-
-    defs.appendChild(document.createElementNS(svgNS,'g')); // keep defs tidy
-    svg.appendChild(defs);
-    svg.appendChild(bg);
-    svg.appendChild(imgEl);
-    svg.appendChild(outline);
-
-    starWrapper.appendChild(svg);
-
-    // assemble name + star
-    nameWrap.appendChild(nameLabel);
-    nameWrap.appendChild(starWrapper);
-
-    // assemble full UI: left arrow, star+name, right arrow
-    container.appendChild(leftBtn);
-    container.appendChild(nameWrap);
-    container.appendChild(rightBtn);
-
-    // place container: prefer right under orderBtn if present, else body
-    if (orderBtn && orderBtn.parentElement){
-      // insert after orderBtn so it appears near the existing order area, but with fixed positioning it will overlay bottom center
-      orderBtn.parentElement.appendChild(container);
-    } else {
-      document.body.appendChild(container);
-    }
-
-    // build internal item list (random horizontal lineup invisible to player)
-    const keys = Object.keys(MENU);
-    // create a randomized order (but keep deterministic-ish per session)
-    const lineup = keys.slice();
-    // simple Fisher-Yates shuffle
-    for (let i = lineup.length - 1; i > 0; i--){
-      const j = Math.floor(Math.random() * (i + 1));
-      [lineup[i], lineup[j]] = [lineup[j], lineup[i]];
-    }
-    // center index: put a random item at center initially
-    let centerIdx = Math.floor(lineup.length/2);
-    if (lineup.length > 0) centerIdx = Math.floor(Math.random() * lineup.length);
-
-    // helper: update displayed star image + name
-    function updateDisplay(){
-      if (lineup.length === 0){
-        nameLabel.textContent = '';
-        imgEl.setAttributeNS('http://www.w3.org/1999/xlink','href','');
-        return;
-      }
-      // clamp index to loop
-      while (centerIdx < 0) centerIdx += lineup.length;
-      centerIdx = centerIdx % lineup.length;
-      const key = lineup[centerIdx];
-      const item = MENU[key];
-      const thumb = item && item.thumb ? rawUrl(item.thumb) : '';
-      nameLabel.textContent = item && item.title ? item.title : key;
-      imgEl.setAttributeNS('http://www.w3.org/1999/xlink','href', thumb);
-      // subtle animation: pulse
-      starWrapper.animate([
-        { transform: 'scale(0.98)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1.0)' }
-      ], { duration: 420, easing: 'ease-out' });
-    }
-
-    // arrow navigation
-    leftBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      centerIdx = (centerIdx - 1 + lineup.length) % lineup.length;
-      updateDisplay();
-    });
-    rightBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      centerIdx = (centerIdx + 1) % lineup.length;
-      updateDisplay();
-    });
-
-    // clicking the star opens the existing item screen (works like clicking the original image)
-    starWrapper.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (lineup.length === 0) return;
-      const key = lineup[centerIdx % lineup.length];
-      const item = MENU[key];
-      if (!item) return;
-      // call the existing openItemScreen to preserve behavior
-      try {
-        openItemScreen(item);
-      } catch (err){
-        console.warn('openItemScreen failed:', err);
-      }
-    });
-
-    // keyboard left/right support for accessibility
-    container.addEventListener('keydown', (ev) => {
-      if (ev.key === 'ArrowLeft') { leftBtn.click(); ev.preventDefault(); }
-      if (ev.key === 'ArrowRight') { rightBtn.click(); ev.preventDefault(); }
-      if (ev.key === 'Enter' || ev.key === ' ') { starWrapper.click(); ev.preventDefault(); }
-    });
-    container.setAttribute('tabindex','0');
-
-    // initial render
-    updateDisplay();
-
-    // If items change later (MENU modified), allow external refresh:
-    // expose a refresh function on container
-    container.refreshStarCarousel = function(){
-      const newKeys = Object.keys(MENU);
-      // re-shuffle and try to keep current selected key if still present
-      const currentKey = lineup.length ? lineup[centerIdx % lineup.length] : null;
-      const newLine = newKeys.slice();
-      for (let i = newLine.length - 1; i > 0; i--){
-        const j = Math.floor(Math.random() * (i + 1));
-        [newLine[i], newLine[j]] = [newLine[j], newLine[i]];
-      }
-      let newCenter = 0;
-      if (currentKey){
-        const idx = newLine.indexOf(currentKey);
-        if (idx >= 0) newCenter = idx;
-      } else {
-        newCenter = Math.floor(Math.random() * newLine.length);
-      }
-      lineup.length = 0; lineup.push(...newLine);
-      centerIdx = newCenter;
-      updateDisplay();
-    };
-
-    // remove any legacy item buttons wrapper for cleanliness (the user requested to replace home images)
-    const legacy = document.getElementById('itemButtonsWrapper');
-    if (legacy) legacy.remove();
-
-    // store pointer for debugging
-    window._STAR_CAROUSEL = container;
-  }
-
-  // per-item state manager (keeps decks etc.)
-  function createItemSession(item){
-    // gifs deck: ensure each gif is shown once before repeating; but user wanted "shuffle" that uses all before repeat
-    const gifs = item.gifs && item.gifs.length ? item.gifs.map(g => ({...g, url: rawUrl(g.url)})) : [];
-    const gifUrls = gifs.map(g=>g.url);
-    const gifDeck = makeDeck(gifs);
-
-    // triggers are contained in gifs[].triggers: array of { afterSec, mp3 }
-    // rest pairs deck
-    const restPairs = (item.restPairs || []).map(r => ({...r, gif: rawUrl(r.gif)}));
-    const restDeck = makeDeck(restPairs);
-
-    // periodic sound deck
-    const periodic = (item.periodicSounds || []).map(s => rawUrl(s));
-    const periodicDeck = makeDeck(periodic);
-
-    // double click deck
-    const dbl = (item.doubleClickSounds || []).map(s=> rawUrl(s));
-    const dblDeck = makeDeck(dbl);
-
-    // pet deck
-    const pet = (item.petSounds || []).map(s=> rawUrl(s));
-    const petDeck = makeDeck(pet);
-
-    // inactivity groups processed into arrays of {minMs,maxMs,soundsDeck}
-    const inactivity = (item.inactivityGroups||[]).map(g => ({
-      minMs: (g.minMin||1)*60*1000,
-      maxMs: (g.maxMin||2)*60*1000,
-      deck: makeDeck((g.sounds||[]).map(s=> rawUrl(s)))
-    }));
-
-    return {
-      item, gifDeck, gifs, restDeck, periodicDeck, dblDeck, petDeck, inactivity
-    };
-  }
-
-  // main open modal & behavior
-  function openItemScreen(item){
-    const session = createItemSession(item);
-    const ui = UI || createUI();
-    // show modal
-    ui.modal.style.display = 'flex';
-
-    // manage current GIF playing loop
-    let gifTimerId = null;
-    let currentGifObj = null; // {url,triggers,...}
-    let triggerTimers = [];
-
-    // helper to clear triggers
-    function clearGifTriggers(){
-      triggerTimers.forEach(t => clearTimeout(t));
-      triggerTimers = [];
-    }
-
-    // show next gif (draw from deck)
-    function showNextGif(){
-      clearGifTriggers();
-      // draw gif metadata
-      const g = session.gifDeck.draw();
-      if (!g) return;
-      currentGifObj = g;
-      ui.gifEl.src = g.url;
-      ui.gifEl.style.display = '';
-      ui.tempOverlay.style.display = 'none';
-      ui.overlayText.style.display = 'none';
-
-      // schedule triggers for this gif
-      if (Array.isArray(g.triggers)){
-        for (const trig of g.triggers){
-          const tId = setTimeout(()=>{
-            // play mp3 for trigger (non-blocking)
-            playAudioOnce(trig.mp3);
-          }, (trig.afterSec || 0) * 1000);
-          triggerTimers.push(tId);
-        }
-      }
-      // show this gif indefinitely until nextShuffle call triggers; we will schedule next shuffle time randomly between gifs or rely on user interactions.
-    }
-
-    // start initial sequence: shuffle through all gifs continuously (each shown until user-driven)
-    showNextGif();
-
-    // shuffle behavior: when / how to proceed? We'll advance to next gif if user double-clicks, or after a default period.
-    // For simplicity, each gif will auto-advance after a default display duration (if triggers set by user, could be longer). Use 8s default.
-    let defaultDisplaySec = 8;
-    function scheduleAutoAdvance(){
-      gifTimerId = setTimeout(()=>{
-        showNextGif();
-        scheduleAutoAdvance();
-      }, defaultDisplaySec * 1000);
-    }
-    scheduleAutoAdvance();
-
-    // rest button behavior: pick a rest pair and play it (disable while playing)
-    let restPlaying = false;
-    ui.restBtn.textContent = item.ui && item.ui.restButtonText ? item.ui.restButtonText : '休憩';
-    ui.restBtn.disabled = false;
-    ui.restBtn.addEventListener('click', async function onRest(){
-      if (restPlaying) return;
-      restPlaying = true;
-      ui.restBtn.disabled = true;
-      // pick a pair
-      const pair = session.restDeck.draw();
-      if (!pair){
-        // nothing configured: re-enable
-        restPlaying = false; ui.restBtn.disabled = false; return;
-      }
-      // show overlay gif and text, play mp3
-      ui.tempOverlayImg.src = pair.gif;
-      ui.tempOverlay.style.display = 'flex';
-      ui.overlayText.textContent = pair.text || '';
-      ui.overlayText.style.display = 'block';
-      await playAudioOnce(pair.mp3);
-      // hide overlay
-      ui.tempOverlay.style.display = 'none';
-      ui.overlayText.style.display = 'none';
-      // mark done (deck ensures non-repeat until exhausted)
-      restPlaying = false;
-      ui.restBtn.disabled = false;
-    });
-
-    // periodic random mp3 timer (30s - 300s default)
-    let periodicTimer = null;
-    function schedulePeriodic(){
-      if (!session.periodicDeck) return;
-      const min = item.periodicMinSec || 30;
-      const max = item.periodicMaxSec || 300;
-      const delay = randInt(min, max) * 1000;
-      periodicTimer = setTimeout(async ()=>{
-        const snd = session.periodicDeck.draw();
-        if (snd) await playAudioOnce(snd);
-        schedulePeriodic();
-      }, delay);
-    }
-    if ((item.periodicSounds||[]).length) schedulePeriodic();
-
-    // inactivity triggers (if rest not pressed in ranges)
-    let inactivityTimers = [];
-    function scheduleInactivity(){
-      // cancel existing
-      inactivityTimers.forEach(t => clearTimeout(t)); inactivityTimers = [];
-      const now = Date.now();
-      for (const g of session.inactivity){
-        const delay = randInt(g.minMs, g.maxMs);
-        const tId = setTimeout(async ()=>{
-          const snd = g.deck.draw();
-          if (snd) await playAudioOnce(snd);
-        }, delay);
-        inactivityTimers.push(tId);
-      }
-    }
-    if ((item.inactivityGroups||[]).length) scheduleInactivity();
-
-    // double-click on gif to play doubleClickSounds deck until exhausted (non-overlap)
-    ui.gifEl.addEventListener('dblclick', async (e)=>{
-      if (!session.dblDeck) return;
-      const snd = session.dblDeck.next ? session.dblDeck.next() : null;
-      if (snd) await playAudioOnce(snd);
-    });
-
-    // pet gesture detection (long-press + horizontal move)
-    let pressStart = null, moved = false, longPressTimeout = null;
-    const longPressMs = 400;
-    let petPlaying = false;
-    function onStartPress(ev){
-      ev.preventDefault();
-      pressStart = { x: ev.touches ? ev.touches[0].clientX : ev.clientX, y: ev.touches ? ev.touches[0].clientY : ev.clientY, t: Date.now() };
-      moved = false;
-      longPressTimeout = setTimeout(()=>{ /* long press ready */ }, longPressMs);
-    }
-    function onMovePress(ev){
-      if (!pressStart) return;
-      const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      const dx = x - pressStart.x;
-      if (Math.abs(dx) > 30) moved = true;
-    }
-    function onEndPress(ev){
-      if (!pressStart) return;
-      const duration = Date.now() - pressStart.t;
-      clearTimeout(longPressTimeout);
-      if (duration >= longPressMs && moved && !petPlaying){
-        petPlaying = true;
-        const snd = session.petDeck.next();
-        if (snd){
-          playAudioOnce(snd).then(()=> { petPlaying = false; });
-        } else petPlaying = false;
-      }
-      pressStart = null;
-    }
-    ui.gifEl.addEventListener('mousedown', onStartPress);
-    ui.gifEl.addEventListener('mousemove', onMovePress);
-    ui.gifEl.addEventListener('mouseup', onEndPress);
-    ui.gifEl.addEventListener('touchstart', onStartPress, {passive:false});
-    ui.gifEl.addEventListener('touchmove', onMovePress, {passive:false});
-    ui.gifEl.addEventListener('touchend', onEndPress, {passive:false});
-
-    // home button closes modal and clears timers
-    ui.homeBtn.addEventListener('click', ()=> {
-      // cleanup
-      ui.modal.style.display = 'none';
-      clearGifTriggers();
-      if (gifTimerId) { clearTimeout(gifTimerId); gifTimerId = null; }
-      if (periodicTimer) { clearTimeout(periodicTimer); periodicTimer = null; }
-      inactivityTimers.forEach(t => clearTimeout(t)); inactivityTimers = [];
-    }, { once:true });
-
-    // ensure rest button cannot be spammed: handled in onRest by flag
-
-    // Note: additional features such as grouping by click-frequency windows (複数分間のルール)
-    // can be added by expanding restDeck selection logic with time-since-last-click heuristics.
-
-  }
-
-  // Initialize: create UI once
-  const UI = createUI();
-
-  // Inject item buttons / new star UI into page
-  injectItemButtons();
-
-  // Utility to build menu items for menuModal if needed (the new items are independent)
-  async function buildMenu(){ /* kept for compatibility */ }
-
-  // expose MENU to window for debugging
-  window._ITEM_MENU = MENU;
-
-})();
-
- -->
-
-
-
 </body>
 </html>
