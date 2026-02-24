@@ -1,77 +1,30 @@
-
 <!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>仮想飲食システム（完全版）</title>
+<title>仮想飲食システム（マルチ店舗版）</title>
 <meta name="format-detection" content="telephone=no">
-
 <style>
   :root{
-    --bg:#f7efe7;
-    --accent:#b33;
-    --paper:#fff8ef;
-    --dark:#3a2b20;
-    --muted:#8b6d5c;
+    --bg:#f7efe7; --accent:#b33; --paper:#fff8ef; --dark:#3a2b20; --muted:#8b6d5c;
     --card-skin:#fff2e6;
+    --glass: rgba(255,255,255,0.86);
   }
-
-  html,body{
-    height:100%;
-    margin:0;
-    font-family:"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+  html,body{height:100%;margin:0;font-family:"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;}
+  body{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
     background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;
   }
-  body{
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .container{
-    width:100%;
-    max-width:420px;
-    margin:0;
-    position:relative;
-    perspective:2000px;
-    aspect-ratio:3/5;
-  }
+  .container{width:100%;max-width:420px;margin:0;position:relative;perspective:2000px;aspect-ratio:3/5;}
   .book{position:relative;width:100%;height:100%;}
   .page{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;}
   .cover{
     background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh1.png") center/cover no-repeat;
-    transform-origin:right center;
-    z-index:2;
-    pointer-events:auto;
+    transform-origin:right center;z-index:60;pointer-events:auto;
   }
-
-  /* ✅ 開くモーション復活 */
   .cover.open{animation:flip 7.2s ease-in-out forwards;pointer-events:none;}
   .cover.open.finished{display:none;}
-
-  .inner{
-    position:absolute;inset:0;
-    background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center/cover no-repeat;
-    box-shadow:0 6px 20px rgba(0,0,0,0.15);
-    border-radius:10px;
-    outline:6px solid var(--accent);
-    outline-offset:-6px;
-    z-index:1;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-  }
-
-  header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:12px;
-    color:var(--dark);
-  }
-
   @keyframes flip{
     0%{transform:rotateY(0deg);box-shadow:0 20px 40px rgba(0,0,0,.25);}
     40%{transform:rotateY(-55deg);}
@@ -79,278 +32,162 @@
     100%{transform:rotateY(-180deg);box-shadow:none;}
   }
 
-  @media (min-width:768px){
-    .container{width:94vw;margin:12px auto;aspect-ratio:3/5;}
+  .inner{
+    position:absolute;inset:0;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/menuh.png") center / cover no-repeat;
+    box-shadow:0 6px 20px rgba(0,0,0,0.15);border-radius:10px;outline:6px solid var(--accent);outline-offset:-6px;
+    z-index:1;display:flex;flex-direction:column;overflow:hidden;
+  }
+  header{display:flex;align-items:center;justify-content:space-between;padding:12px;color:var(--dark);}
+  header h1{margin:0;font-size:16px;font-weight:800;letter-spacing:.03em}
+  .small-info{font-size:12px;color:var(--muted);}
+  .content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px;flex:1;}
+  .panel{
+    width:100%;max-width:520px;background:var(--glass);border:2px solid #f0c6c6;border-radius:12px;
+    padding:10px;box-shadow:0 10px 22px rgba(0,0,0,0.12);
   }
 
-  .content{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:12px;
-    padding:12px;
-    position:relative;
-    flex:1;
-  }
-
-  .order-block{
-    width:100%;
-    max-width:520px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:10px;
-  }
-
-  .status-line{
-    font-weight:700;
-    background:rgba(255,255,255,0.92);
-    padding:8px 12px;
-    border-radius:8px;
-    border:2px solid #f0c6c6;
-    text-align:center;
-    width:100%;
-    box-sizing:border-box;
-  }
-
-  .order-row{
-    width:100%;
-    display:flex;
-    gap:8px;
-    align-items:stretch;
-    justify-content:center;
-  }
-
+  .order-block{width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .status-line{font-weight:800;background:rgba(255,255,255,0.92);padding:8px 12px;border-radius:10px;border:2px solid #f0c6c6;text-align:center;width:100%;}
+  .order-row{width:100%;display:flex;gap:10px;align-items:stretch;justify-content:center;}
   .order-btn{
-    flex:1;
-    background:linear-gradient(180deg,#ffd4c4,#ffb38a);
-    border:4px solid var(--accent);
-    color:var(--dark);
-    padding:14px 18px;
-    border-radius:12px;
-    cursor:pointer;
-    box-shadow:0 6px 0 #913;
-    user-select:none;
-    width:100%;
-    max-width:160px;
-    aspect-ratio:5/3;
-    font-size:clamp(16px,4vw,30px);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
+    background:linear-gradient(180deg,#ffd4c4,#ffb38a);border:4px solid var(--accent);color:var(--dark);
+    padding:14px 18px;border-radius:14px;cursor:pointer;box-shadow:0 6px 0 #913;user-select:none;
+    width:100%;max-width:140px;aspect-ratio:5/3;font-size:clamp(16px,4vw,30px);
+    display:flex;align-items:center;justify-content:center;text-align:center;font-weight:900;
   }
-  .order-btn.disabled{opacity:0.4;cursor:not-allowed;box-shadow:none;}
+  .order-btn.disabled{opacity:0.42;cursor:not-allowed;box-shadow:none;}
+  .mini-btn{
+    background:#fff;border:2px solid #e6d0c6;border-radius:10px;padding:10px 12px;cursor:pointer;
+    font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  }
+  .mini-btn:active{transform:translateY(1px)}
+  .danger{border-color:#e6a3a3}
+  .primary{border-color:#a6d2ff}
 
-  .offline-order{
-    flex:0 0 33%;
-    max-width:100px;
-    aspect-ratio:5 / 3;
-    background:linear-gradient(180deg,#ffe8de,#ffbfa5);
-    border:3px dashed #e6b2a3;
-    color:#5a2e1e;
-    border-radius:14px;
-    cursor:pointer;
-    box-shadow:0 4px 0 #a35a42;
-    font-size:12px;
-    font-weight:800;
-    line-height:1.2;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    user-select:none;
+  .guest-mini{
+    position:fixed;right:12px;bottom:12px;background:var(--paper);padding:10px;border-radius:12px;
+    border:1px solid #e6d6cc;font-size:13px;box-shadow:0 8px 18px rgba(0,0,0,0.12);z-index:50;
+    min-width:160px;
   }
 
   .small-pass{
-    position:fixed;left:12px;bottom:12px;
-    background:rgba(255,255,255,0.95);
-    padding:6px;border-radius:6px;border:1px dashed #c66;
-    display:flex;align-items:center;gap:6px;z-index:60;
+    position:fixed;left:12px;bottom:12px;background:rgba(255,255,255,0.95);padding:8px;border-radius:12px;
+    border:1px dashed #c66;display:flex;align-items:center;gap:6px;z-index:60;
   }
-  .small-pass input{width:110px;padding:4px;}
+  .small-pass input{width:110px;padding:6px;border-radius:8px;border:1px solid #e6d0c6;}
+  .small-pass button{padding:8px 10px;border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer;font-weight:800;}
 
-  .guest-mini{
-    position:fixed;right:12px;bottom:12px;
-    background:var(--paper);padding:8px;border-radius:8px;border:1px solid #e6d6cc;
-    font-size:13px;box-shadow:0 6px 12px rgba(0,0,0,0.08);z-index:60;
-  }
-
-  .small-info{font-size:12px;color:var(--muted);}
-  .bgm-btn{
-    font-size:12px;padding:6px 10px;border-radius:8px;
-    background:rgba(255,255,255,0.95);
-    border:1px solid #e6d0c6;cursor:pointer;
-  }
-
-  .btn-red{
-    background:linear-gradient(180deg,#ff7b7b,#ff4f4f);
-    color:#fff;border:none;border-radius:10px;padding:10px 14px;
-    font-weight:800;cursor:pointer;
-    box-shadow:0 4px 0 #a22;
-  }
-  .btn-green{
-    background:linear-gradient(180deg,#6b3,#2b8f4a);
-    color:#fff;border:none;border-radius:10px;padding:10px 14px;
-    font-weight:800;cursor:pointer;
-    box-shadow:0 4px 0 #1c6a35;
-  }
-  .small{
-    padding:8px 10px;border-radius:8px;border:1px solid #d4c0b8;background:#fff;cursor:pointer;
-    font-weight:700;
-  }
-
-  /* ===== Modals / overlays ===== */
-  .modal-back{
-    position:fixed;inset:0;background:rgba(0,0,0,0.45);
-    display:none;align-items:center;justify-content:center;z-index:100;
-  }
-  .modal{
-    background:#fff;padding:16px;border-radius:12px;width:780px;max-width:95%;
-    box-shadow:0 8px 30px rgba(0,0,0,0.4);
-    border:6px solid var(--accent);
-  }
-  .status-overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,0.45);
-    display:none;align-items:center;justify-content:center;z-index:120;flex-direction:column;color:#111;
-  }
-  .status-card{
-    width:80%;max-width:720px;background:rgba(255,255,255,0.98);
-    padding:28px;border-radius:12px;border:4px solid var(--accent);
-    text-align:center;font-size:26px;font-weight:900;
-  }
-  .status-sub{font-size:14px;color:#444;margin-top:8px;}
-
-  /* ===== Staff ===== */
   .staff-full{
-    position:fixed;inset:0;background:linear-gradient(180deg,#fff8f2,#fff3ec);
-    padding:18px;z-index:90;display:none;flex-direction:column;overflow:auto;
+    position:fixed;inset:0;background:linear-gradient(180deg,#fff8f2,#fff3ec);padding:18px;z-index:120;
+    display:none;flex-direction:column;overflow:auto;
   }
   .staff-full.show{display:flex;}
-  .staff-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-  .big-toggle{display:flex;gap:8px;align-items:center;margin-top:8px;}
-  .big-toggle button{flex:1;padding:12px;border-radius:8px;font-size:16px;border:2px solid #c6b3b3;cursor:pointer;}
+  .staff-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .staff-badge{display:flex;flex-direction:column;gap:2px}
+  .staff-body{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
+  .staff-panel{
+    flex:1;min-width:300px;background:var(--paper);padding:12px;border-radius:12px;border:1px solid #e6d6cc;
+    max-height:560px;overflow:auto;
+  }
+  .order-item{padding:10px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .order-item strong{font-size:14px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid #ddd;background:#fff;font-size:12px;font-weight:800}
+  .chip.green{border-color:#79d39a}
+  .chip.orange{border-color:#f0c07a}
+  .chip.gray{border-color:#ccc;color:#666}
+
+  .big-toggle{display:flex;gap:8px;align-items:center;margin-top:10px;}
+  .big-toggle button{flex:1;padding:12px;border-radius:12px;font-size:16px;border:2px solid #c6b3b3;cursor:pointer;font-weight:900;}
   .big-toggle .on{background:#2b8f4a;color:#fff;border-color:#2b8f4a;}
   .big-toggle .off{background:#f0f0f0;color:#666;}
-  .staff-body{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;}
-  .staff-panel{flex:1;min-width:280px;background:var(--paper);padding:12px;border-radius:10px;border:1px solid #e6d6cc;max-height:560px;overflow:auto;}
-  .order-item{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;justify-content:space-between;align-items:center;gap:10px;}
-  .order-item .left{min-width:0;}
-  .order-item .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
-  .shift-row{padding:8px;border-bottom:1px dashed #e6d0c6;display:flex;gap:10px;align-items:center;justify-content:space-between;}
-  .pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid #ddd;background:#fff;}
-  .pill.waiting{border-color:#c7d2fe;background:#eef2ff;}
-  .pill.cooking{border-color:#fde68a;background:#fffbeb;}
-  .pill.off{border-color:#e5e7eb;background:#f9fafb;color:#777;}
 
-  /* ===== Menu ===== */
-  .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
-  .menu-item{padding:8px;border:2px solid #e0bdb5;background:#fff;border-radius:10px;text-align:center;cursor:pointer;}
-  img.menu-thumb{width:100%;height:120px;object-fit:cover;border-radius:8px;}
-  @media (max-width:520px){ img.menu-thumb{height:90px;} .modal{width:94%;} }
-
-  /* ===== Make / Paint ===== */
-  .art-area{
-    position:relative;width:240px;height:240px;border-radius:10px;overflow:hidden;
-    /* ✅ アートの黒縁→白に */
-    border:2px solid #fff;
-    background:#b36e3c;
-    box-shadow:0 6px 16px rgba(0,0,0,0.12);
+  .menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .menu-item{
+    padding:10px;border:2px solid #e0bdb5;background:#fff;border-radius:12px;text-align:center;cursor:pointer;
+    box-shadow:0 6px 14px rgba(0,0,0,0.06);
   }
+  img.menu-thumb{width:100%;height:110px;object-fit:cover;border-radius:10px;}
+  .stars{font-size:12px;color:#b33;font-weight:900;margin-top:6px}
+
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:200;}
+  .modal{
+    background:#fff;padding:16px;border-radius:14px;width:780px;max-width:95%;
+    box-shadow:0 10px 32px rgba(0,0,0,0.35);border:6px solid var(--accent);
+  }
+  .modal h3{margin:0 0 10px 0}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .row input,.row textarea,.row select{
+    border:1px solid #e6d0c6;border-radius:10px;padding:10px 12px;font-size:14px;
+  }
+  .row textarea{width:100%;min-height:90px;resize:vertical}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+  .btn-red{background:linear-gradient(180deg,#ffb5b5,#ff6b6b);border:2px solid #c33;color:#222;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:900}
+  .btn-green{background:linear-gradient(180deg,#8ef0a7,#2b8f4a);border:2px solid #2b8f4a;color:#fff;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:900}
+  .btn-gray{background:#f3f3f3;border:2px solid #ddd;color:#444;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:900}
+
+  /* 調理中表示（画像） */
+  .status-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;
+    z-index:220;flex-direction:column;color:#111;padding:14px;
+  }
+  .status-card{
+    width:92%;max-width:820px;background:rgba(255,255,255,0.98);padding:16px;border-radius:16px;border:4px solid var(--accent);
+    text-align:center;box-shadow:0 18px 40px rgba(0,0,0,0.25);
+  }
+  .status-main{font-size:22px;font-weight:900;margin-bottom:8px}
+  .status-sub{font-size:13px;color:#444}
+  .cook-preview{
+    margin:10px auto 0 auto;width:260px;height:260px;border-radius:14px;overflow:hidden;border:2px solid #f0c6c6;
+    background:#fff;display:flex;align-items:center;justify-content:center;
+  }
+  .cook-preview img{max-width:100%;max-height:100%;image-rendering:auto}
+  .review-mini{
+    margin-top:10px;text-align:left;background:#fff;border:1px solid #eee;border-radius:12px;padding:10px;
+    font-size:13px;
+  }
+  .review-mini .head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .review-mini .text{margin-top:6px;color:#333;line-height:1.45}
+  .busy{margin-top:8px;font-size:12px;color:#555}
+
+  /* アートエリア（白縁） */
+  .art-area{position:relative;width:240px;height:240px;border-radius:10px;overflow:hidden;border:2px solid #fff;background:#b36e3c;}
   .art-area canvas{position:absolute;left:0;top:0;width:240px;height:240px;}
-  .card-canvas{border:1px solid #fff;background:var(--card-skin);border-radius:10px;}
 
-  /* ===== Eat (photo folder) ===== */
+  /* 飲食モーダル（既存を維持しつつ右側に口コミ） */
   #modalEat .modal{
-    width:95%;
-    max-width:960px;
-    background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;
-    border-radius:14px;
-    padding:14px;
-    box-shadow:0 12px 30px rgba(0,0,0,0.25);
+    width:95%;max-width:980px;background:url("https://raw.githubusercontent.com/zzcafe2800/reiji_cafe/main/3739270_l.jpg") center center / cover no-repeat;
+    border-radius:16px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,0.25);
   }
-  #modalEat h3{
-    font-size:14px;color:#fff;opacity:.75;margin:0 0 6px 6px;font-weight:700;
-  }
+  #modalEat h3{font-size:14px;color:#fff;opacity:.75;margin:0 0 6px 6px;font-weight:600;}
   .photo-folder{background:#f6efe7;border-radius:12px;padding:10px;box-shadow: inset 0 2px 4px rgba(0,0,0,.1);}
-  .photo-frame{
-    background:#fff;border:10px solid #e8dccd;border-bottom:16px solid #d7c6b2;border-radius:6px;
-    box-shadow:0 6px 14px rgba(0,0,0,.25);padding:6px;position:relative;transform:rotate(-1deg);
-  }
-  #eatMainWrap{
-    width:100%;height:520px;border-radius:12px;background:#fffdf8;
-    display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
-    box-shadow:inset 0 0 12px rgba(0,0,0,.15);
-  }
-  #servedImage{max-width:100%;max-height:100%;border-radius:8px;cursor:pointer;}
-  #eatSoundInfo{
-    font-weight:900;padding:.6em .9em;background:#fff;border-radius:14px;
-    box-shadow:0 3px 10px rgba(0,0,0,.15);position:relative;
-  }
-  #eatSoundInfo:after{
-    content:"";position:absolute;left:16px;bottom:-8px;border:8px solid transparent;border-top-color:#fff;
-  }
-  .wood-btn{
-    background:linear-gradient(#c9a57a,#a67c52);color:#fff;border:none;border-radius:10px;padding:6px 12px;font-weight:900;
-    box-shadow:0 3px 6px rgba(0,0,0,.25);cursor:pointer;
-  }
-  .wood-btn.small{font-size:12px;}
-  .side-card{background:rgba(255,255,255,.92);border-radius:12px;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);}
+  .photo-frame{background:#fff;border:10px solid #e8dccd;border-bottom:16px solid #d7c6b2;border-radius:6px;box-shadow:0 6px 14px rgba(0,0,0,.25);padding:6px;position:relative;transform:rotate(-1deg);}
+  #eatMainWrap{width:100%;height:520px;border-radius:12px;background:#fffdf8;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:inset 0 0 12px rgba(0,0,0,.15);}
+  #servedImage{max-width:100%;max-height:100%;border-radius:10px;}
+  .side-card{background:rgba(255,255,255,.94);border-radius:14px;padding:10px;box-shadow:0 8px 18px rgba(0,0,0,.15);}
   .photo-stack{display:flex;gap:8px;justify-content:center;margin-top:8px;}
-  .mini-frame{
-    background:#fff;border:6px solid #e8dccd;border-bottom:10px solid #d7c6b2;border-radius:4px;padding:4px;
-    box-shadow:0 4px 10px rgba(0,0,0,.2);
-  }
+  .mini-frame{background:#fff;border:6px solid #e8dccd;border-bottom:10px solid #d7c6b2;border-radius:4px;padding:4px;box-shadow:0 4px 10px rgba(0,0,0,.2);}
 
-  /* ✅ ポロドーモタイマー復活（Eat内表示） */
+  /* POMODORO（復活） */
   #pomodoroPanel{
-    position:absolute;bottom:8px;right:8px;
-    width:230px;aspect-ratio:1/1;
-    background:#fff7e9;border-radius:14px;padding:10px;
-    box-shadow:0 8px 18px rgba(0,0,0,.3);
-    transform:scale(0.82);transform-origin:bottom right;
-    overflow:auto;
-    display:none; /* 初期はクリックで表示 */
-    z-index:10;
+    position:absolute;bottom:8px;right:8px;width:230px;aspect-ratio:1/1;background:#fff7e9;border-radius:14px;padding:10px;
+    box-shadow:0 8px 18px rgba(0,0,0,.3);transform:scale(0.8);transform-origin:bottom right;overflow:auto;cursor:grab;
+    display:none;
   }
   #pomodoroPanel.show{display:block;}
-  .pomo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;}
-  .pomo-number{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e6d0c6;padding:6px;border-radius:8px;flex:1;}
-  .pomo-number input{border:none;width:56px;font-weight:900;text-align:center;}
-  .pomo-btn{width:28px;height:28px;border-radius:6px;border:1px solid #ccc;background:#fafafa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;user-select:none;font-weight:900;}
-  .pomo-timer{
-    font-family:monospace;font-size:26px;text-align:center;background:#222;color:#7cff7c;padding:6px;border-radius:8px;letter-spacing:2px;font-weight:900;
+  .pomo-timer{font-family:monospace;font-size:26px;text-align:center;background:#222;color:#7cff7c;padding:6px;border-radius:8px;letter-spacing:2px;font-weight:900;}
+  .pomo-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;}
+  .pomo-number{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e6d0c6;padding:6px;border-radius:10px;flex:1;}
+  .pomo-number input{border:none;width:56px;font-weight:900;text-align:center;font-size:14px;outline:none}
+  .pomo-btn, #startPomoBtn,#stopPomoBtn,#pausePomoBtn,#skipPomoBtn{
+    width:32px;height:32px;border-radius:10px;border:1px solid #ccc;background:#fafafa;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;font-weight:900;
   }
-  .pomo-controls{display:flex;gap:6px;margin-top:6px;}
-  .pomo-controls button{flex:1;padding:8px;border-radius:8px;border:1px solid #d4c0b8;background:#fff;cursor:pointer;font-weight:900;}
-  .pomo-progress{height:10px;background:#eee;border-radius:999px;overflow:hidden;width:100%;margin-top:6px;}
+  .pomo-start{width:100%;padding:10px;background:linear-gradient(180deg,#6b3,#2b8f4a);color:#fff;border-radius:12px;border:2px solid #2b8f4a;cursor:pointer;font-weight:900;}
+  .pomo-controls{display:flex;gap:6px;width:100%;margin-top:8px}
+  .pomo-controls button{flex:1}
+  .pomo-progress{height:10px;background:#eee;border-radius:999px;overflow:hidden;width:100%;margin-top:8px}
   .pomo-progress > i{display:block;height:100%;background:linear-gradient(90deg,#ffd4c4,#ffb38a);width:0%;}
-
-  @media(max-width:700px){
-    #pomodoroPanel{transform:scale(0.72);transform-origin:bottom right;}
-  }
-
-  /* ✅ ホームの「新メニューの提供」ボタン */
-  .newmenu-btn{
-    position:absolute;
-    left:50%;
-    transform:translateX(-50%);
-    bottom:86px;
-    z-index:55;
-    font-size:12px;
-    padding:8px 12px;
-    border-radius:999px;
-    border:1px solid #e6d0c6;
-    background:rgba(255,255,255,0.92);
-    cursor:pointer;
-    font-weight:900;
-    box-shadow:0 6px 14px rgba(0,0,0,0.12);
-  }
-
-  /* 音の許可 */
-  .sound-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;background:rgba(0,0,0,0.6);color:#fff;flex-direction:column;}
-  .sound-panel{background:#fff;padding:18px;border-radius:12px;color:#111;border:3px solid var(--accent);width:360px;max-width:92%;text-align:center;}
+  @media (max-width:700px){#pomodoroPanel{transform:scale(0.7);transform-origin:bottom right;}}
 </style>
 </head>
 
@@ -358,76 +195,91 @@
 
 <div class="container">
   <div class="book">
-    <div class="page cover" id="coverPage" title="クリックで開く"></div>
+    <div class="page cover" id="coverPage"></div>
 
     <div class="page inner">
       <header>
-        <h1 style="margin:0;font-size:16px;"></h1>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <h1 id="headerTitle">仮想飲食</h1>
+        <div style="display:flex;align-items:center;gap:10px;">
           <div class="small-info">時刻: <span id="nowtime">--:--:--</span></div>
-          <button id="bgmBtn" class="bgm-btn" title="Xを開く">X</button>
+          <button id="xBtn" class="mini-btn primary" title="Xへ" style="padding:8px 10px;">X</button>
         </div>
       </header>
 
       <div class="content">
-        <div class="order-block">
+        <!-- 店選択 -->
+        <div id="shopPicker" class="panel" style="display:none;">
+          <div style="font-weight:900;font-size:14px;margin-bottom:10px;">お店を選んでください</div>
+          <div id="shopList" style="display:flex;flex-direction:column;gap:10px;"></div>
+          <div style="margin-top:10px;border-top:1px dashed #e6d0c6;padding-top:10px;display:flex;justify-content:center;">
+            <button id="wantMyShopBtn" class="mini-btn" style="font-size:12px;opacity:.9;">自分のお店用を作りたい方（開発中）</button>
+          </div>
+        </div>
+
+        <!-- ホーム（店決定後） -->
+        <div id="homePanel" class="order-block" style="display:none;">
           <div id="shiftShort" class="status-line">読み込み中...</div>
 
           <div class="order-row">
             <button id="orderBtn" class="order-btn disabled">注文</button>
-            <button id="offlineOrderBtn" class="offline-order" style="display:none;">アート<br>なし版</button>
           </div>
 
-          <div class="small-info" id="helperSmall">実際の支払いはありません</div>
-        </div>
+          <div class="small-info" id="busyInfo" style="margin-top:2px;">混雑: --</div>
 
-        <!-- ✅ 新メニューの提供（小さく下の方） -->
-        <button id="openNewMenu" class="newmenu-btn">＋ 新メニューの提供</button>
+          <div style="width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:6px;">
+            <div class="small-info">実際の支払いはありません</div>
+            <button id="newMenuOfferBtn" class="mini-btn" style="font-size:12px;opacity:.95;">新メニューの提供</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- 右下の簡易表示 -->
 <div class="guest-mini" id="guestMini">
   <div id="guestRole"><strong>あなた：客</strong></div>
-  <div class="small-info" style="margin-top:6px">目的：注文</div>
+  <div class="small-info" style="margin-top:6px">店：<span id="miniShop">未選択</span></div>
+  <div class="small-info">目的：注文</div>
 </div>
 
-<div class="small-pass">
-  <label style="font-size:12px;margin:0">店員用</label>
-  <input id="staffPass" placeholder="　" />
-  <button id="passOk" class="small">OK</button>
+<!-- 左下：スタッフ入室 -->
+<div class="small-pass" id="staffEnterBox">
+  <label style="font-size:12px;margin:0;font-weight:900;">店員用</label>
+  <input id="staffPass" placeholder="パスワード" />
+  <button id="passOk">OK</button>
 </div>
 
-<!-- Staff screen -->
+<!-- スタッフ画面 -->
 <div id="staffFull" class="staff-full" aria-hidden="true">
   <div class="staff-top">
-    <div>
+    <div class="staff-badge">
       <strong id="staffBadge">店員</strong>
-      <div class="small-info">店員控室</div>
+      <div class="small-info">店員控室（<span id="staffShopName">-</span>）</div>
+      <div class="small-info">BOT対応: <span id="botStatusText">-</span></div>
     </div>
-    <div>
-      <button id="logoutStaff" class="small">退室</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="botToggleBtn" class="mini-btn">BOT切替</button>
+      <button id="logoutStaff" class="mini-btn danger">退室</button>
     </div>
   </div>
 
-  <div style="margin-top:8px;">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <label>シフト開始</label><input id="shiftStart" type="time" />
-      <label>終了</label><input id="shiftEnd" type="time" />
-      <button id="saveShift" class="small">保存</button>
-      <span class="small-info">※時間は店員側の時間基準</span>
+  <div style="margin-top:10px;">
+    <div class="row">
+      <label style="font-weight:900;">シフト開始</label><input id="shiftStart" type="time" />
+      <label style="font-weight:900;">終了</label><input id="shiftEnd" type="time" />
+      <button id="saveShift" class="mini-btn primary">保存</button>
     </div>
 
-    <div class="big-toggle" style="margin-top:8px;">
-      <button id="shiftBtn" class="off">シフト中</button>
-      <button id="breakBtn" class="off">休憩中</button>
+    <div class="big-toggle">
+      <button id="shiftBtn" class="off">待機中</button>
+      <button id="cookBtn" class="off">料理中</button>
     </div>
   </div>
 
   <div class="staff-body">
     <div class="staff-panel">
-      <strong>全員のシフト一覧</strong>
+      <strong>スタッフ一覧</strong>
       <div id="shiftList" class="small-info" style="margin-top:8px">読み込み中…</div>
     </div>
 
@@ -435,63 +287,73 @@
       <strong>注文一覧 <span id="pendingTasksSmall" class="small-info"></span></strong>
       <div id="staffOrderList" style="margin-top:8px"></div>
     </div>
-  </div>
 
-  <!-- ✅ 新メニュー提出一覧（スタッフのみ） -->
-  <div class="staff-body">
-    <div class="staff-panel" style="min-width:100%;">
-      <strong>新メニュー提出（消すまで表示され続けます）</strong>
-      <div class="small-info">ここに「番号」「名前」「画像」「保存」「削除」が出ます</div>
-      <div id="newMenuList" style="margin-top:10px;"></div>
+    <div class="staff-panel">
+      <strong>新メニュー候補（お客さん投稿）</strong>
+      <div id="submissionList" class="small-info" style="margin-top:8px">読み込み中…</div>
     </div>
   </div>
 </div>
 
-<!-- Sound permission -->
-<div id="soundOverlay" class="sound-overlay" style="display:none;">
-  <div class="sound-panel">
-    <h3 style="margin:0 0 8px;">効果音など流しますか？</h3>
-    <p style="font-size:12px;margin:0;">音声、効果音が流れます</p>
-    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-      <button id="enableSoundBtn" class="btn-green">OK</button>
-      <button id="disableSoundBtn" class="small">NO</button>
+<!-- 状態（待機/調理中）表示：文字ではなく画像中心 -->
+<div id="orderStatusOverlay" class="status-overlay" aria-hidden="true">
+  <div class="status-card">
+    <div class="status-main" id="orderStatusMain">状態</div>
+    <div class="status-sub" id="orderStatusSub">しばらくお待ちください</div>
+
+    <div class="cook-preview">
+      <img id="cookPreviewImg" src="" alt="調理中のアート" />
     </div>
+
+    <div class="review-mini" id="overlayReviewMini" style="display:none;">
+      <div class="head">
+        <div style="font-weight:900;">口コミ</div>
+        <div id="overlayReviewStars" style="font-weight:900;color:#b33;"></div>
+      </div>
+      <div class="text" id="overlayReviewText"></div>
+    </div>
+
+    <div class="busy" id="overlayBusyText"></div>
   </div>
 </div>
 
-<!-- Status overlay -->
-<div id="orderStatusOverlay" class="status-overlay">
-  <div class="status-card" id="orderStatusCard">
-    <div id="orderStatusMain">状態</div>
-    <div id="orderStatusSub" class="status-sub">対応されない場合再度注文</div>
-  </div>
-</div>
-
-<!-- Name modal -->
-<div id="modalName" class="modal-back" style="display:none;">
+<!-- 客：名前入力 -->
+<div id="modalOrderName" class="modal-back">
   <div class="modal">
     <h3>ゲーム内の名前</h3>
-    <input id="orderName" placeholder="名前を入力" style="width: 300px; height: 60px;font-size:18px;padding:8px;" />
-    <div style="margin-top:10px;text-align:right;">
-      <button id="cancelOrderName" class="small">キャンセル</button>
+    <input id="orderName" placeholder="名前を入力" style="width: 300px; height: 54px;" />
+    <div class="modal-actions">
+      <button id="cancelOrderName" class="btn-gray">キャンセル</button>
       <button id="okOrderName" class="btn-red">決定</button>
     </div>
   </div>
 </div>
 
-<!-- Menu modal -->
-<div id="modalMenu" class="modal-back" style="display:none;">
+<!-- 店員：名前入力 -->
+<div id="modalStaffName" class="modal-back">
   <div class="modal">
-    <h3 id="menuTitleH3">メニューを選択『１日１品まで』</h3>
-    <div class="menu-grid" id="menuGrid"></div>
-    <div style="margin-top:10px;text-align:right;">
-      <button id="backMenu" class="small">戻る</button>
+    <h3>店員名</h3>
+    <input id="staffName" placeholder="名前を入力" style="width: 300px; height: 54px;" />
+    <div class="modal-actions">
+      <button id="cancelStaffName" class="btn-gray">キャンセル</button>
+      <button id="okStaffName" class="btn-green">入室</button>
     </div>
   </div>
 </div>
 
-<!-- Make modal -->
-<div id="modalMakeLatte" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
+<!-- 客：メニュー選択 -->
+<div id="modalMenu" class="modal-back">
+  <div class="modal">
+    <h3 id="menuTitle">メニューを選択</h3>
+    <div class="menu-grid" id="menuGrid"></div>
+    <div class="modal-actions">
+      <button id="backMenu" class="btn-gray">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- 店員：制作（注ぎ+アート） -->
+<div id="modalMake" class="modal-back" style="align-items:flex-start;overflow:auto;">
   <div class="modal" style="width:95%;max-width:920px;">
     <h3 id="makeTitle">制作（担当：<span id="makerName"></span>）</h3>
 
@@ -508,32 +370,32 @@
         </div>
 
         <div style="margin-top:8px;">
-          <label id="espressoLabel">エスプレッソ注ぎ</label>
-          <div style="background:#eee;border-radius:8px;padding:8px;">
+          <label id="espressoLabel" style="font-weight:900;">工程①</label>
+          <div style="background:#eee;border-radius:10px;padding:10px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startEsp" class="small">注ぐ（押し続け）</button>
-              <div style="flex:1;">
-                <div style="height:16px;background:#fff;border-radius:999px;border:1px solid #d4c0b8;overflow:hidden;">
+              <button id="startEsp" class="mini-btn">注ぐ（押し続け）</button>
+              <div style="flex:1;position:relative;">
+                <div style="height:16px;background:#fff;border-radius:999px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
                   <div id="espBar" style="height:100%;width:0%;background:linear-gradient(90deg,#a7552b,#6b3);"></div>
                 </div>
               </div>
-              <div id="espPct" style="width:52px;text-align:right;font-weight:900;">0%</div>
+              <div id="espPct" style="width:56px;text-align:right;font-weight:900;">0%</div>
             </div>
             <div class="small-info">合格ゾーン: 95%〜105%</div>
           </div>
         </div>
 
         <div style="margin-top:8px;">
-          <label id="milkLabel">フームドミルク注ぎ</label>
-          <div style="background:#eee;border-radius:8px;padding:8px;">
+          <label id="milkLabel" style="font-weight:900;">工程②</label>
+          <div style="background:#eee;border-radius:10px;padding:10px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <button id="startMilk" class="small" disabled>注ぐ（押し続け）</button>
-              <div style="flex:1;">
-                <div style="height:16px;background:#fff;border-radius:999px;border:1px solid #d4c0b8;overflow:hidden;">
+              <button id="startMilk" class="mini-btn" disabled>注ぐ（押し続け）</button>
+              <div style="flex:1;position:relative;">
+                <div style="height:16px;background:#fff;border-radius:999px;border:1px solid #d4c0b8;overflow:hidden;position:relative;">
                   <div id="milkBar" style="height:100%;width:0%;background:linear-gradient(90deg,#fff,#eee);"></div>
                 </div>
               </div>
-              <div id="milkPct" style="width:52px;text-align:right;font-weight:900;">0%</div>
+              <div id="milkPct" style="width:56px;text-align:right;font-weight:900;">0%</div>
             </div>
             <div class="small-info">合格ゾーン: 95%〜105%</div>
           </div>
@@ -542,88 +404,60 @@
 
       <div style="flex:1;min-width:300px;">
         <div style="background:#fff8ef;padding:10px;border-radius:12px;border:1px solid #e0c7bb;">
-          <strong id="latteArtLabel">アート（似顔絵など）</strong>
-
-          <div style="margin-top:8px;">
+          <strong id="artLabel">アート</strong>
+          <div style="margin-top:10px;">
             <div class="art-area" id="artArea">
               <canvas id="artBg" width="240" height="240"></canvas>
               <canvas id="artLayer" width="240" height="240"></canvas>
             </div>
-
-            <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-              <label>ツール</label>
-              <select id="penMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
-              <label>太さ</label>
+            <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <label style="font-weight:900;">ツール</label>
+              <select id="penMode"><option value="draw">描く</option><option value="erase">消す</option></select>
+              <label style="font-weight:900;">太さ</label>
               <select id="penSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
-              <button id="clearArt" class="small">クリア</button>
+              <button id="clearArt" class="mini-btn">クリア</button>
             </div>
-
-            <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-              <label style="font-size:12px;">背景色</label><input id="artBgColor" type="color" value="#6b3b24"/>
-              <label style="font-size:12px;">ペン色</label><input id="artPenColor" type="color" value="#ffffff"/>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+              <label style="font-size:12px;font-weight:900;">背景色</label><input id="artBgColor" type="color" value="#6b3b24"/>
+              <label style="font-size:12px;font-weight:900;">ペン色</label><input id="artPenColor" type="color" value="#ffffff"/>
             </div>
-
-            <div style="margin-top:10px;text-align:right;">
-              <button id="saveArt" class="btn-green" disabled>アート保存</button>
+            <div class="modal-actions" style="justify-content:space-between;align-items:center;">
+              <div id="taskStatusSmall" class="small-info" style="font-weight:900;"></div>
+              <div style="display:flex;gap:8px;">
+                <button id="saveArt" class="btn-green" disabled>アート保存</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div style="margin-top:10px;background:#fff8ef;padding:10px;border-radius:12px;border:1px solid #e0c7bb;">
-          <strong>メッセージカード（応援等々…）</strong>
-          <div style="margin-top:8px;">
-            <canvas id="cardCanvas" class="card-canvas" width="320" height="120"></canvas>
-          </div>
-
-          <div style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <label>ツール</label>
-            <select id="cardMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
-            <label>太さ</label>
-            <select id="cardSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
-            <button id="clearCard" class="small">クリア</button>
-          </div>
-
-          <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-            <label style="font-size:12px;">背景色</label><input id="cardBgColor" type="color" value="#fff2e6"/>
-            <label style="font-size:12px;">ペン色</label><input id="cardPenColor" type="color" value="#000000"/>
-          </div>
-
-          <div style="margin-top:10px;text-align:right;">
-            <button id="saveCard" class="small" disabled>保存</button>
-          </div>
-        </div>
-
-        <div style="margin-top:10px;display:flex;justify-content:flex-end;align-items:center;gap:8px;">
-          <div id="taskStatusSmall" class="small-info" style="margin-right:auto"></div>
+        <div class="modal-actions" style="justify-content:flex-end;">
           <button id="completeMake" class="btn-red" disabled>提供する</button>
-          <button id="cancelMake" class="small">中止</button>
+          <button id="cancelMake" class="btn-gray">中止</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Eat modal -->
-<div id="modalEat" class="modal-back" style="display:none;align-items:center;justify-content:center;">
+<!-- 飲食モーダル（右に口コミ追加、コメント機能は無し） -->
+<div id="modalEat" class="modal-back" style="align-items:center;justify-content:center;">
   <div class="modal">
-    <h3 id="eatTitle">飲食</h3>
+    <h3>飲食</h3>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <div style="flex:1;min-width:420px;" class="photo-folder">
         <div class="photo-frame">
           <div id="eatMainWrap">
             <img id="servedImage" src="" alt="商品画像" />
-
-            <!-- ✅ ポロドーモ（クリックで開く） -->
             <div id="pomodoroPanel" aria-hidden="true">
               <div id="pomoSettings">
                 <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
-                  <div>ポロドーモタイマー</div>
-                  <div id="pomoCountDisplay">1 / 1</div>
+                  <div style="font-weight:900;">ポロドーモタイマー</div>
+                  <div id="pomoCountDisplay" style="font-weight:900;">1 / 1</div>
                 </div>
 
                 <div class="pomo-row">
-                  <div style="width:56px;">ループ</div>
+                  <div style="width:52px;font-weight:900;">ループ</div>
                   <div class="pomo-number">
                     <button class="pomo-btn" id="loopDown">-</button>
                     <input id="loopCount" type="number" value="2" min="1" max="10"/>
@@ -632,25 +466,25 @@
                 </div>
 
                 <div class="pomo-row">
-                  <div style="width:56px;">作業</div>
+                  <div style="width:52px;font-weight:900;">作業</div>
                   <div class="pomo-number">
-                    <button class="pomo-btn" id="workDown">-</button>
-                    <input id="workMin" type="number" value="1" min="1" max="200"/>
-                    <button class="pomo-btn" id="workUp">+</button>
+                    <button id="workDown" class="pomo-btn">-</button>
+                    <input id="workMin" type="number" value="1"/>
+                    <button id="workUp" class="pomo-btn">+</button>
                   </div>
                 </div>
 
                 <div class="pomo-row">
-                  <div style="width:56px;">休憩</div>
+                  <div style="width:52px;font-weight:900;">休憩</div>
                   <div class="pomo-number">
-                    <button class="pomo-btn" id="breakDown">-</button>
-                    <input id="breakMin" type="number" value="5" min="1" max="200"/>
-                    <button class="pomo-btn" id="breakUp">+</button>
+                    <button id="breakDown" class="pomo-btn">-</button>
+                    <input id="breakMin" type="number" value="5"/>
+                    <button id="breakUp" class="pomo-btn">+</button>
                   </div>
                 </div>
 
                 <div style="text-align:right;margin-top:8px;">
-                  <button id="startPomoBtn" class="wood-btn">再生 ▶</button>
+                  <button id="startPomoBtn" class="pomo-start">再生 ▶</button>
                 </div>
               </div>
 
@@ -661,15 +495,13 @@
                 </div>
                 <div class="pomo-timer" id="pomoTimerText">00:00:00</div>
                 <div class="pomo-progress"><i id="pomoProgressBar"></i></div>
-
                 <div class="pomo-controls">
                   <button id="stopPomoBtn">■</button>
                   <button id="pausePomoBtn">⏸</button>
                   <button id="skipPomoBtn">⏭</button>
                 </div>
-
                 <div id="pomoHint" style="font-size:12px;text-align:center;margin-top:6px;">
-                  作業した分、飲食が進むよ！
+                  作業した分完食に近づくよ！
                 </div>
               </div>
             </div>
@@ -677,105 +509,123 @@
           </div>
         </div>
 
-        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
-          <div id="eatSoundInfo">↑ 画像をクリックするとポロドーモを設定できます</div>
-          <button id="saveAllBtn" class="wood-btn small" style="margin-left:auto">画像保存</button>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+          <div id="eatSoundInfo" style="font-weight:900;padding:.6em .9em;background:#fff;border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,.15);">
+            ↑ 画像クリックでタイマー
+          </div>
+          <button id="saveAllBtn" class="mini-btn" style="margin-left:auto;">画像保存</button>
         </div>
       </div>
 
-      <div style="width:320px;">
+      <div style="width:340px;">
         <div class="side-card">
           <div class="photo-stack">
-            <div class="mini-frame">
-              <canvas id="servedArtMini" width="220" height="220"></canvas>
+            <div class="mini-frame"><canvas id="servedArtMini" width="220" height="220"></canvas></div>
+          </div>
+
+          <div style="margin-top:10px;border-top:1px dashed #e6d0c6;padding-top:10px;">
+            <div style="font-weight:900;">口コミ</div>
+            <div class="small-info" style="margin-top:6px;">（入力した内容は他の方に見られます）</div>
+
+            <div style="margin-top:10px;">
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <div style="font-weight:900;">評価</div>
+                <div id="reviewStarsPick" style="display:flex;gap:4px;"></div>
+                <div class="small-info" id="reviewStarsValue">0/5</div>
+              </div>
+
+              <textarea id="reviewText" placeholder="例：待ち時間が短くてうれしい / アートがかわいい など"></textarea>
+
+              <div class="modal-actions" style="justify-content:space-between;">
+                <button id="reviewCancel" class="btn-gray">やめる</button>
+                <button id="reviewSubmit" class="btn-green">投稿</button>
+              </div>
             </div>
           </div>
 
-          <div class="photo-stack">
-            <div class="mini-frame">
-              <canvas id="servedCardMini" width="260" height="120"></canvas>
-            </div>
+          <div class="modal-actions" style="justify-content:flex-end;margin-top:8px;">
+            <button id="homeFromEat" class="btn-gray">ホームへ</button>
           </div>
 
-          <div style="margin-top:10px;text-align:right;">
-            <button id="homeFromEat" class="wood-btn small">ホームへ</button>
-          </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
 
-<!-- ✅ 新メニュー説明モーダル -->
-<div id="modalNewMenuInfo" class="modal-back" style="display:none;">
+<!-- 新メニュー提供：説明 -->
+<div id="modalNewMenuOffer" class="modal-back">
   <div class="modal" style="max-width:720px;">
     <h3>新メニューの提供</h3>
-    <div class="small-info" style="font-size:14px;color:#333;line-height:1.6;">
-      お客様が描いた商品が、メニューとして追加されるかも！<br>
-      SNSに掲載されたり、このサイト内で使用することがあります。了承の上で挑戦してください。
+    <div class="panel" style="border:none;box-shadow:none;">
+      <div style="font-weight:900;margin-bottom:8px;">説明</div>
+      <div class="small-info" style="line-height:1.6;color:#333;">
+        お客様が描いた商品が、メニューとして追加されるかも！！<br>
+        提出した画像はSNSに掲載されたり、このサイト内で使用されることがあります。<br>
+        了承できる方だけ「挑戦」を押してください。
+      </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
-      <button id="cancelNewMenuInfo" class="small">やめる</button>
-      <button id="goNewMenuPaint" class="btn-green">挑戦</button>
+    <div class="modal-actions">
+      <button id="newMenuNo" class="btn-gray">やめる</button>
+      <button id="newMenuYes" class="btn-red">挑戦</button>
     </div>
   </div>
 </div>
 
-<!-- ✅ 新メニュー提出（ペイント） -->
-<div id="modalNewMenuPaint" class="modal-back" style="display:none;align-items:flex-start;overflow:auto;">
-  <div class="modal" style="max-width:860px;width:95%;">
-    <h3>新メニュー：おえかき提出</h3>
+<!-- 新メニュー提供：描く -->
+<div id="modalSubmitMenu" class="modal-back" style="align-items:flex-start;overflow:auto;">
+  <div class="modal" style="max-width:900px;">
+    <h3>新メニューを描く</h3>
+
+    <div class="row" style="margin-bottom:10px;">
+      <label style="font-weight:900;">名前</label>
+      <input id="submitterName" placeholder="表示名（任意）" style="width:240px;">
+      <div class="small-info">※スタッフ画面に表示されます</div>
+    </div>
 
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:280px;">
-        <div class="small-info">名前（スタッフ画面に表示されます）</div>
-        <input id="newMenuName" placeholder="名前を入力" style="width:100%;height:46px;font-size:18px;padding:8px;border-radius:10px;border:1px solid #d4c0b8;box-sizing:border-box;">
-        <div class="small-info" style="margin-top:10px;">商品（おえかき）</div>
-
-        <div style="margin-top:8px;">
-          <div class="art-area" style="width:320px;height:320px;">
-            <canvas id="newMenuBg" width="320" height="320"></canvas>
-            <canvas id="newMenuLayer" width="320" height="320"></canvas>
+      <div style="flex:1;min-width:320px;">
+        <div style="background:#fff8ef;padding:10px;border-radius:12px;border:1px solid #e0c7bb;">
+          <div style="font-weight:900;">ペイント</div>
+          <div style="margin-top:10px;display:flex;justify-content:center;">
+            <div class="art-area" style="width:320px;height:320px;">
+              <canvas id="subBg" width="320" height="320"></canvas>
+              <canvas id="subLayer" width="320" height="320"></canvas>
+            </div>
           </div>
 
-          <div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <label>ツール</label>
-            <select id="newMenuMode"><option value="draw">描く</option><option value="erase">消しゴム</option></select>
-            <label>太さ</label>
-            <select id="newMenuSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
-            <button id="newMenuClear" class="small">クリア</button>
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <label style="font-weight:900;">ツール</label>
+            <select id="subMode"><option value="draw">描く</option><option value="erase">消す</option></select>
+            <label style="font-weight:900;">太さ</label>
+            <select id="subSize"><option value="2">小</option><option value="6" selected>中</option><option value="12">大</option></select>
+            <button id="subClear" class="mini-btn">クリア</button>
           </div>
 
-          <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;">
-            <label style="font-size:12px;">背景色</label><input id="newMenuBgColor" type="color" value="#fff2e6"/>
-            <label style="font-size:12px;">ペン色</label><input id="newMenuPenColor" type="color" value="#000000"/>
+          <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:12px;font-weight:900;">背景</label><input id="subBgColor" type="color" value="#fff2e6"/>
+            <label style="font-size:12px;font-weight:900;">ペン</label><input id="subPenColor" type="color" value="#000000"/>
+          </div>
+
+          <div class="modal-actions" style="justify-content:flex-end;">
+            <button id="subSaveDraft" class="btn-gray">下書き保存</button>
+            <button id="subSubmit" class="btn-green">提出</button>
           </div>
         </div>
       </div>
+    </div>
 
-      <div style="flex:1;min-width:280px;">
-        <div style="background:#fff8ef;border:1px solid #e0c7bb;border-radius:12px;padding:10px;">
-          <strong>提出の流れ</strong>
-          <div class="small-info" style="margin-top:8px;color:#333;">
-            ・保存して提出すると「番号」が発行され、スタッフ画面に表示されます。<br>
-            ・スタッフは画像を保存できます。<br>
-            ・スタッフが削除するまで、提出は残ります。
-          </div>
-        </div>
-
-        <div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-          <button id="closeNewMenuPaint" class="small">戻る</button>
-          <button id="submitNewMenu" class="btn-red">保存して提出</button>
-        </div>
-
-        <div id="newMenuSubmitHint" class="small-info" style="margin-top:10px;color:#333;"></div>
-      </div>
+    <div class="modal-actions">
+      <button id="subBackHome" class="btn-gray">戻る</button>
     </div>
   </div>
 </div>
 
 <script type="module">
-/* ===== Firebase imports ===== */
+/* ===========================
+   Firebase imports
+=========================== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
 import {
@@ -788,10 +638,14 @@ import {
   onSnapshot,
   query,
   orderBy,
+  where,
+  limit,
   getDoc
 } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-/* ===== Firebase config ===== */
+/* ===========================
+   Firebase config
+=========================== */
 const firebaseConfig = {
   apiKey: "AIzaSyBJe7_PGeOEkCyC1NxaTMc5bjelQwv2OaU",
   authDomain: "insyoku-f9aee.firebaseapp.com",
@@ -802,7 +656,6 @@ const firebaseConfig = {
   measurementId: "G-QET0N3KP2L"
 };
 
-/* ===== init ===== */
 let app, auth, db;
 try{
   app = initializeApp(firebaseConfig);
@@ -810,710 +663,878 @@ try{
   db = getFirestore(app);
   signInAnonymously(auth).catch(e=>console.warn("anon sign-in failed", e));
 }catch(e){
-  console.warn("Firebase init failed - offline mode", e);
+  console.warn("Firebase init failed - offline fallback", e);
   db = null;
 }
 
-/* ===== DOM ===== */
-const nowtimeEl = document.getElementById("nowtime");
-const coverPage = document.getElementById("coverPage");
+/* ===========================
+   Multi-shop CONFIG (ここを編集)
+   - shopId は英数の短いID
+   - menus: 使いたい MENUS のID配列
+   - staffPass: 店ごとのスタッフ用パス
+   - xUrl: 店ごとのX URL
+=========================== */
+const SHOPS = {
+  reiji: {
+    id:"reiji",
+    name:"0時カフェ",
+    menus:["rate","asa","tyoko","pafe","omu"],
+    staffPass:"1232",
+    xUrl:"https://x.com/zzcafe_280",
+    defaultBotEnabled:true,
+  },
+  zz: {
+    id:"zz",
+    name:"zzカフェ",
+    menus:["rate","omu"],
+    staffPass:"9999",
+    xUrl:"https://x.com/zzcafe_280",
+    defaultBotEnabled:false,
+  },
+};
 
-const orderBtn = document.getElementById("orderBtn");
-const offlineOrderBtn = document.getElementById("offlineOrderBtn");
-const shiftShort = document.getElementById("shiftShort");
-
-const staffPass = document.getElementById("staffPass");
-const passOk = document.getElementById("passOk");
-
-const modalName = document.getElementById("modalName");
-const orderName = document.getElementById("orderName");
-const okOrderName = document.getElementById("okOrderName");
-const cancelOrderName = document.getElementById("cancelOrderName");
-
-const modalMenu = document.getElementById("modalMenu");
-const menuTitleH3 = document.getElementById("menuTitleH3");
-const menuGrid = document.getElementById("menuGrid");
-const backMenu = document.getElementById("backMenu");
-
-const staffFull = document.getElementById("staffFull");
-const staffBadge = document.getElementById("staffBadge");
-const logoutStaff = document.getElementById("logoutStaff");
-const shiftBtn = document.getElementById("shiftBtn");
-const breakBtn = document.getElementById("breakBtn");
-const shiftStart = document.getElementById("shiftStart");
-const shiftEnd = document.getElementById("shiftEnd");
-const saveShift = document.getElementById("saveShift");
-const shiftList = document.getElementById("shiftList");
-const staffOrderList = document.getElementById("staffOrderList");
-const pendingTasksSmall = document.getElementById("pendingTasksSmall");
-
-const newMenuList = document.getElementById("newMenuList");
-
-const modalMakeLatte = document.getElementById("modalMakeLatte");
-const makerName = document.getElementById("makerName");
-const makeTitle = document.getElementById("makeTitle");
-const espressoLabelEl = document.getElementById("espressoLabel");
-const milkLabelEl = document.getElementById("milkLabel");
-const latteArtLabelEl = document.getElementById("latteArtLabel");
-
-const startEsp = document.getElementById("startEsp");
-const espBar = document.getElementById("espBar");
-const espPct = document.getElementById("espPct");
-const startMilk = document.getElementById("startMilk");
-const milkBar = document.getElementById("milkBar");
-const milkPct = document.getElementById("milkPct");
-
-const artBg = document.getElementById("artBg");
-const artLayer = document.getElementById("artLayer");
-const artBgCtx = artBg.getContext("2d");
-const artLayerCtx = artLayer.getContext("2d");
-const penMode = document.getElementById("penMode");
-const penSize = document.getElementById("penSize");
-const clearArt = document.getElementById("clearArt");
-const saveArt = document.getElementById("saveArt");
-const artBgColor = document.getElementById("artBgColor");
-const artPenColor = document.getElementById("artPenColor");
-
-const cardCanvas = document.getElementById("cardCanvas");
-const cardCtx = cardCanvas.getContext("2d");
-const cardMode = document.getElementById("cardMode");
-const cardSize = document.getElementById("cardSize");
-const clearCard = document.getElementById("clearCard");
-const saveCard = document.getElementById("saveCard");
-const cardBgColor = document.getElementById("cardBgColor");
-const cardPenColor = document.getElementById("cardPenColor");
-
-const taskStatusSmall = document.getElementById("taskStatusSmall");
-const completeMake = document.getElementById("completeMake");
-const cancelMake = document.getElementById("cancelMake");
-
-const soundOverlay = document.getElementById("soundOverlay");
-const enableSoundBtn = document.getElementById("enableSoundBtn");
-const disableSoundBtn = document.getElementById("disableSoundBtn");
-
-const orderStatusOverlay = document.getElementById("orderStatusOverlay");
-const orderStatusMain = document.getElementById("orderStatusMain");
-const orderStatusSub = document.getElementById("orderStatusSub");
-
-const bgmBtn = document.getElementById("bgmBtn");
-
-/* Eat */
-const modalEat = document.getElementById("modalEat");
-const eatTitle = document.getElementById("eatTitle");
-const servedImage = document.getElementById("servedImage");
-const servedArtMini = document.getElementById("servedArtMini");
-const servedCardMini = document.getElementById("servedCardMini");
-const saveAllBtn = document.getElementById("saveAllBtn");
-const homeFromEat = document.getElementById("homeFromEat");
-
-/* Pomodoro in eat */
-const pomoPanel = document.getElementById("pomodoroPanel");
-const pomoSettings = document.getElementById("pomoSettings");
-const pomoRunning = document.getElementById("pomoRunning");
-const loopCountInput = document.getElementById("loopCount");
-const workMinInput = document.getElementById("workMin");
-const breakMinInput = document.getElementById("breakMin");
-const loopUp = document.getElementById("loopUp");
-const loopDown = document.getElementById("loopDown");
-const workUp = document.getElementById("workUp");
-const workDown = document.getElementById("workDown");
-const breakUp = document.getElementById("breakUp");
-const breakDown = document.getElementById("breakDown");
-const startPomoBtn = document.getElementById("startPomoBtn");
-const pomoLoopCounter = document.getElementById("pomoLoopCounter");
-const pomoPhaseLabel = document.getElementById("pomoPhaseLabel");
-const pomoTimerText = document.getElementById("pomoTimerText");
-const pomoProgressBar = document.getElementById("pomoProgressBar");
-const stopPomoBtn = document.getElementById("stopPomoBtn");
-const pausePomoBtn = document.getElementById("pausePomoBtn");
-const skipPomoBtn = document.getElementById("skipPomoBtn");
-const pomoCountDisplay = document.getElementById("pomoCountDisplay");
-
-/* New menu feature */
-const openNewMenuBtn = document.getElementById("openNewMenu");
-const modalNewMenuInfo = document.getElementById("modalNewMenuInfo");
-const cancelNewMenuInfo = document.getElementById("cancelNewMenuInfo");
-const goNewMenuPaint = document.getElementById("goNewMenuPaint");
-const modalNewMenuPaint = document.getElementById("modalNewMenuPaint");
-const newMenuName = document.getElementById("newMenuName");
-const newMenuBg = document.getElementById("newMenuBg");
-const newMenuLayer = document.getElementById("newMenuLayer");
-const newMenuBgCtx = newMenuBg.getContext("2d");
-const newMenuLayerCtx = newMenuLayer.getContext("2d");
-const newMenuMode = document.getElementById("newMenuMode");
-const newMenuSize = document.getElementById("newMenuSize");
-const newMenuClear = document.getElementById("newMenuClear");
-const newMenuBgColor = document.getElementById("newMenuBgColor");
-const newMenuPenColor = document.getElementById("newMenuPenColor");
-const closeNewMenuPaint = document.getElementById("closeNewMenuPaint");
-const submitNewMenu = document.getElementById("submitNewMenu");
-const newMenuSubmitHint = document.getElementById("newMenuSubmitHint");
-
-/* ===== Firestore collections ===== */
-const staffsCol = db ? collection(db, "staffs") : null;
-const ordersCol = db ? collection(db, "orders") : null;
-const signalsCol = db ? collection(db, "signals") : null;
-const newMenusCol = db ? collection(db, "newMenus") : null;
-
-/* ===== Helpers ===== */
-function uid(p="id"){ return p + Math.random().toString(36).slice(2,9); }
-function escapeHtml(s){ return (s||"").replace(/[&<>"']/g,c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
-function show(el){ el.style.display="flex"; el.setAttribute("aria-hidden","false"); }
-function hide(el){ el.style.display="none"; el.setAttribute("aria-hidden","true"); }
+/* ===========================
+   MENU definitions (IDで参照)
+=========================== */
 function getAssetUrl(path){
-  if(!path) return "";
-  if(path.startsWith("@")) return "https://raw.githubusercontent.com/" + path.slice(1);
-  try{ return new URL(path).href; }catch(e){ return path; }
+  if (!path) return '';
+  if (path.startsWith('@')) return 'https://raw.githubusercontent.com/' + path.slice(1);
+  try { return new URL(path).href; } catch(e){ return path; }
 }
+const MENUS = {
+  rate: { id:'rate', title:'カフェ・ラテ', imageBase:'@zzcafe2800/reiji_cafe/main/rate', frameCount:6, lastFrameRandom:true,
+    ui:{ makeTitle:'カフェラテ制作', step1:'エスプレッソ注ぎ', step2:'フームドミルク注ぎ' },
+    artBg:'#6b3b24', artPen:'#ffffff'
+  },
+  asa: { id:'asa', title:'食テロ', imageBase:'@zzcafe2800/reiji_cafe/main/asa', frameCount:4, lastFrameRandom:false,
+    ui:{ makeTitle:'あさごはん', step1:'ウィンナー焼き', step2:'味噌汁' },
+    artBg:'#6b3b24', artPen:'#ffffff'
+  },
+  tyoko: { id:'tyoko', title:'ケーキ（限定）', imageBase:'@zzcafe2800/reiji_cafe/main/tyoko', frameCount:4, lastFrameRandom:false,
+    ui:{ makeTitle:'チョコケーキ', step1:'チョコ', step2:'スポンジ' },
+    artBg:'#6b3b24', artPen:'#ffffff'
+  },
+  pafe: { id:'pafe', title:'パフェ', imageBase:'@zzcafe2800/reiji_cafe/main/pafe', frameCount:3, lastFrameRandom:false,
+    ui:{ makeTitle:'パフェ制作', step1:'クリーム注ぎ', step2:'トッピング' },
+    artBg:'#6b3b24', artPen:'#ffffff'
+  },
+  omu: { id:'omu', title:'オムライス', imageBase:'@zzcafe2800/reiji_cafe/main/omu', frameCount:6, lastFrameRandom:true,
+    ui:{ makeTitle:'オムライス制作', step1:'ケチャップライス', step2:'卵で包む' },
+    artBg:'#ffd66b', artPen:'#ff0000'
+  },
+};
 
-/* JST now */
+/* ===========================
+   Audio assets
+=========================== */
+const audioTyaimu = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/tyaimu.mp3'));
+const audioCookbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookbgm.mp3'));
+const audioCookdbgm = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/cookdbgm.mp3'));
+const audioPs = new Audio(getAssetUrl('@zzcafe2800/reiji_cafe/main/s1.mp3')); // ←要：ps.mp3 を置いてください（無ければ再生失敗してもOK）
+audioCookbgm.loop = true;
+
+/* ===========================
+   DOM refs
+=========================== */
+const coverPage = document.getElementById('coverPage');
+
+const headerTitle = document.getElementById('headerTitle');
+const nowtimeEl = document.getElementById('nowtime');
+const xBtn = document.getElementById('xBtn');
+
+const shopPicker = document.getElementById('shopPicker');
+const shopList = document.getElementById('shopList');
+const wantMyShopBtn = document.getElementById('wantMyShopBtn');
+
+const homePanel = document.getElementById('homePanel');
+const shiftShort = document.getElementById('shiftShort');
+const orderBtn = document.getElementById('orderBtn');
+const busyInfo = document.getElementById('busyInfo');
+const newMenuOfferBtn = document.getElementById('newMenuOfferBtn');
+
+const guestMini = document.getElementById('guestMini');
+const miniShop = document.getElementById('miniShop');
+
+const staffEnterBox = document.getElementById('staffEnterBox');
+const staffPass = document.getElementById('staffPass');
+const passOk = document.getElementById('passOk');
+
+const staffFull = document.getElementById('staffFull');
+const staffBadge = document.getElementById('staffBadge');
+const staffShopName = document.getElementById('staffShopName');
+const logoutStaff = document.getElementById('logoutStaff');
+const shiftStart = document.getElementById('shiftStart');
+const shiftEnd = document.getElementById('shiftEnd');
+const saveShift = document.getElementById('saveShift');
+const shiftBtn = document.getElementById('shiftBtn');
+const cookBtn = document.getElementById('cookBtn');
+const shiftList = document.getElementById('shiftList');
+const staffOrderList = document.getElementById('staffOrderList');
+const pendingTasksSmall = document.getElementById('pendingTasksSmall');
+
+const botToggleBtn = document.getElementById('botToggleBtn');
+const botStatusText = document.getElementById('botStatusText');
+
+const submissionList = document.getElementById('submissionList');
+
+const orderStatusOverlay = document.getElementById('orderStatusOverlay');
+const orderStatusMain = document.getElementById('orderStatusMain');
+const orderStatusSub = document.getElementById('orderStatusSub');
+const cookPreviewImg = document.getElementById('cookPreviewImg');
+const overlayReviewMini = document.getElementById('overlayReviewMini');
+const overlayReviewStars = document.getElementById('overlayReviewStars');
+const overlayReviewText = document.getElementById('overlayReviewText');
+const overlayBusyText = document.getElementById('overlayBusyText');
+
+const modalOrderName = document.getElementById('modalOrderName');
+const orderName = document.getElementById('orderName');
+const okOrderName = document.getElementById('okOrderName');
+const cancelOrderName = document.getElementById('cancelOrderName');
+
+const modalStaffName = document.getElementById('modalStaffName');
+const staffName = document.getElementById('staffName');
+const okStaffName = document.getElementById('okStaffName');
+const cancelStaffName = document.getElementById('cancelStaffName');
+
+const modalMenu = document.getElementById('modalMenu');
+const menuTitle = document.getElementById('menuTitle');
+const menuGrid = document.getElementById('menuGrid');
+const backMenu = document.getElementById('backMenu');
+
+const modalMake = document.getElementById('modalMake');
+const makeTitle = document.getElementById('makeTitle');
+const makerName = document.getElementById('makerName');
+const espressoLabel = document.getElementById('espressoLabel');
+const milkLabel = document.getElementById('milkLabel');
+const startEsp = document.getElementById('startEsp');
+const startMilk = document.getElementById('startMilk');
+const espBar = document.getElementById('espBar');
+const milkBar = document.getElementById('milkBar');
+const espPct = document.getElementById('espPct');
+const milkPct = document.getElementById('milkPct');
+
+const latteCanvas = document.getElementById('latteCanvas');
+const latteCtx = latteCanvas.getContext('2d');
+
+const artBg = document.getElementById('artBg');
+const artLayer = document.getElementById('artLayer');
+const artBgCtx = artBg.getContext('2d');
+const artLayerCtx = artLayer.getContext('2d');
+const penMode = document.getElementById('penMode');
+const penSize = document.getElementById('penSize');
+const clearArt = document.getElementById('clearArt');
+const saveArt = document.getElementById('saveArt');
+const artBgColor = document.getElementById('artBgColor');
+const artPenColor = document.getElementById('artPenColor');
+
+const taskStatusSmall = document.getElementById('taskStatusSmall');
+const completeMake = document.getElementById('completeMake');
+const cancelMake = document.getElementById('cancelMake');
+
+const modalEat = document.getElementById('modalEat');
+const servedImage = document.getElementById('servedImage');
+const servedArtMini = document.getElementById('servedArtMini');
+const servedCardMini = document.getElementById('servedCardMini'); // 互換のため残す（今回は未使用でもOK）
+const saveAllBtn = document.getElementById('saveAllBtn');
+const homeFromEat = document.getElementById('homeFromEat');
+
+const reviewStarsPick = document.getElementById('reviewStarsPick');
+const reviewStarsValue = document.getElementById('reviewStarsValue');
+const reviewText = document.getElementById('reviewText');
+const reviewSubmit = document.getElementById('reviewSubmit');
+const reviewCancel = document.getElementById('reviewCancel');
+
+const pomodoroPanel = document.getElementById('pomodoroPanel');
+const pomoSettings = document.getElementById('pomoSettings');
+const pomoRunning = document.getElementById('pomoRunning');
+const loopCountInput = document.getElementById('loopCount');
+const workMinInput = document.getElementById('workMin');
+const breakMinInput = document.getElementById('breakMin');
+const loopUp = document.getElementById('loopUp');
+const loopDown = document.getElementById('loopDown');
+const workUp = document.getElementById('workUp');
+const workDown = document.getElementById('workDown');
+const breakUp = document.getElementById('breakUp');
+const breakDown = document.getElementById('breakDown');
+const startPomoBtn = document.getElementById('startPomoBtn');
+const stopPomoBtn = document.getElementById('stopPomoBtn');
+const pausePomoBtn = document.getElementById('pausePomoBtn');
+const skipPomoBtn = document.getElementById('skipPomoBtn');
+const pomoLoopCounter = document.getElementById('pomoLoopCounter');
+const pomoPhaseLabel = document.getElementById('pomoPhaseLabel');
+const pomoTimerText = document.getElementById('pomoTimerText');
+const pomoProgressBar = document.getElementById('pomoProgressBar');
+const pomoCountDisplay = document.getElementById('pomoCountDisplay');
+const eatSoundInfo = document.getElementById('eatSoundInfo');
+
+const modalNewMenuOffer = document.getElementById('modalNewMenuOffer');
+const newMenuNo = document.getElementById('newMenuNo');
+const newMenuYes = document.getElementById('newMenuYes');
+
+const modalSubmitMenu = document.getElementById('modalSubmitMenu');
+const submitterName = document.getElementById('submitterName');
+const subBg = document.getElementById('subBg');
+const subLayer = document.getElementById('subLayer');
+const subBgCtx = subBg.getContext('2d');
+const subLayerCtx = subLayer.getContext('2d');
+const subMode = document.getElementById('subMode');
+const subSize = document.getElementById('subSize');
+const subClear = document.getElementById('subClear');
+const subBgColor = document.getElementById('subBgColor');
+const subPenColor = document.getElementById('subPenColor');
+const subSaveDraft = document.getElementById('subSaveDraft');
+const subSubmit = document.getElementById('subSubmit');
+const subBackHome = document.getElementById('subBackHome');
+
+/* ===========================
+   App state
+=========================== */
+const state = {
+  currentShopId: null,
+  currentShop: null,
+  currentUser: { role:'guest', staffId:null },
+  staffs: [],
+  orders: [],
+  reviews: [],
+  submissions: [],
+  settings: { botEnabled:true },
+  currentOrderIdForClient: null,
+  currentMenuIdForClient: null,
+};
+let clientId = localStorage.getItem('reiji_clientId');
+if (!clientId){ clientId = 'c_' + Math.random().toString(36).slice(2,9); localStorage.setItem('reiji_clientId', clientId); }
+
+/* ===========================
+   Helpers
+=========================== */
+function show(el){ el.style.display = 'flex'; el.setAttribute('aria-hidden','false'); }
+function hide(el){ el.style.display = 'none'; el.setAttribute('aria-hidden','true'); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uid(p='id'){ return p + Math.random().toString(36).slice(2,9); }
 function nowInJST(){
-  const s = new Date().toLocaleString("en-US",{ timeZone:"Asia/Tokyo" });
+  const s = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
   return new Date(s);
 }
 setInterval(()=> nowtimeEl.textContent = nowInJST().toLocaleTimeString(), 1000);
 
-/* Shift time check: staff-side time 기준 (JST) */
+/* シフト判定（スタッフの時間基準：JSTで固定） */
 function isNowWithinShift(start,end,dateObj){
-  if(!start || !end) return false;
-  const [sh,sm] = start.split(":").map(Number);
-  const [eh,em] = end.split(":").map(Number);
+  if (!start || !end) return false;
+  const [sh,sm] = start.split(':').map(Number); const [eh,em] = end.split(':').map(Number);
   const sDate = new Date(dateObj); sDate.setHours(sh,sm,0,0);
   const eDate = new Date(dateObj); eDate.setHours(eh,em,0,0);
-  if(eDate <= sDate) eDate.setDate(eDate.getDate()+1);
+  if (eDate <= sDate) eDate.setDate(eDate.getDate()+1);
   return dateObj >= sDate && dateObj <= eDate;
 }
 
-/* Cover open motion (クリック or OK で確実に開く) */
+/* 店ごとの Firestore パス */
+function colStaffs(){ return collection(db, 'shops', state.currentShopId, 'staffs'); }
+function colOrders(){ return collection(db, 'shops', state.currentShopId, 'orders'); }
+function colReviews(){ return collection(db, 'shops', state.currentShopId, 'reviews'); }
+function colSubmissions(){ return collection(db, 'shops', state.currentShopId, 'submissions'); }
+function colSignals(){ return collection(db, 'shops', state.currentShopId, 'signals'); }
+function docSettings(){ return doc(db, 'shops', state.currentShopId, 'settings', 'main'); }
+function docMenuStat(menuId){ return doc(db, 'shops', state.currentShopId, 'menuStats', menuId); }
+
+/* ===========================
+   Shop picker UI
+=========================== */
+function renderShopPicker(){
+  shopList.innerHTML = '';
+  Object.values(SHOPS).forEach(shop=>{
+    const row = document.createElement('div');
+    row.style.display='flex';
+    row.style.alignItems='center';
+    row.style.justifyContent='space-between';
+    row.style.gap='10px';
+    row.style.background='#fff';
+    row.style.border='1px solid #e6d0c6';
+    row.style.borderRadius='12px';
+    row.style.padding='10px 12px';
+    row.style.boxShadow='0 6px 14px rgba(0,0,0,0.06)';
+    row.innerHTML = `<div style="font-weight:900;">${escapeHtml(shop.name)}</div>`;
+    const btn = document.createElement('button');
+    btn.className = 'mini-btn primary';
+    btn.textContent = '来店';
+    btn.onclick = ()=> selectShop(shop.id);
+    row.appendChild(btn);
+    shopList.appendChild(row);
+  });
+}
+wantMyShopBtn.onclick = ()=>{
+  alert('開発中です。');
+};
+
+/* ===========================
+   Cover motion restore
+=========================== */
 function openCover(){
-  if(!coverPage) return;
-  coverPage.classList.add("open");
-  coverPage.addEventListener("animationend", ()=>{
-    coverPage.classList.add("finished");
+  if (!coverPage) return;
+  coverPage.classList.add('open');
+  coverPage.addEventListener('animationend', ()=>{
+    coverPage.classList.add('finished');
     try{ coverPage.remove(); }catch(e){}
   }, { once:true });
 }
-if(coverPage){
-  document.addEventListener("click", function onFirst(){
-    openCover();
-    document.removeEventListener("click", onFirst);
-  }, { once:true });
+/* 1回目のタップで開く（モーション復活） */
+document.addEventListener('click', function onFirst(){
+  openCover();
+  document.removeEventListener('click', onFirst);
+}, { once:true });
+
+/* ===========================
+   Shop selection + listeners
+=========================== */
+let unsub = [];
+function clearListeners(){
+  unsub.forEach(fn=>{ try{ fn(); }catch(e){} });
+  unsub = [];
 }
 
-/* ===== Audio ===== */
-const audioTyaimu = new Audio(getAssetUrl("@zzcafe2800/reiji_cafe/main/tyaimu.mp3"));
-const audioCookbgm = new Audio(getAssetUrl("@zzcafe2800/reiji_cafe/main/cookbgm.mp3"));
-const audioCookdbgm = new Audio(getAssetUrl("@zzcafe2800/reiji_cafe/main/cookdbgm.mp3"));
-const audioPiroStart = new Audio(getAssetUrl("@zzcafe2800/reiji_cafe/main/piro.mp3"));
-const audioPiroBreak = new Audio(getAssetUrl("@zzcafe2800/reiji_cafe/main/piro1.mp3"));
-const audioPiroToggle = new Audio(getAssetUrl("@zzcafe2800/reiji_cafe/main/piro3.mp3"));
-
-/* ===== State ===== */
-const state = {
-  staffs: [],
-  orders: [],
-  newMenus: [],
-  currentUser: { role:"guest", staffId:null },
-  currentOrderIdForClient: null,
-  audioUnlocked: false,
-  pendingPlayQueue: []
-};
-
-let clientId = localStorage.getItem("reiji_clientId");
-if(!clientId){
-  clientId = "c_" + Math.random().toString(36).slice(2,9);
-  localStorage.setItem("reiji_clientId", clientId);
-}
-
-/* ===== MENUS ===== */
-const MENUS = {
-  rate: {
-    id:"rate", title:"カフェ・ラテ",
-    imageBase:"@zzcafe2800/reiji_cafe/main/rate",
-    frameCount:6, lastFrameRandom:true,
-    artBg:"#6b3b24", artPen:"#ffffff", cardBg:"#fff2e6", cardPen:"#000000",
-    ui:{ makeTitle:"カフェラテ制作", espressoLabel:"エスプレッソ注ぎ", milkLabel:"フームドミルク注ぎ", latteArtLabel:"ラテアート" }
-  },
-  asa: {
-    id:"asa", title:"食テロ",
-    imageBase:"@zzcafe2800/reiji_cafe/main/asa",
-    frameCount:4, lastFrameRandom:false,
-    artBg:"#6b3b24", artPen:"#ffffff", cardBg:"#fff2e6", cardPen:"#000000",
-    ui:{ makeTitle:"あさごはん", espressoLabel:"ウィンナー焼き", milkLabel:"味噌汁", latteArtLabel:"ノリアート" }
-  },
-  tyoko: {
-    id:"tyoko", title:"ケーキ（バレンタイン限定）",
-    imageBase:"@zzcafe2800/reiji_cafe/main/tyoko",
-    frameCount:4, lastFrameRandom:false,
-    artBg:"#6b3b24", artPen:"#ffffff", cardBg:"#fff2e6", cardPen:"#000000",
-    ui:{ makeTitle:"チョコケーキ", espressoLabel:"チョコ", milkLabel:"スポンジ", latteArtLabel:"チョコアート" }
-  },
-  pafe: {
-    id:"pafe", title:"パフェ（新メニュー）",
-    imageBase:"@zzcafe2800/reiji_cafe/main/pafe",
-    frameCount:3, lastFrameRandom:false,
-    artBg:"#6b3b24", artPen:"#ffffff", cardBg:"#fff2e6", cardPen:"#000000",
-    ui:{ makeTitle:"パフェ制作", espressoLabel:"クリーム注ぎ", milkLabel:"トッピング", latteArtLabel:"クリームアート" }
-  },
-  omu: {
-    id:"omu", title:"オムライス",
-    imageBase:"@zzcafe2800/reiji_cafe/main/omu",
-    frameCount:6, lastFrameRandom:true,
-    artBg:"#ffd66b", artPen:"#ff0000", cardBg:"#fff2e6", cardPen:"#000000",
-    ui:{ makeTitle:"オムライス制作", espressoLabel:"ケチャップライス", milkLabel:"卵で包む", latteArtLabel:"ケチャップアート" }
-  }
-};
-
-/* ===== UI helpers ===== */
-function showClientStatus(text){
-  orderStatusMain.textContent = text;
-  orderStatusSub.textContent = "数分そのままでお待ちください";
-  orderStatusOverlay.style.display = "flex";
-}
-function hideClientStatus(){ orderStatusOverlay.style.display = "none"; }
-
-/* ===== Realtime ===== */
-function startRealtime(){
-  if(!db){
-    // offline fallback
-    try{
-      state.staffs = JSON.parse(localStorage.getItem("reiji_state_staffs")||"[]");
-      state.orders = JSON.parse(localStorage.getItem("reiji_state_orders")||"[]");
-      state.newMenus = JSON.parse(localStorage.getItem("reiji_state_newMenus")||"[]");
-    }catch(e){}
-    renderShiftShort();
-    renderShiftList();
-    renderOrderLists();
-    renderNewMenuList();
-    updateOrderButtonState();
+async function ensureSettings(){
+  if (!db) {
+    state.settings.botEnabled = state.currentShop?.defaultBotEnabled ?? true;
+    renderBotStatus();
     return;
   }
+  try{
+    const sref = docSettings();
+    const snap = await getDoc(sref);
+    if (snap.exists()){
+      state.settings = { botEnabled: !!snap.data().botEnabled };
+    }else{
+      state.settings = { botEnabled: state.currentShop?.defaultBotEnabled ?? true };
+      await updateDoc(sref, { botEnabled: state.settings.botEnabled }).catch(async ()=>{
+        // docが無い場合は add できないので addDoc ではなく set 相当が必要だが、ここでは簡易：addDoc できない
+        // 代替：addDocではなく updateDoc 失敗時は何もしない（初回はUI側だけ）
+      });
+    }
+  }catch(e){
+    state.settings.botEnabled = state.currentShop?.defaultBotEnabled ?? true;
+  }
+  renderBotStatus();
+}
 
-  onSnapshot(query(staffsCol, orderBy("createdAt","asc")), snap=>{
+function startListeners(){
+  if (!db) return;
+
+  // staffs
+  unsub.push(onSnapshot(query(colStaffs(), orderBy('createdAt','asc')), snap=>{
     state.staffs = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-    try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}
     renderShiftShort();
     renderShiftList();
     updateOrderButtonState();
-    updateStaffToggleUI();
-  });
+  }));
 
-  onSnapshot(query(ordersCol, orderBy("createdAt","asc")), snap=>{
+  // orders
+  unsub.push(onSnapshot(query(colOrders(), orderBy('createdAt','asc')), snap=>{
     state.orders = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-    try{ localStorage.setItem("reiji_state_orders", JSON.stringify(state.orders)); }catch(e){}
-    renderOrderLists();
+    renderOrderList();
     updateClientOverlay();
-  });
+    renderBusy();
+  }));
 
-  onSnapshot(query(newMenusCol, orderBy("createdAt","asc")), snap=>{
-    state.newMenus = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-    try{ localStorage.setItem("reiji_state_newMenus", JSON.stringify(state.newMenus)); }catch(e){}
-    renderNewMenuList();
-  });
+  // reviews（最近のみ）
+  unsub.push(onSnapshot(query(colReviews(), orderBy('createdAt','desc'), limit(60)), snap=>{
+    state.reviews = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    // メニュー表示やオーバーレイ用
+    // buildMenu() の表示星は都度計算
+  }));
+
+  // submissions
+  unsub.push(onSnapshot(query(colSubmissions(), orderBy('createdAt','desc'), limit(30)), snap=>{
+    state.submissions = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderSubmissionList();
+  }));
+
+  // settings
+  unsub.push(onSnapshot(docSettings(), snap=>{
+    if (snap.exists()){
+      state.settings = { botEnabled: !!snap.data().botEnabled };
+      renderBotStatus();
+      updateOrderButtonState();
+      renderShiftShort();
+    }
+  }));
+
+  // signals（tyaimu: 店員控室にいる人だけ鳴らす）
+  unsub.push(onSnapshot(query(colSignals(), orderBy('ts','asc'), limit(50)), snap=>{
+    // “新しい”だけ鳴らす：local lastTs
+    if (!state._lastSignalTs) state._lastSignalTs = 0;
+    snap.docs.forEach(d=>{
+      const data = d.data();
+      if (!data || !data.ts) return;
+      if (data.ts <= state._lastSignalTs) return;
+      state._lastSignalTs = data.ts;
+
+      // type=tyaimu は、スタッフ画面を開いている人だけ
+      if (data.type === 'tyaimu'){
+        if (state.currentUser.role === 'staff' && staffFull.classList.contains('show')){
+          try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); }catch(e){}
+        }
+      }
+    });
+  }));
 }
 
-/* ===== Shift short + list (✅「待機中 / 料理中」表示) ===== */
-function staffStatusLabel(staff){
-  // 二択：待機中 or 料理中
-  const cooking = state.orders.some(o => o.state === "inprogress" && (o.assignedTo === staff.id));
-  return cooking ? "料理中" : "待機中";
+async function selectShop(shopId){
+  const shop = SHOPS[shopId];
+  if (!shop){ alert('店が見つかりません'); return; }
+  state.currentShopId = shopId;
+  state.currentShop = shop;
+  headerTitle.textContent = shop.name;
+  miniShop.textContent = shop.name;
+  staffShopName.textContent = shop.name;
+
+  // XボタンのURLを店ごとに
+  xBtn.onclick = ()=> window.open(shop.xUrl || 'https://x.com/', '_blank');
+
+  // UI切替
+  shopPicker.style.display = 'none';
+  homePanel.style.display = 'flex';
+
+  // listeners restart
+  clearListeners();
+  await ensureSettings();
+  startListeners();
+
+  // 初期描画
+  renderShiftShort();
+  updateOrderButtonState();
+  renderBusy();
 }
 
-function renderShiftShort(){
+/* ===========================
+   Shift short + busy
+=========================== */
+function getHumanActiveStaffs(){
   const now = nowInJST();
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart, s.shiftEnd, now));
-  if(humanActive.length){
-    shiftShort.textContent = "シフト：" + humanActive.map(s=>{
-      return `${s.name}（${staffStatusLabel(s)}） ${s.shiftStart||""}〜${s.shiftEnd||""}`;
-    }).join(" / ");
+  return state.staffs.filter(s => !!s.onShift && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
+}
+function renderBotStatus(){
+  botStatusText.textContent = state.settings.botEnabled ? 'ON' : 'OFF';
+  botStatusText.style.fontWeight = '900';
+}
+function renderBusy(){
+  const pending = (state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length;
+  busyInfo.textContent = `混雑: ${pending}件`;
+}
+function renderShiftShort(){
+  if (!state.currentShop) return;
+  const active = getHumanActiveStaffs();
+  if (active.length){
+    const names = active.map(s=>{
+      const st = (s.status === 'cooking') ? '料理中' : '待機中';
+      return `${s.name}（${st}）`;
+    }).join(' / ');
+    shiftShort.textContent = `シフト：${names}`;
     return;
   }
-  shiftShort.textContent = "シフト：無人（注文不可）";
+  // 無人
+  if (state.settings.botEnabled){
+    shiftShort.textContent = 'シフト：BOT対応中（無人）';
+  }else{
+    shiftShort.textContent = 'シフト：無人（注文停止中）';
+  }
 }
 
-function renderShiftList(){
-  shiftList.innerHTML = "";
-  const now = nowInJST();
+/* 注文ボタン：BOT OFF かつ無人なら押せない */
+function updateOrderButtonState(){
+  if (!state.currentShop) return;
+  const active = getHumanActiveStaffs();
+  const canOrder = active.length > 0 || state.settings.botEnabled;
+  if (canOrder){
+    orderBtn.classList.remove('disabled');
+  }else{
+    orderBtn.classList.add('disabled');
+  }
+}
 
+/* ===========================
+   Staff list UI (名前横に状態)
+=========================== */
+function renderShiftList(){
+  shiftList.innerHTML = '';
+  const now = nowInJST();
   state.staffs.forEach(s=>{
+    const div = document.createElement('div');
+    div.style.padding = '8px 0';
     const onNow = isNowWithinShift(s.shiftStart,s.shiftEnd,now);
-    const row = document.createElement("div");
-    row.className = "shift-row";
-    const left = document.createElement("div");
-    left.innerHTML = `
-      <div><strong>${escapeHtml(s.name)}</strong> <span class="small-info">${escapeHtml(s.shiftStart||"")}〜${escapeHtml(s.shiftEnd||"")}</span></div>
-      <div class="small-info">
-        ${s.onShift ? '<span class="pill waiting">シフト</span>' : '<span class="pill off">OFF</span>'}
-        ${s.breaking ? '<span class="pill off">休憩</span>' : ''}
-        ${onNow ? '<span class="pill waiting">現在この時間</span>' : ''}
-        <span class="pill ${staffStatusLabel(s)==="料理中"?"cooking":"waiting"}">${staffStatusLabel(s)}</span>
+    const st = (s.status === 'cooking') ? '料理中' : '待機中';
+    const stChip = (s.status === 'cooking') ? '<span class="chip orange">料理中</span>' : '<span class="chip green">待機中</span>';
+    const timeInfo = `${escapeHtml(s.shiftStart||'--:--')}〜${escapeHtml(s.shiftEnd||'--:--')}`;
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <strong>${escapeHtml(s.name)}</strong>
+        ${stChip}
+        <span class="chip gray">${timeInfo}</span>
+        ${onNow ? '<span class="small-info" style="font-weight:900;">（現在この時間）</span>' : ''}
       </div>
     `;
-    const right = document.createElement("div");
-    const del = document.createElement("button");
-    del.className = "small";
-    del.textContent = "削除";
-    del.onclick = async ()=>{
-      if(!s.id) return;
-      if(db){
-        try{ await deleteDoc(doc(db,"staffs",s.id)); }catch(e){ console.warn(e); }
+    // 削除
+    const delBtn = document.createElement('button');
+    delBtn.className='mini-btn danger';
+    delBtn.style.padding='6px 10px';
+    delBtn.style.fontSize='12px';
+    delBtn.textContent='削除';
+    delBtn.onclick = async ()=>{
+      if (!s.id) return;
+      if (db){
+        try{ await deleteDoc(doc(db,'shops',state.currentShopId,'staffs',s.id)); }catch(e){}
       }else{
         state.staffs = state.staffs.filter(x=>x.id!==s.id);
-        try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}
         renderShiftList(); renderShiftShort(); updateOrderButtonState();
       }
     };
-    right.appendChild(del);
-    row.appendChild(left);
-    row.appendChild(right);
-    shiftList.appendChild(row);
+    div.appendChild(delBtn);
+    shiftList.appendChild(div);
   });
 }
 
-/* ===== Order button state =====
-   ✅ 無人(シフト0)の時は注文できない
-   ✅ スタッフの時間基準（JST）
-*/
-function updateOrderButtonState(){
-  const now = nowInJST();
-  const anyAvailable = state.staffs.some(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if(anyAvailable){
-    orderBtn.classList.remove("disabled");
-    orderBtn.disabled = false;
-    offlineOrderBtn.style.display = "none"; // 今回は「アートなし版」温存だけ（必要なら表示）
-  }else{
-    orderBtn.classList.add("disabled");
-    orderBtn.disabled = true;
-    offlineOrderBtn.style.display = "none";
-  }
-}
+/* ===========================
+   Staff login (店ごとのパス)
+=========================== */
+passOk.onclick = ()=>{
+  if (!state.currentShop){ alert('先にお店を選んでください'); return; }
+  if (staffPass.value !== (state.currentShop.staffPass||'')){ alert('パスワードが違います'); return; }
+  staffName.value = '';
+  show(modalStaffName);
+};
+cancelStaffName.onclick = ()=> hide(modalStaffName);
+okStaffName.onclick = async ()=>{
+  const name = staffName.value.trim();
+  if (!name){ alert('名前を入力してください'); return; }
+  hide(modalStaffName);
 
-/* ===== Staff login ===== */
-passOk.addEventListener("click", ()=>{
-  if(staffPass.value === "1232"){
-    show(modalName);
-    orderName.value = "";
-  }else{
-    alert("パスワードが違います");
-  }
-});
-
-cancelOrderName.addEventListener("click", ()=>{
-  hide(modalName);
-  orderName.value = "";
-});
-
-okOrderName.addEventListener("click", async ()=>{
-  const name = orderName.value.trim();
-  if(!name){ alert("名前"); return; }
-
-  hide(modalName);
-
-  // If currently guest clicked "注文" it uses same name modal → detect mode by a flag
-  if(modalName.dataset.mode === "guest"){
-    delete modalName.dataset.mode;
-    buildMenu();
-    show(modalMenu);
-    return;
-  }
-
-  // staff enter
   try{
-    if(db){
-      const ref = await addDoc(staffsCol, { name, shiftStart:"09:00", shiftEnd:"17:00", onShift:true, breaking:false, createdAt: Date.now() });
+    if (db){
+      const ref = await addDoc(colStaffs(), {
+        name, shiftStart:'09:00', shiftEnd:'17:00',
+        onShift:true,
+        status:'idle', // idle / cooking
+        createdAt: Date.now()
+      });
       enterStaffFull(name, ref.id);
     }else{
-      const s = { id: uid("s"), name, shiftStart:"09:00", shiftEnd:"17:00", onShift:true, breaking:false, createdAt: Date.now() };
+      const s = { id:uid('s'), name, shiftStart:'09:00', shiftEnd:'17:00', onShift:true, status:'idle', createdAt:Date.now() };
       state.staffs.push(s);
-      try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}
       enterStaffFull(name, s.id);
     }
   }catch(e){
     console.warn(e);
-    const s = { id: uid("s"), name, shiftStart:"09:00", shiftEnd:"17:00", onShift:true, breaking:false, createdAt: Date.now() };
-    state.staffs.push(s);
-    enterStaffFull(name, s.id);
   }
-});
+};
 
 function enterStaffFull(name, staffId){
-  state.currentUser = { role:"staff", staffId };
+  state.currentUser = { role:'staff', staffId };
   staffBadge.textContent = name;
-  staffFull.classList.add("show");
+  staffFull.classList.add('show');
+  staffFull.setAttribute('aria-hidden','false');
   renderShiftList();
-  renderOrderLists();
-  renderNewMenuList();
+  renderOrderList();
+  renderBotStatus();
   updateStaffToggleUI();
 }
 
-logoutStaff.addEventListener("click", async ()=>{
+/* 退室 */
+logoutStaff.onclick = async ()=>{
   const id = state.currentUser.staffId;
-  if(id){
-    if(db){
-      try{ await deleteDoc(doc(db,"staffs",id)); }catch(e){}
+  if (id){
+    if (db){
+      try{ await deleteDoc(doc(db,'shops',state.currentShopId,'staffs',id)); }catch(e){}
     }else{
       state.staffs = state.staffs.filter(s=>s.id!==id);
-      try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}
     }
   }
-  state.currentUser = { role:"guest", staffId:null };
-  staffFull.classList.remove("show");
-});
+  state.currentUser = { role:'guest', staffId:null };
+  staffFull.classList.remove('show');
+  staffFull.setAttribute('aria-hidden','true');
+};
 
-/* shift toggle */
+/* スタッフ：シフト保存 */
+saveShift.onclick = async ()=>{
+  const id = state.currentUser.staffId; if (!id) return;
+  const payload = { shiftStart:shiftStart.value||'09:00', shiftEnd:shiftEnd.value||'17:00' };
+  if (db){
+    try{ await updateDoc(doc(db,'shops',state.currentShopId,'staffs',id), payload); }catch(e){}
+  }else{
+    const s = state.staffs.find(x=>x.id===id); if (s) Object.assign(s,payload);
+    renderShiftList(); renderShiftShort();
+  }
+};
+
+/* スタッフ：状態トグル（待機/料理中） */
 function updateStaffToggleUI(){
-  if(state.currentUser.role==="staff" && state.currentUser.staffId){
-    const my = state.staffs.find(s=>s.id===state.currentUser.staffId);
-    if(my){
-      if(my.onShift && !my.breaking){
-        shiftBtn.classList.add("on"); shiftBtn.classList.remove("off");
-        breakBtn.classList.add("off"); breakBtn.classList.remove("on");
-      }else if(my.breaking){
-        breakBtn.classList.add("on"); breakBtn.classList.remove("off");
-        shiftBtn.classList.add("off"); shiftBtn.classList.remove("on");
-      }else{
-        shiftBtn.classList.add("off"); shiftBtn.classList.remove("on");
-        breakBtn.classList.add("off"); breakBtn.classList.remove("on");
-      }
+  const id = state.currentUser.staffId;
+  if (!id) return;
+  const me = state.staffs.find(s=>s.id===id);
+  const cooking = me && me.status === 'cooking';
+  if (me && me.onShift){
+    // onShift は true を維持（時間帯で有効）
+    if (cooking){
+      cookBtn.classList.add('on'); cookBtn.classList.remove('off');
+      shiftBtn.classList.add('off'); shiftBtn.classList.remove('on');
+    }else{
+      shiftBtn.classList.add('on'); shiftBtn.classList.remove('off');
+      cookBtn.classList.add('off'); cookBtn.classList.remove('on');
     }
+  }else{
+    shiftBtn.classList.add('off'); shiftBtn.classList.remove('on');
+    cookBtn.classList.add('off'); cookBtn.classList.remove('on');
   }
 }
-
-shiftBtn.addEventListener("click", async ()=>{
-  const id = state.currentUser.staffId; if(!id) return;
-  if(db){
-    try{ await updateDoc(doc(db,"staffs",id), { onShift:true, breaking:false }); }catch(e){}
+shiftBtn.onclick = async ()=>{
+  const id = state.currentUser.staffId; if (!id) return;
+  if (db){
+    try{ await updateDoc(doc(db,'shops',state.currentShopId,'staffs',id), { onShift:true, status:'idle' }); }catch(e){}
   }else{
-    const s = state.staffs.find(x=>x.id===id);
-    if(s){ s.onShift=true; s.breaking=false; try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}; renderShiftList(); renderShiftShort(); updateOrderButtonState(); }
+    const s=state.staffs.find(x=>x.id===id); if (s){ s.onShift=true; s.status='idle'; renderShiftList(); renderShiftShort(); }
   }
   updateStaffToggleUI();
-});
-
-breakBtn.addEventListener("click", async ()=>{
-  const id = state.currentUser.staffId; if(!id) return;
-  if(db){
-    try{ await updateDoc(doc(db,"staffs",id), { onShift:false, breaking:true }); }catch(e){}
+};
+cookBtn.onclick = async ()=>{
+  const id = state.currentUser.staffId; if (!id) return;
+  if (db){
+    try{ await updateDoc(doc(db,'shops',state.currentShopId,'staffs',id), { onShift:true, status:'cooking' }); }catch(e){}
   }else{
-    const s = state.staffs.find(x=>x.id===id);
-    if(s){ s.onShift=false; s.breaking=true; try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}; renderShiftList(); renderShiftShort(); updateOrderButtonState(); }
+    const s=state.staffs.find(x=>x.id===id); if (s){ s.onShift=true; s.status='cooking'; renderShiftList(); renderShiftShort(); }
   }
   updateStaffToggleUI();
-});
+};
 
-saveShift.addEventListener("click", async ()=>{
-  const id = state.currentUser.staffId; if(!id) return;
-  const payload = { shiftStart:shiftStart.value||"09:00", shiftEnd:shiftEnd.value||"17:00" };
-  if(db){
-    try{ await updateDoc(doc(db,"staffs",id), payload); }catch(e){ console.warn(e); }
-  }else{
-    const s = state.staffs.find(x=>x.id===id);
-    if(s){ Object.assign(s, payload); try{ localStorage.setItem("reiji_state_staffs", JSON.stringify(state.staffs)); }catch(e){}; renderShiftList(); renderShiftShort(); updateOrderButtonState(); }
+/* BOT切替（スタッフ画面で変更） */
+botToggleBtn.onclick = async ()=>{
+  const next = !state.settings.botEnabled;
+  state.settings.botEnabled = next;
+  renderBotStatus();
+  renderShiftShort();
+  updateOrderButtonState();
+  if (db){
+    try{
+      // settings/main が無い可能性もあるので、update失敗してもUIは維持
+      await updateDoc(docSettings(), { botEnabled: next });
+    }catch(e){
+      console.warn('bot toggle save failed', e);
+    }
   }
-});
+};
 
-/* ===== Menu build (✅ メニュー名が「0」になる問題を避ける：titleを必ず使う) ===== */
+/* ===========================
+   Menu build (店ごとに変わる)
+   - メニューごとの平均星（簡易計算）
+=========================== */
+function calcMenuAvg(menuId){
+  const list = (state.reviews||[]).filter(r=>r.menuId===menuId);
+  if (!list.length) return { avg:0, count:0 };
+  const sum = list.reduce((a,b)=>a+(Number(b.stars)||0),0);
+  return { avg: sum/list.length, count:list.length };
+}
+function starString(avg){
+  const n = Math.round(avg);
+  let s = '';
+  for (let i=0;i<5;i++) s += (i<n?'★':'☆');
+  return s;
+}
+
 async function buildMenu(){
-  menuGrid.innerHTML = "";
-  menuTitleH3.textContent = "メニューを選択『１日１品まで』";
+  menuGrid.innerHTML = '';
+  if (!state.currentShop) return;
+  const ids = state.currentShop.menus || [];
+  for (const id of ids){
+    const it = MENUS[id];
+    if (!it) continue;
+    const div = document.createElement('div');
+    div.className='menu-item';
 
-  const keys = Object.keys(MENUS);
-  for(const k of keys){
-    const it = MENUS[k];
-    const div = document.createElement("div");
-    div.className = "menu-item";
-    const img = document.createElement("img");
-    img.className = "menu-thumb";
-
-    const url = getAssetUrl(it.imageBase + "1.png");
+    const img = document.createElement('img');
+    img.className='menu-thumb';
+    // 1枚目を表示
+    const url = getAssetUrl(it.imageBase + '1.png');
     try{
       const res = await fetch(url);
-      if(res.ok){
+      if (res.ok){
         const blob = await res.blob();
         img.src = URL.createObjectURL(blob);
       }else{
-        img.src = makePlaceholder(it.title);
+        img.src = url;
       }
     }catch(e){
-      img.src = makePlaceholder(it.title);
+      img.src = url;
     }
 
-    const label = document.createElement("div");
-    label.style.fontWeight = "900";
-    label.textContent = it.title; // ✅ ここが数字0にならない
-    div.appendChild(img);
-    div.appendChild(label);
+    const title = document.createElement('div');
+    title.style.fontWeight='900';
+    title.style.marginTop='6px';
+    title.textContent = it.title;
 
-    div.addEventListener("click", ()=> onMenuSelect(it));
+    const st = calcMenuAvg(it.id);
+    const stars = document.createElement('div');
+    stars.className='stars';
+    stars.textContent = st.count ? `${starString(st.avg)} (${st.count})` : `☆☆☆☆☆`;
+
+    div.appendChild(img);
+    div.appendChild(title);
+    div.appendChild(stars);
+
+    div.onclick = ()=> onMenuSelect(it);
     menuGrid.appendChild(div);
   }
 }
-function makePlaceholder(title){
-  const c=document.createElement("canvas"); c.width=320; c.height=240;
-  const ctx=c.getContext("2d");
-  ctx.fillStyle="#fff8ef"; ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#6b3b24"; ctx.beginPath(); ctx.arc(160,110,60,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle="#fff"; ctx.font="20px sans-serif"; ctx.fillText(title||"menu", 90, 210);
-  return c.toDataURL("image/png");
+
+/* ===========================
+   Order flow (tyaimu: メニュー画像を押したときだけ)
+=========================== */
+orderBtn.onclick = ()=>{
+  if (orderBtn.classList.contains('disabled')) return;
+  orderName.value = '';
+  show(modalOrderName);
+};
+cancelOrderName.onclick = ()=> hide(modalOrderName);
+okOrderName.onclick = async ()=>{
+  const name = orderName.value.trim();
+  if (!name){ alert('名前を入力してください'); return; }
+  hide(modalOrderName);
+
+  // メニューへ
+  await buildMenu();
+  show(modalMenu);
+};
+backMenu.onclick = ()=> hide(modalMenu);
+
+/* メニュー選択時に tyaimu を「本人 + スタッフ控室だけ」鳴らす */
+async function emitTyaimuSignal(){
+  try{
+    // 本人はローカルで鳴らす
+    try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); }catch(e){}
+    // スタッフ控室は signals で鳴らす（店ごと）
+    if (db){
+      await addDoc(colSignals(), { type:'tyaimu', ts: Date.now() });
+    }
+  }catch(e){
+    console.warn('emit signal failed', e);
+  }
 }
 
-backMenu.addEventListener("click", ()=> hide(modalMenu));
-
-/* ===== Ordering ===== */
-orderBtn.addEventListener("click", async ()=>{
-  if(orderBtn.classList.contains("disabled")) return;
-
-  // signal (tyaimu) minimal write
-  if(db && signalsCol){
-    try{ await addDoc(signalsCol, { type:"tyaimu", ts: Date.now() }); }catch(e){}
-  }
-  try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); }catch(e){}
-
-  modalName.dataset.mode = "guest";
-  show(modalName);
-});
-
-async function onMenuSelect(item){
+async function onMenuSelect(menuItem){
   hide(modalMenu);
+  const name = orderName.value.trim() || '名無し';
+  state.currentMenuIdForClient = menuItem.id;
 
-  const name = (orderName.value.trim() || "名無し");
+  // tyaimu はここで
+  await emitTyaimuSignal();
+
+  // 注文作成
   const createdAt = Date.now();
-  const expiresAt = createdAt + 5*60*1000;
   const orderObj = {
     name,
-    item: item.id,
-    itemTitle: item.title,
-    itemImageBase: item.imageBase,
-    state:"waiting",
+    menuId: menuItem.id,
+    state: 'waiting', // waiting -> inprogress -> delivered
     createdAt,
-    expiresAt,
-    assignedTo:null,
-    assignedToName:null,
-    artStrokes:null,
-    cardStrokes:null,
-    artMeta:null,
-    cardMeta:null,
-    artDataUrl:null,
-    cardDataUrl:null,
-    servedImageData:null,
-    clientId
+    clientId,
+    assignedTo: null,
+    assignedToName: null,
+    cookingPreview: null, // 調理中のアート画像（低画質）
+    servedImageData: null,
+    artDataUrl: null,
+    artBg: menuItem.artBg || '#6b3b24',
   };
 
-  // human staff check
-  const now = nowInJST();
-  const humanActive = state.staffs.filter(s => s.onShift && !s.breaking && isNowWithinShift(s.shiftStart,s.shiftEnd,now));
-  if(!humanActive.length){
-    // no staff: order should not be possible per requirement. But just in case:
-    showClientStatus("現在無人です（注文できません）");
-    setTimeout(()=> hideClientStatus(), 2500);
+  const active = getHumanActiveStaffs();
+
+  // 無人の場合：BOT ONなら即提供（簡易BOT）
+  if (!active.length){
+    if (!state.settings.botEnabled){
+      alert('今はシフトがいないため注文できません。');
+      return;
+    }
+    showClientStatus('BOTが料理中…', '少し待ってね');
+    const served = await botProduce(menuItem, name);
+    orderObj.state = 'delivered';
+    orderObj.servedImageData = served.servedImageData;
+    orderObj.artDataUrl = served.artDataUrl;
+    orderObj.cookingPreview = served.cookingPreview;
+
+    if (db){
+      try{
+        const ref = await addDoc(colOrders(), { ...orderObj, deliveredAt: Date.now() });
+        state.currentOrderIdForClient = ref.id;
+      }catch(e){
+        console.warn(e);
+        // fallback local
+        orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id;
+      }
+    }else{
+      orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id;
+    }
+
+    hideClientStatus();
+    await showClientServed(orderObj);
     return;
   }
 
+  // 人がいる：通常
   try{
-    if(db){
-      const ref = await addDoc(ordersCol, orderObj);
+    if (db){
+      const ref = await addDoc(colOrders(), orderObj);
       state.currentOrderIdForClient = ref.id;
-      showClientStatus("現在対応待ち中");
-      scheduleOrderTimeout(ref.id, expiresAt);
     }else{
-      orderObj.id = uid("o");
-      state.orders.push(orderObj);
-      try{ localStorage.setItem("reiji_state_orders", JSON.stringify(state.orders)); }catch(e){}
-      state.currentOrderIdForClient = orderObj.id;
-      showClientStatus("現在対応待ち中");
-      scheduleOrderTimeout(orderObj.id, expiresAt);
-      renderOrderLists();
+      orderObj.id = uid('o'); state.orders.push(orderObj); state.currentOrderIdForClient = orderObj.id;
     }
+    showClientStatus('現在対応待ち中', '店員さんが対応します');
   }catch(e){
     console.warn(e);
-    orderObj.id = uid("o");
-    state.orders.push(orderObj);
-    try{ localStorage.setItem("reiji_state_orders", JSON.stringify(state.orders)); }catch(e){}
-    state.currentOrderIdForClient = orderObj.id;
-    showClientStatus("現在対応待ち中");
-    scheduleOrderTimeout(orderObj.id, expiresAt);
-    renderOrderLists();
+    alert('注文に失敗しました');
   }
 }
 
-async function scheduleOrderTimeout(orderId, expiresAt){
-  const remaining = (expiresAt||0) - Date.now();
-  if(remaining <= 0) return;
-  setTimeout(async ()=>{
-    try{
-      if(!db){
-        const o = state.orders.find(x=>x.id===orderId);
-        if(o && o.state==="waiting"){
-          o.state="cancelled";
-          o.cancelReason="スタッフの応答がないため現在注文を取り消しになります";
-          try{ localStorage.setItem("reiji_state_orders", JSON.stringify(state.orders)); }catch(e){}
-          renderOrderLists();
-        }
-        return;
-      }
-      const snap = await getDoc(doc(db,"orders",orderId));
-      if(snap.exists()){
-        const o = snap.data();
-        if(o.state==="waiting"){
-          await updateDoc(doc(db,"orders",orderId), { state:"cancelled", cancelReason:"スタッフの応答がないため現在注文を取り消しになります" });
-        }
-      }
-    }catch(e){ console.warn(e); }
-  }, remaining);
-}
+/* ===========================
+   Staff: Order list + assign + make
+=========================== */
+function renderOrderList(){
+  staffOrderList.innerHTML = '';
+  const pending = (state.orders||[]).filter(o=>o.state==='waiting' || o.state==='inprogress').length;
+  pendingTasksSmall.textContent = pending ? ` 未処理:${pending}` : '';
 
-/* ===== Staff orders list ===== */
-function renderOrderLists(){
-  staffOrderList.innerHTML = "";
-  const visible = (state.orders||[]).filter(o => o && !["cancelled","served"].includes(o.state));
-  const pendingCount = visible.filter(o => o.state==="waiting" || o.state==="inprogress").length;
-  pendingTasksSmall.textContent = pendingCount ? ` 未処理:${pendingCount}` : "";
+  (state.orders||[]).forEach(o=>{
+    if (!o) return;
+    if (o.state === 'delivered' || o.state === 'cancelled') return;
 
-  visible.forEach(o=>{
-    if(o.state === "delivered") return;
+    const div = document.createElement('div');
+    div.className='order-item';
 
-    const div = document.createElement("div");
-    div.className = "order-item";
-
-    const left = document.createElement("div");
-    left.className = "left";
-    const time = new Date(o.createdAt||0).toLocaleTimeString();
+    const left = document.createElement('div');
     left.innerHTML = `
-      <div style="font-weight:900;">${escapeHtml(o.name)} <span class="small-info">(${escapeHtml(o.itemTitle || MENUS[o.item]?.title || o.item)})</span></div>
-      <div class="small-info">状態: ${escapeHtml(o.state)} / 作成: ${escapeHtml(time)}</div>
+      <strong>${escapeHtml(o.name)}</strong>
+      <div class="small-info" style="margin-top:4px;">
+        メニュー: ${escapeHtml(MENUS[o.menuId]?.title || o.menuId || '-')}
+        / 状態: ${escapeHtml(o.state)}
+      </div>
     `;
 
-    const right = document.createElement("div");
-    right.className = "right";
+    const right = document.createElement('div');
+    right.style.display='flex';
+    right.style.flexDirection='column';
+    right.style.gap='8px';
+    right.style.alignItems='flex-end';
 
-    if(o.state === "waiting"){
-      const btn = document.createElement("button");
-      btn.className = "small btn-green";
-      btn.textContent = "対応";
-      btn.onclick = ()=> assignOrderToCurrentStaff(o.id);
+    if (o.state === 'waiting'){
+      const btn = document.createElement('button');
+      btn.className='mini-btn primary';
+      btn.textContent='対応';
+      btn.onclick = ()=> assignOrder(o.id);
       right.appendChild(btn);
-    }else if(o.state === "inprogress"){
-      const info = document.createElement("span");
-      info.className = "small-info";
-      info.textContent = `担当:${o.assignedToName||o.assignedTo||""}`;
+    }else if (o.state === 'inprogress'){
+      const info = document.createElement('div');
+      info.className='small-info';
+      info.style.fontWeight='900';
+      info.textContent = `担当: ${o.assignedToName || o.assignedTo || ''}`;
       right.appendChild(info);
 
-      const makeBtn = document.createElement("button");
-      makeBtn.className = "small";
-      makeBtn.textContent = "制作開始";
-      makeBtn.onclick = ()=> openMakeModal(o);
-      right.appendChild(makeBtn);
-    }else if(o.state === "done"){
-      const provideBtn = document.createElement("button");
-      provideBtn.className = "small btn-green";
-      provideBtn.textContent = "提供";
-      provideBtn.onclick = ()=> openMakeModal(o);
-      right.appendChild(provideBtn);
-    }else if(o.state === "cancelled"){
-      const span = document.createElement("span");
-      span.className = "small-info";
-      span.textContent = "キャンセル";
-      right.appendChild(span);
+      const btn = document.createElement('button');
+      btn.className='mini-btn';
+      btn.textContent='制作';
+      btn.onclick = ()=> openMakeModal(o);
+      right.appendChild(btn);
     }
 
     div.appendChild(left);
@@ -1522,463 +1543,442 @@ function renderOrderLists(){
   });
 }
 
-async function assignOrderToCurrentStaff(orderId){
+async function assignOrder(orderId){
   const staffId = state.currentUser.staffId;
-  if(!staffId){ alert("スタッフとしてログインしてください"); return; }
-  const s = state.staffs.find(x=>x.id===staffId);
+  if (!staffId){ alert('スタッフとして入室してください'); return; }
+  const me = state.staffs.find(s=>s.id===staffId);
+  if (!me){ alert('スタッフ情報が見つかりません'); return; }
 
   try{
-    if(db){
-      await updateDoc(doc(db,"orders",orderId), { state:"inprogress", assignedTo: staffId, assignedToName: s?.name||"" });
+    if (db){
+      await updateDoc(doc(db,'shops',state.currentShopId,'orders',orderId), {
+        state:'inprogress',
+        assignedTo: staffId,
+        assignedToName: me.name,
+      });
+      // 状態も料理中に寄せる（任意）
+      await updateDoc(doc(db,'shops',state.currentShopId,'staffs',staffId), { status:'cooking', onShift:true }).catch(()=>{});
+      try{ audioCookbgm.currentTime=0; audioCookbgm.play().catch(()=>{}); }catch(e){}
     }else{
       const o = state.orders.find(x=>x.id===orderId);
-      if(o){ o.state="inprogress"; o.assignedTo=staffId; o.assignedToName=s?.name||""; try{ localStorage.setItem("reiji_state_orders", JSON.stringify(state.orders)); }catch(e){}; renderOrderLists(); }
+      if (o){ o.state='inprogress'; o.assignedTo=staffId; o.assignedToName=me.name; }
+      try{ audioCookbgm.currentTime=0; audioCookbgm.play().catch(()=>{}); }catch(e){}
+      renderOrderList();
     }
-    if(state.audioUnlocked){
-      try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); }catch(e){}
-    }else{
-      state.pendingPlayQueue.push({ type:"cook" });
-    }
-  }catch(e){ console.warn(e); }
+  }catch(e){
+    console.warn(e);
+  }
 }
 
-/* ===== Drawing (✅ 消しゴムで背景まで消えるバグ修正：背景は別キャンバス固定、消しゴムは上レイヤのみ) ===== */
-function normPointInCanvas(pt, canvas){ return { x: pt.x / canvas.width, y: pt.y / canvas.height }; }
-function denormPoint(p, canvas){ return { x: (p.x||0)*canvas.width, y: (p.y||0)*canvas.height }; }
+/* ===========================
+   Make modal (アート送信：8秒に1回、低画質JPEG)
+   + 消しゴムの背景消しバグ修正（export時はbg色で上書き）
+=========================== */
+let currentMakingOrder = null;
+let espDone=false, milkDone=false;
+let artStrokes = [];
+let currentStroke = null;
+let drawing = false;
+let savedArtDataUrl = null;
+let lastCookingPreviewSentAt = 0;
+let cookingPreviewDirty = false;
+let cookingPreviewTimer = null;
 
-function initArtCanvas(bgColor){
+function latteClear(){
+  latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
+  latteCtx.fillStyle='#6b3b24';
+  latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill();
+}
+function latteFillEsp(){ latteCtx.fillStyle='#5a2f1a'; latteCtx.fillRect(0,60,latteCanvas.width,60); }
+function latteFillMilk(){ latteCtx.fillStyle='#f6efe6'; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
+
+function initArtCanvas(bg){
   artBgCtx.clearRect(0,0,artBg.width,artBg.height);
-  artBgCtx.fillStyle = bgColor || artBgColor.value || "#6b3b24";
+  const bgc = bg || artBgColor.value || '#6b3b24';
+  artBgCtx.fillStyle = bgc;
   artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.fill();
 
+  // 白縁（黒縁→白へ）
+  artBgCtx.strokeStyle = '#ffffff';
+  artBgCtx.lineWidth = 6;
+  artBgCtx.beginPath(); artBgCtx.arc(120,120,100,0,Math.PI*2); artBgCtx.stroke();
+
   artLayerCtx.clearRect(0,0,artLayer.width,artLayer.height);
-  artLayerCtx.lineCap="round"; artLayerCtx.lineJoin="round";
+  artLayerCtx.lineCap='round'; artLayerCtx.lineJoin='round';
 }
-function initCardCanvas(bgColor){
-  cardCtx.clearRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.fillStyle = bgColor || cardBgColor.value || "#fff2e6";
-  cardCtx.fillRect(0,0,cardCanvas.width,cardCanvas.height);
-  cardCtx.lineCap="round"; cardCtx.lineJoin="round";
-}
-
-let artStrokes = [];
-let cardStrokes = [];
-let currentArtStroke = null;
-let currentCardStroke = null;
-let artDrawing=false, cardDrawing=false;
-
-let savedArtDataUrlLocal = null, savedCardDataUrlLocal = null;
-let savedArtMeta = null, savedCardMeta = null;
-let savedArtStrokesLocal = null, savedCardStrokesLocal = null;
 
 function getEventPos(e, canvas){
   const r = canvas.getBoundingClientRect();
   const t = e.touches ? e.touches[0] : null;
   const cx = t ? t.clientX : e.clientX;
   const cy = t ? t.clientY : e.clientY;
-  return { x:(cx-r.left)*(canvas.width/r.width), y:(cy-r.top)*(canvas.height/r.height) };
+  return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
 }
+function norm(p, canvas){ return { x: p.x / canvas.width, y: p.y / canvas.height }; }
+function denorm(p, canvas){ return { x: (p.x||0)*canvas.width, y: (p.y||0)*canvas.height }; }
 
-function renderLatestStrokeSegment(stroke, canvasEl, ctx){
-  if(!stroke || stroke.points.length<2) return;
-  const p1 = denormPoint(stroke.points[stroke.points.length-2], canvasEl);
-  const p2 = denormPoint(stroke.points[stroke.points.length-1], canvasEl);
-
-  if(stroke.tool==="draw"){
-    ctx.globalCompositeOperation="source-over";
+/* live描画：消しゴムは layer のみ destination-out（背景は消えない） */
+function drawSegment(ctx, stroke, canvas, p1, p2){
+  if (stroke.tool === 'draw'){
+    ctx.globalCompositeOperation='source-over';
     ctx.strokeStyle = stroke.pen;
-    ctx.lineWidth = stroke.width;
   }else{
-    // ✅ 上レイヤだけを消す（背景は artBg / cardBg で守られる）
-    ctx.globalCompositeOperation="destination-out";
-    ctx.lineWidth = stroke.width;
+    ctx.globalCompositeOperation='destination-out';
+    ctx.strokeStyle = '#000';
   }
-  ctx.beginPath();
-  ctx.moveTo(p1.x,p1.y);
-  ctx.lineTo(p2.x,p2.y);
-  ctx.stroke();
-  ctx.closePath();
-  ctx.globalCompositeOperation="source-over";
+  ctx.lineWidth = stroke.width;
+  ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  ctx.globalCompositeOperation='source-over';
 }
 
-/* Art layer events */
-artLayer.addEventListener("mousedown", (e)=>{
-  artDrawing=true;
+artLayer.addEventListener('mousedown', (e)=>{
+  drawing = true;
   const p = getEventPos(e, artLayer);
-  currentArtStroke = {
+  currentStroke = {
     tool: penMode.value,
     width: parseInt(penSize.value,10),
-    points: [ normPointInCanvas(p, artLayer) ],
-    pen: artPenColor.value || "#ffffff"
+    pen: artPenColor.value || '#ffffff',
+    points: [ norm(p, artLayer) ],
   };
 });
-artLayer.addEventListener("mousemove",(e)=>{
-  if(!artDrawing || !currentArtStroke) return;
+artLayer.addEventListener('mousemove', (e)=>{
+  if (!drawing || !currentStroke) return;
   const p = getEventPos(e, artLayer);
-  currentArtStroke.points.push(normPointInCanvas(p, artLayer));
-  renderLatestStrokeSegment(currentArtStroke, artLayer, artLayerCtx);
+  currentStroke.points.push(norm(p, artLayer));
+  const pts = currentStroke.points;
+  if (pts.length < 2) return;
+  const p1 = denorm(pts[pts.length-2], artLayer);
+  const p2 = denorm(pts[pts.length-1], artLayer);
+  drawSegment(artLayerCtx, currentStroke, artLayer, p1, p2);
+
+  // cooking preview: dirty
+  cookingPreviewDirty = true;
 });
-function endArt(){
-  if(!artDrawing) return;
-  artDrawing=false;
-  if(currentArtStroke){
-    artStrokes.push(currentArtStroke);
-    currentArtStroke=null;
-    saveArt.disabled=false;
+function endStroke(){
+  if (!drawing) return;
+  drawing = false;
+  if (currentStroke){
+    artStrokes.push(currentStroke);
+    currentStroke = null;
+    saveArt.disabled = !(artStrokes.length);
     updateTaskStatus();
+    cookingPreviewDirty = true;
   }
 }
-artLayer.addEventListener("mouseup", endArt);
-artLayer.addEventListener("mouseleave", endArt);
-artLayer.addEventListener("touchstart",(e)=>{ e.preventDefault(); const t=e.touches[0]; artLayer.dispatchEvent(new MouseEvent("mousedown",{clientX:t.clientX,clientY:t.clientY})); }, {passive:false});
-artLayer.addEventListener("touchmove",(e)=>{ e.preventDefault(); const t=e.touches[0]; artLayer.dispatchEvent(new MouseEvent("mousemove",{clientX:t.clientX,clientY:t.clientY})); }, {passive:false});
-artLayer.addEventListener("touchend",(e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent("mouseup")); }, {passive:false});
+artLayer.addEventListener('mouseup', endStroke);
+artLayer.addEventListener('mouseleave', endStroke);
+artLayer.addEventListener('touchstart', (e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousedown',{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY})); }, {passive:false});
+artLayer.addEventListener('touchmove', (e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY})); }, {passive:false});
+artLayer.addEventListener('touchend', (e)=>{ e.preventDefault(); artLayer.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
 
-/* Card canvas events */
-cardCanvas.addEventListener("mousedown",(e)=>{
-  cardDrawing=true;
-  const p = getEventPos(e, cardCanvas);
-  currentCardStroke = {
-    tool: cardMode.value,
-    width: parseInt(cardSize.value,10),
-    points: [ normPointInCanvas(p, cardCanvas) ],
-    pen: cardPenColor.value || "#000000"
-  };
-});
-cardCanvas.addEventListener("mousemove",(e)=>{
-  if(!cardDrawing || !currentCardStroke) return;
-  const p = getEventPos(e, cardCanvas);
-  currentCardStroke.points.push(normPointInCanvas(p, cardCanvas));
-  renderLatestStrokeSegment(currentCardStroke, cardCanvas, cardCtx);
-});
-function endCard(){
-  if(!cardDrawing) return;
-  cardDrawing=false;
-  if(currentCardStroke){
-    cardStrokes.push(currentCardStroke);
-    currentCardStroke=null;
-    saveCard.disabled=false;
-    updateTaskStatus();
-  }
-}
-cardCanvas.addEventListener("mouseup", endCard);
-cardCanvas.addEventListener("mouseleave", endCard);
-cardCanvas.addEventListener("touchstart",(e)=>{ e.preventDefault(); const t=e.touches[0]; cardCanvas.dispatchEvent(new MouseEvent("mousedown",{clientX:t.clientX,clientY:t.clientY})); }, {passive:false});
-cardCanvas.addEventListener("touchmove",(e)=>{ e.preventDefault(); const t=e.touches[0]; cardCanvas.dispatchEvent(new MouseEvent("mousemove",{clientX:t.clientX,clientY:t.clientY})); }, {passive:false});
-cardCanvas.addEventListener("touchend",(e)=>{ e.preventDefault(); cardCanvas.dispatchEvent(new MouseEvent("mouseup")); }, {passive:false});
+clearArt.onclick = ()=>{
+  initArtCanvas(artBgColor.value);
+  artStrokes = [];
+  savedArtDataUrl = null;
+  saveArt.disabled = true;
+  updateTaskStatus();
+  cookingPreviewDirty = true;
+};
 
-/* clear */
-clearArt.addEventListener("click", ()=>{ initArtCanvas(); artStrokes=[]; currentArtStroke=null; saveArt.disabled=true; updateTaskStatus(); });
-clearCard.addEventListener("click", ()=>{ initCardCanvas(); cardStrokes=[]; currentCardStroke=null; saveCard.disabled=true; updateTaskStatus(); });
-
-/* save art/card (✅ 画像つぶれ対策：保存サイズ固定＆比率保持のまま描画) */
-saveArt.addEventListener("click", ()=>{
-  const scale = 2;
-  const tmp = document.createElement("canvas");
+/* export（バグ修正）：erase は「透明に抜く」ではなく、BG色で描き戻す */
+function exportArtDataUrl(scale=1, jpeg=false){
+  const tmp = document.createElement('canvas');
   tmp.width = artLayer.width * scale;
   tmp.height = artLayer.height * scale;
-  const t = tmp.getContext("2d");
+  const ctx = tmp.getContext('2d');
 
-  t.fillStyle = artBgColor.value || "#6b3b24";
-  t.fillRect(0,0,tmp.width,tmp.height);
+  // 背景（円 + 白縁）
+  const bgc = artBgColor.value || '#6b3b24';
+  ctx.fillStyle = '#0000';
+  ctx.clearRect(0,0,tmp.width,tmp.height);
 
-  t.lineCap="round"; t.lineJoin="round";
-  const strokes = JSON.parse(JSON.stringify(artStrokes||[]));
-  for(const s of strokes){
-    t.beginPath();
-    t.globalCompositeOperation = (s.tool==="draw") ? "source-over" : "destination-out";
-    t.strokeStyle = s.pen || artPenColor.value || "#fff";
-    t.lineWidth = (s.width||6)*scale;
-    const pts = s.points||[];
-    for(let i=0;i<pts.length;i++){
-      const x = pts[i].x * tmp.width;
-      const y = pts[i].y * tmp.height;
-      if(i===0) t.moveTo(x,y); else t.lineTo(x,y);
+  ctx.fillStyle = bgc;
+  ctx.beginPath();
+  ctx.arc(tmp.width/2, tmp.height/2, (100/240)*tmp.width, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 6 * scale;
+  ctx.beginPath();
+  ctx.arc(tmp.width/2, tmp.height/2, (100/240)*tmp.width, 0, Math.PI*2);
+  ctx.stroke();
+
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for (const s of artStrokes){
+    const pts = s.points || [];
+    if (pts.length < 2) continue;
+    ctx.beginPath();
+    ctx.lineWidth = (s.width || 6) * scale;
+    if (s.tool === 'draw'){
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle = s.pen || '#fff';
+    }else{
+      // erase: 背景色で上書き（背景が“消えた”ように見えるバグを防ぐ）
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle = bgc;
     }
-    t.stroke(); t.closePath();
-    t.globalCompositeOperation="source-over";
-  }
-
-  savedArtDataUrlLocal = tmp.toDataURL("image/png");
-  savedArtMeta = { origWidth: artLayer.width, origHeight: artLayer.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: artBgColor.value || "#6b3b24", penDefault: artPenColor.value || "#ffffff", scale };
-  savedArtStrokesLocal = JSON.parse(JSON.stringify(artStrokes||[]));
-  saveArt.disabled=true;
-  updateTaskStatus();
-  alert("アートを保存しました。");
-});
-
-saveCard.addEventListener("click", ()=>{
-  const scale = 2;
-  const tmp = document.createElement("canvas");
-  tmp.width = cardCanvas.width * scale;
-  tmp.height = cardCanvas.height * scale;
-  const t = tmp.getContext("2d");
-
-  t.fillStyle = cardBgColor.value || "#fff2e6";
-  t.fillRect(0,0,tmp.width,tmp.height);
-
-  t.lineCap="round"; t.lineJoin="round";
-  const strokes = JSON.parse(JSON.stringify(cardStrokes||[]));
-  for(const s of strokes){
-    t.beginPath();
-    t.globalCompositeOperation = (s.tool==="draw") ? "source-over" : "destination-out";
-    t.strokeStyle = s.pen || cardPenColor.value || "#000";
-    t.lineWidth = (s.width||4)*scale;
-    const pts = s.points||[];
-    for(let i=0;i<pts.length;i++){
-      const x = pts[i].x * tmp.width;
-      const y = pts[i].y * tmp.height;
-      if(i===0) t.moveTo(x,y); else t.lineTo(x,y);
+    for (let i=0;i<pts.length;i++){
+      const p = pts[i];
+      const x = p.x * tmp.width;
+      const y = p.y * tmp.height;
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
-    t.stroke(); t.closePath();
-    t.globalCompositeOperation="source-over";
+    ctx.stroke();
   }
+  ctx.globalCompositeOperation='source-over';
+  if (jpeg){
+    return tmp.toDataURL('image/jpeg', 0.45); // 低画質
+  }
+  return tmp.toDataURL('image/png');
+}
 
-  savedCardDataUrlLocal = tmp.toDataURL("image/png");
-  savedCardMeta = { origWidth: cardCanvas.width, origHeight: cardCanvas.height, savedWidth: tmp.width, savedHeight: tmp.height, bg: cardBgColor.value || "#fff2e6", penDefault: cardPenColor.value || "#000000", scale };
-  savedCardStrokesLocal = JSON.parse(JSON.stringify(cardStrokes||[]));
-  saveCard.disabled=true;
+saveArt.onclick = ()=>{
+  if (!artStrokes.length){ alert('アートがありません'); return; }
+  savedArtDataUrl = exportArtDataUrl(2, false);
+  saveArt.disabled = true;
   updateTaskStatus();
-  alert("カードを保存しました。");
-});
+  alert('アートを保存しました。');
+};
 
-/* pouring */
-const latteCanvas = document.getElementById("latteCanvas");
-const latteCtx = latteCanvas.getContext("2d");
-function latteClear(){
-  latteCtx.clearRect(0,0,latteCanvas.width,latteCanvas.height);
-  latteCtx.fillStyle="#6b3b24";
-  latteCtx.beginPath(); latteCtx.arc(60,60,58,0,Math.PI*2); latteCtx.fill();
-}
-function latteFillEsp(){ latteCtx.fillStyle="#5a2f1a"; latteCtx.fillRect(0,60,latteCanvas.width,60); }
-function latteFillMilk(){ latteCtx.fillStyle="#f6efe6"; latteCtx.beginPath(); latteCtx.arc(60,60,48,0,Math.PI*2); latteCtx.fill(); }
-latteClear();
-
-let espInterval=null, milkInterval=null, espDone=false, milkDone=false;
-function resetPouring(){
-  if(espInterval){ clearInterval(espInterval); espInterval=null; }
-  if(milkInterval){ clearInterval(milkInterval); milkInterval=null; }
-  espBar.style.width="0%"; espPct.textContent="0%";
-  milkBar.style.width="0%"; milkPct.textContent="0%";
-  espDone=false; milkDone=false;
-  startEsp.disabled=false; startMilk.disabled=true;
-  updateTaskStatus();
-}
-resetPouring();
-
-function startAutoPour(barEl,pctEl,onOverflow){
-  let pct=0;
-  const it=setInterval(()=>{
-    pct = Math.min(130, pct + Math.random()*4 + 1);
-    barEl.style.width = pct + "%";
-    pctEl.textContent = Math.round(pct) + "%";
-    if(pct>=120){ clearInterval(it); onOverflow(); }
-  }, 100);
-  return { it, getPct: ()=>pct };
-}
-
-startEsp.addEventListener("mousedown", ()=>{
-  if(espInterval) return;
-  startEsp.textContent="注ぎ中...";
-  const res = startAutoPour(espBar, espPct, ()=>{ alert("注ぎ過ぎ（120%）最初からやり直し"); resetPouring(); });
-  espInterval = res.it;
-});
-startEsp.addEventListener("mouseup", ()=>{
-  if(espInterval){ clearInterval(espInterval); espInterval=null; }
-  startEsp.textContent="注ぐ（押し続け）";
-  const pct = parseFloat(espBar.style.width)||0;
-  if(pct>=95 && pct<=105){ espDone=true; latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); }
-  else{ alert("合格ラインを外しました。最初から"); resetPouring(); }
-});
-startMilk.addEventListener("mousedown", ()=>{
-  if(milkInterval) return;
-  startMilk.textContent="注ぎ中...";
-  const res = startAutoPour(milkBar, milkPct, ()=>{ alert("注ぎ過ぎ（120%）最初からやり直し"); resetPouring(); });
-  milkInterval = res.it;
-});
-startMilk.addEventListener("mouseup", ()=>{
-  if(milkInterval){ clearInterval(milkInterval); milkInterval=null; }
-  startMilk.textContent="注ぐ（押し続け）";
-  const pct = parseFloat(milkBar.style.width)||0;
-  if(pct>=95 && pct<=105){ milkDone=true; latteFillMilk(); updateTaskStatus(); }
-  else{ alert("合格ラインを外しました。最初から"); resetPouring(); }
-});
-startEsp.addEventListener("touchstart",(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event("mousedown")); }, {passive:false});
-startEsp.addEventListener("touchend",(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event("mouseup")); }, {passive:false});
-startMilk.addEventListener("touchstart",(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event("mousedown")); }, {passive:false});
-startMilk.addEventListener("touchend",(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event("mouseup")); }, {passive:false});
-
-/* task status */
 function updateTaskStatus(){
   const parts=[];
-  if(!espDone || !milkDone) parts.push("注ぎ");
-  if(!savedArtDataUrlLocal && (!artStrokes || !artStrokes.length)) parts.push("アート");
-  if(!savedCardDataUrlLocal && (!cardStrokes || !cardStrokes.length)) parts.push("カード");
-  taskStatusSmall.textContent = parts.length ? "未完了: " + parts.join(", ") : "すべて完了";
+  if (!espDone || !milkDone) parts.push('注ぎ');
+  if (!savedArtDataUrl && !artStrokes.length) parts.push('アート');
+  taskStatusSmall.textContent = parts.length ? '未完了: ' + parts.join(' / ') : 'すべて完了';
   completeMake.disabled = parts.length !== 0;
 }
 
-/* open make modal */
-let currentMakingOrderId=null;
+/* 注ぎ：簡易 */
+let espInterval=null, milkInterval=null;
+function resetPour(){
+  if (espInterval){ clearInterval(espInterval); espInterval=null; }
+  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
+  espDone=false; milkDone=false;
+  espBar.style.width='0%'; milkBar.style.width='0%';
+  espPct.textContent='0%'; milkPct.textContent='0%';
+  startEsp.disabled=false; startMilk.disabled=true;
+  latteClear();
+  updateTaskStatus();
+}
+function startAuto(barEl, pctEl, onOverflow){
+  let pct=0;
+  const it=setInterval(()=>{
+    pct = Math.min(130, pct + Math.random()*4 + 1);
+    barEl.style.width = pct + '%';
+    pctEl.textContent = Math.round(pct) + '%';
+    if (pct >= 120){ clearInterval(it); onOverflow(); }
+  }, 100);
+  return { it, get: ()=>pct };
+}
+startEsp.addEventListener('mousedown', ()=>{
+  if (espInterval) return;
+  startEsp.textContent='注ぎ中...';
+  const r = startAuto(espBar, espPct, ()=>{ alert('注ぎ過ぎ（120%）最初から'); resetPour(); });
+  espInterval = r.it;
+});
+startEsp.addEventListener('mouseup', ()=>{
+  if (espInterval){ clearInterval(espInterval); espInterval=null; }
+  startEsp.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(espBar.style.width)||0;
+  if (pct>=95 && pct<=105){ espDone=true; latteFillEsp(); startMilk.disabled=false; updateTaskStatus(); }
+  else { alert('合格ライン外。最初から'); resetPour(); }
+});
+startMilk.addEventListener('mousedown', ()=>{
+  if (milkInterval) return;
+  startMilk.textContent='注ぎ中...';
+  const r = startAuto(milkBar, milkPct, ()=>{ alert('注ぎ過ぎ（120%）最初から'); resetPour(); });
+  milkInterval = r.it;
+});
+startMilk.addEventListener('mouseup', ()=>{
+  if (milkInterval){ clearInterval(milkInterval); milkInterval=null; }
+  startMilk.textContent='注ぐ（押し続け）';
+  const pct = parseFloat(milkBar.style.width)||0;
+  if (pct>=95 && pct<=105){ milkDone=true; latteFillMilk(); updateTaskStatus(); }
+  else { alert('合格ライン外。最初から'); resetPour(); }
+});
+startEsp.addEventListener('touchstart',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mousedown')); }, {passive:false});
+startEsp.addEventListener('touchend',(e)=>{ e.preventDefault(); startEsp.dispatchEvent(new Event('mouseup')); }, {passive:false});
+startMilk.addEventListener('touchstart',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mousedown')); }, {passive:false});
+startMilk.addEventListener('touchend',(e)=>{ e.preventDefault(); startMilk.dispatchEvent(new Event('mouseup')); }, {passive:false});
+
+/* make modal open */
 async function openMakeModal(order){
-  currentMakingOrderId = order.id;
-  makerName.textContent = order.assignedToName || "";
+  currentMakingOrder = order;
+  makerName.textContent = order.assignedToName || order.assignedTo || '';
+  const cfg = MENUS[order.menuId] || MENUS.rate;
+  makeTitle.textContent = `${cfg.ui?.makeTitle || '制作'}（担当：${makerName.textContent}）`;
+  espressoLabel.textContent = cfg.ui?.step1 || '工程①';
+  milkLabel.textContent = cfg.ui?.step2 || '工程②';
+  artBgColor.value = cfg.artBg || '#6b3b24';
+  artPenColor.value = cfg.artPen || '#ffffff';
 
-  const cfg = MENUS[order.item] || MENUS.rate;
-  makeTitle.textContent = `${cfg.ui.makeTitle}（担当：${order.assignedToName||""}）`;
-  espressoLabelEl.textContent = cfg.ui.espressoLabel;
-  milkLabelEl.textContent = cfg.ui.milkLabel;
-  latteArtLabelEl.textContent = cfg.ui.latteArtLabel;
+  resetPour();
+  initArtCanvas(artBgColor.value);
+  artStrokes = [];
+  savedArtDataUrl = null;
+  saveArt.disabled = true;
 
-  resetPouring();
-  initArtCanvas(cfg.artBg);
-  initCardCanvas(cfg.cardBg);
-
-  artStrokes = Array.isArray(order.artStrokes) ? JSON.parse(JSON.stringify(order.artStrokes)) : [];
-  cardStrokes = Array.isArray(order.cardStrokes) ? JSON.parse(JSON.stringify(order.cardStrokes)) : [];
-
-  savedArtDataUrlLocal = order.artDataUrl || null;
-  savedCardDataUrlLocal = order.cardDataUrl || null;
-  savedArtMeta = order.artMeta || null;
-  savedCardMeta = order.cardMeta || null;
-
-  // replay
-  if(artStrokes.length) replayStrokesOnCanvas(artStrokes, artLayer, artLayerCtx);
-  if(cardStrokes.length) replayStrokesOnCanvas(cardStrokes, cardCanvas, cardCtx);
-
-  saveArt.disabled = !artStrokes.length;
-  saveCard.disabled = !cardStrokes.length;
+  show(modalMake);
   updateTaskStatus();
 
-  show(modalMakeLatte);
+  // cooking preview send loop
+  if (cookingPreviewTimer) clearInterval(cookingPreviewTimer);
+  lastCookingPreviewSentAt = 0;
+  cookingPreviewDirty = false;
+  cookingPreviewTimer = setInterval(()=> maybeSendCookingPreview(), 500);
 }
-cancelMake.addEventListener("click", ()=> hide(modalMakeLatte));
 
-function replayStrokesOnCanvas(strokes, canvasEl, ctx){
-  for(const s of strokes){
-    ctx.beginPath();
-    ctx.lineWidth = s.width || 3;
-    if(s.tool==="draw"){
-      ctx.globalCompositeOperation="source-over";
-      ctx.strokeStyle = s.pen || "#000";
-    }else{
-      ctx.globalCompositeOperation="destination-out";
-    }
-    const pts = s.points||[];
-    for(let i=0;i<pts.length;i++){
-      const p = denormPoint(pts[i], canvasEl);
-      if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
-    }
-    ctx.stroke();
-    ctx.closePath();
-    ctx.globalCompositeOperation="source-over";
+/* 8秒に1回、dirtyなら送る */
+async function maybeSendCookingPreview(){
+  if (!db) return;
+  if (!currentMakingOrder) return;
+  if (!cookingPreviewDirty) return;
+  const now = Date.now();
+  if (now - lastCookingPreviewSentAt < 8000) return;
+
+  cookingPreviewDirty = false;
+  lastCookingPreviewSentAt = now;
+
+  // 低画質JPEG（scale 0.7）
+  const previewUrl = exportArtDataUrl(1, true);
+  try{
+    await updateDoc(doc(db,'shops',state.currentShopId,'orders',currentMakingOrder.id), { cookingPreview: previewUrl, cookingPreviewAt: now });
+  }catch(e){
+    console.warn('send cooking preview failed', e);
   }
 }
 
-/* complete make: generate served image */
-completeMake.addEventListener("click", async ()=>{
-  if(!currentMakingOrderId){ alert("対象の注文がありません"); return; }
+cancelMake.onclick = ()=>{
+  hide(modalMake);
+  currentMakingOrder = null;
+  if (cookingPreviewTimer){ clearInterval(cookingPreviewTimer); cookingPreviewTimer=null; }
+  try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; }catch(e){}
+};
 
-  const tmp = document.createElement("canvas");
+/* complete make: delivered */
+completeMake.onclick = async ()=>{
+  if (!currentMakingOrder) return;
+  // served image compose（簡易：アート+ラテ）
+  const tmp = document.createElement('canvas');
   tmp.width = 1200; tmp.height = 1200;
-  const tctx = tmp.getContext("2d");
-  tctx.fillStyle = "#fff8ef"; tctx.fillRect(0,0,tmp.width,tmp.height);
+  const t = tmp.getContext('2d');
+  t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
 
-  // latte
-  tctx.drawImage(latteCanvas, 450, 300, 300, 300);
+  // ラテ
+  t.drawImage(latteCanvas, 450,320,300,300);
 
-  // art
-  if(savedArtDataUrlLocal){
-    const img = new Image(); img.src = savedArtDataUrlLocal;
-    await new Promise(r=>{ img.onload=r; img.onerror=r; });
-    tctx.drawImage(img, 440,120,320,320);
-  }
+  // アート
+  const artUrl = savedArtDataUrl || exportArtDataUrl(2,false);
+  const artImg = new Image();
+  artImg.src = artUrl;
+  await new Promise(r=>{ artImg.onload=r; artImg.onerror=r; });
+  t.drawImage(artImg, 430,140,340,340);
 
-  // card
-  if(savedCardDataUrlLocal){
-    const img = new Image(); img.src = savedCardDataUrlLocal;
-    await new Promise(r=>{ img.onload=r; img.onerror=r; });
-    tctx.drawImage(img, 430,700,340,160);
-  }
-
-  const servedDataUrl = tmp.toDataURL("image/png");
+  const servedUrl = tmp.toDataURL('image/png');
 
   try{
-    if(db){
-      await updateDoc(doc(db,"orders",currentMakingOrderId), {
-        state:"delivered",
+    if (db){
+      await updateDoc(doc(db,'shops',state.currentShopId,'orders',currentMakingOrder.id), {
+        state:'delivered',
         deliveredAt: Date.now(),
-        servedImageData: servedDataUrl,
-        artStrokes: artStrokes || [],
-        cardStrokes: cardStrokes || [],
-        artMeta: savedArtMeta || null,
-        cardMeta: savedCardMeta || null,
-        artDataUrl: savedArtDataUrlLocal || null,
-        cardDataUrl: savedCardDataUrlLocal || null
+        servedImageData: servedUrl,
+        artDataUrl: artUrl,
+        cookingPreview: null
       });
-    }else{
-      const o = state.orders.find(x=>x.id===currentMakingOrderId);
-      if(o){
-        o.state="delivered";
-        o.servedImageData = servedDataUrl;
-        o.artStrokes = artStrokes || [];
-        o.cardStrokes = cardStrokes || [];
-        o.artDataUrl = savedArtDataUrlLocal || null;
-        o.cardDataUrl = savedCardDataUrlLocal || null;
-        try{ localStorage.setItem("reiji_state_orders", JSON.stringify(state.orders)); }catch(e){}
+      // 担当を待機に戻す（任意）
+      const staffId = state.currentUser.staffId;
+      if (staffId){
+        await updateDoc(doc(db,'shops',state.currentShopId,'staffs',staffId), { status:'idle', onShift:true }).catch(()=>{});
       }
-      renderOrderLists();
+    }else{
+      const o = state.orders.find(x=>x.id===currentMakingOrder.id);
+      if (o){ o.state='delivered'; o.servedImageData=servedUrl; o.artDataUrl=artUrl; }
     }
-    hide(modalMakeLatte);
+    hide(modalMake);
+    currentMakingOrder = null;
+    if (cookingPreviewTimer){ clearInterval(cookingPreviewTimer); cookingPreviewTimer=null; }
     try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; }catch(e){}
-    alert("提供しました。");
+    alert('提供しました');
   }catch(e){
     console.warn(e);
-    hide(modalMakeLatte);
-    alert("提供に失敗しました。");
+    alert('提供に失敗しました');
   }
-});
+};
 
-/* ===== Client overlay updates ===== */
+/* ===========================
+   Client overlay (待機/料理中 → 画像表示)
+   - 待機/料理中中にランダム口コミを小さく表示
+=========================== */
+function pickRandomReview(menuId){
+  const pool = (state.reviews||[]).filter(r=>r.menuId===menuId && (r.text||'').trim().length);
+  if (!pool.length) return null;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function showClientStatus(main, sub){
+  orderStatusMain.textContent = main || '状態';
+  orderStatusSub.textContent = sub || 'しばらくお待ちください';
+  cookPreviewImg.src = ''; // まだ無い
+  overlayReviewMini.style.display = 'none';
+  overlayBusyText.textContent = '';
+  orderStatusOverlay.style.display = 'flex';
+  orderStatusOverlay.setAttribute('aria-hidden','false');
+}
+function hideClientStatus(){
+  orderStatusOverlay.style.display = 'none';
+  orderStatusOverlay.setAttribute('aria-hidden','true');
+}
 function updateClientOverlay(){
-  if(!state.currentOrderIdForClient) return;
+  if (!state.currentOrderIdForClient) return;
   const o = state.orders.find(x=>x.id===state.currentOrderIdForClient);
-  if(!o) return;
+  if (!o) return;
 
-  if(o.state==="waiting"){
-    showClientStatus("現在対応待ち中");
-  }else if(o.state==="inprogress"){
-    showClientStatus("現在調理中…");
-    if(state.audioUnlocked){
-      try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); }catch(e){}
-    }else{
-      state.pendingPlayQueue.push({ type:"cook" });
+  const pending = (state.orders||[]).filter(x=>x.state==='waiting' || x.state==='inprogress').length;
+  overlayBusyText.textContent = `混雑: ${pending}件`;
+
+  const rv = pickRandomReview(o.menuId);
+  if (rv){
+    overlayReviewMini.style.display = 'block';
+    overlayReviewText.textContent = rv.text;
+    overlayReviewStars.textContent = starString(rv.stars || 0);
+  }else{
+    overlayReviewMini.style.display = 'none';
+  }
+
+  if (o.state === 'waiting'){
+    showClientStatus('現在対応待ち中', '店員さんが対応します');
+    cookPreviewImg.src = o.cookingPreview || '';
+  }else if (o.state === 'inprogress'){
+    showClientStatus('現在調理中…', 'アートが更新されることがあります');
+    // 画像中心
+    if (o.cookingPreview){
+      cookPreviewImg.src = o.cookingPreview;
     }
-  }else if(o.state==="delivered"){
+    // 調理BGM（PC/スマホどっちでも）
+    try{ audioCookbgm.currentTime=0; audioCookbgm.play().catch(()=>{}); }catch(e){}
+  }else if (o.state === 'delivered'){
     hideClientStatus();
     try{ audioCookbgm.pause(); audioCookbgm.currentTime=0; }catch(e){}
     showClientServed(o);
-  }else if(o.state==="cancelled"){
-    showClientStatus(o.cancelReason || "注文が取り消されました");
-    setTimeout(()=>{ hideClientStatus(); state.currentOrderIdForClient=null; }, 8000);
   }
 }
 
-/* ===== Served / Eat modal ===== */
+/* ===========================
+   Eat modal + save image fix (つぶれ防止：アスペクト維持)
+   + 提供時：スマホならバイブ + ps.mp3
+=========================== */
 async function preloadFrames(basePath, frameCount=6){
-  const frames=[];
-  for(let i=1;i<=frameCount;i++){
-    const candidates = [
+  const frames = [];
+  for (let i=1;i<=frameCount;i++){
+    const variants = [
       `${basePath}${i}.png`,
-      `${basePath}${String(i).padStart(2,"0")}.png`,
+      `${basePath}${String(i).padStart(2,'0')}.png`,
       `${basePath}_${i}.png`,
-      `${basePath}_${String(i).padStart(2,"0")}.png`
+      `${basePath}_${String(i).padStart(2,'0')}.png`
     ];
-    for(const c of candidates){
+    for (const v of variants){
       try{
-        const url = getAssetUrl(c);
+        const url = getAssetUrl(v);
         const res = await fetch(url);
-        if(!res.ok) continue;
+        if (!res.ok) continue;
         const blob = await res.blob();
         frames.push(URL.createObjectURL(blob));
         break;
@@ -1988,599 +1988,648 @@ async function preloadFrames(basePath, frameCount=6){
   return frames;
 }
 
-/* ✅ ポロドーモ開始後、②以降の画像を表示する仕組み（メニューごと） */
-function getWorkFrameIndex(menuKey, elapsedMs, totalMs){
-  const menu = MENUS[menuKey] || MENUS.rate;
-  const fc = menu.frameCount || 6;
-  if(!totalMs || totalMs<=0) return 1;
-  const ratio = Math.min(1, Math.max(0, elapsedMs / totalMs));
-  const from = 2;
-  const to = fc;
-  const idx = Math.floor(from + (to-from)*ratio);
-  return Math.min(fc, Math.max(1, idx));
-}
-function pickBreakFrame(menuKey){
-  const menu = MENUS[menuKey] || MENUS.rate;
-  const fc = menu.frameCount || 6;
-  if(fc<=1) return 1;
-  return Math.random() < 0.5 ? Math.max(1,fc-1) : fc;
-}
-async function setServedImageFrame(menuKey, frameIndex){
-  const menu = MENUS[menuKey] || MENUS.rate;
-  const candidates = [
-    `${menu.imageBase}${frameIndex}.png`,
-    `${menu.imageBase}${String(frameIndex).padStart(2,"0")}.png`,
-    `${menu.imageBase}_${frameIndex}.png`,
-    `${menu.imageBase}_${String(frameIndex).padStart(2,"0")}.png`
-  ];
-  for(const c of candidates){
-    try{
-      const url = getAssetUrl(c);
-      const res = await fetch(url, { method:"HEAD" });
-      if(res.ok){ servedImage.src = url; return; }
-    }catch(e){}
+function fitDraw(ctx, img, x, y, w, h){
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih){
+    ctx.drawImage(img, x, y, w, h);
+    return;
   }
-  servedImage.src = getAssetUrl(menu.imageBase + "1.png");
+  const ir = iw/ih;
+  const tr = w/h;
+  let dw=w, dh=h, dx=x, dy=y;
+  if (ir > tr){
+    dh = h;
+    dw = h * ir;
+    dx = x - (dw-w)/2;
+  }else{
+    dw = w;
+    dh = w / ir;
+    dy = y - (dh-h)/2;
+  }
+  ctx.drawImage(img, dx, dy, dw, dh);
 }
 
 async function showClientServed(order){
-  const cfg = MENUS[order.item] || MENUS.rate;
+  // 提供時：振動+ps.mp3
+  try{
+    if (navigator.vibrate) navigator.vibrate([120,60,120]);
+  }catch(e){}
+  try{
+    audioPs.currentTime=0;
+    audioPs.play().catch(()=>{});
+  }catch(e){}
 
-  // ✅ Eatタイトルにメニュー名（0表示問題を完全回避）
-  eatTitle.textContent = `飲食（${cfg.title}）`;
-
-  // served image
-  if(order.servedImageData){
+  const cfg = MENUS[order.menuId] || MENUS.rate;
+  // 最初は合成画像 or 1枚目
+  if (order.servedImageData){
     servedImage.src = order.servedImageData;
   }else{
-    servedImage.src = getAssetUrl(cfg.imageBase + "1.png");
+    servedImage.src = getAssetUrl(cfg.imageBase + '1.png');
   }
 
-  // minis
-  const artCtx = servedArtMini.getContext("2d");
-  artCtx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
-  artCtx.fillStyle = (order.artMeta && order.artMeta.bg) || cfg.artBg || "#6b3b24";
-  artCtx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
-  if(order.artDataUrl){
-    const img = new Image(); img.src = order.artDataUrl;
+  // アートミニ表示
+  const ctx = servedArtMini.getContext('2d');
+  ctx.clearRect(0,0,servedArtMini.width,servedArtMini.height);
+  ctx.fillStyle = order.artBg || cfg.artBg || '#6b3b24';
+  ctx.fillRect(0,0,servedArtMini.width,servedArtMini.height);
+  if (order.artDataUrl){
+    const img = new Image();
+    img.src = order.artDataUrl;
     await new Promise(r=>{ img.onload=r; img.onerror=r; });
-    artCtx.drawImage(img,0,0,servedArtMini.width,servedArtMini.height);
+    fitDraw(ctx, img, 0,0,servedArtMini.width,servedArtMini.height);
   }
 
-  const cardCtxMini = servedCardMini.getContext("2d");
-  cardCtxMini.clearRect(0,0,servedCardMini.width,servedCardMini.height);
-  cardCtxMini.fillStyle = (order.cardMeta && order.cardMeta.bg) || cfg.cardBg || "#fff2e6";
-  cardCtxMini.fillRect(0,0,servedCardMini.width,servedCardMini.height);
-  if(order.cardDataUrl){
-    const img = new Image(); img.src = order.cardDataUrl;
-    await new Promise(r=>{ img.onload=r; img.onerror=r; });
-    cardCtxMini.drawImage(img,0,0,servedCardMini.width,servedCardMini.height);
+  // POMODORO復活：メニュー画像クリックで開く
+  POMO.currentMenuKey = order.menuId || 'rate';
+  modalEat.style.display='flex';
+  modalEat.setAttribute('aria-hidden','false');
+
+  // フレーム列（0だけになる問題回避：必ず1..nで読む）
+  const frames = await preloadFrames(cfg.imageBase, cfg.frameCount || 6);
+  if (frames.length){
+    servedImage.src = frames[0];
+    POMO.frames = frames;
+    POMO.frameCount = frames.length;
+  }else{
+    POMO.frames = [];
+    POMO.frameCount = cfg.frameCount || 6;
   }
 
-  // pomodoro binds to this menu
-  POMO.currentMenuKey = cfg.id;
-
-  // show eat
-  show(modalEat);
+  // 口コミ入力初期化
+  reviewText.value = '';
+  setStars(0);
 }
 
-/* save image */
-saveAllBtn.addEventListener("click", ()=>{
-  const tmp = document.createElement("canvas");
-  tmp.width=1200; tmp.height=1200;
-  const t = tmp.getContext("2d");
-  t.fillStyle="#fff8ef"; t.fillRect(0,0,tmp.width,tmp.height);
+/* 保存（つぶれ防止） */
+saveAllBtn.onclick = ()=>{
+  const tmp = document.createElement('canvas');
+  tmp.width = 1200; tmp.height = 1200;
+  const t = tmp.getContext('2d');
+  t.fillStyle = '#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
 
   const mainImg = new Image();
-  mainImg.crossOrigin="anonymous";
+  mainImg.crossOrigin='anonymous';
   mainImg.src = servedImage.src;
-
   mainImg.onload = ()=>{
-    // ✅ つぶれ対策：常に同じ座標・同じ比率で描画
-    t.drawImage(mainImg, 150,100,900,600);
-    t.drawImage(servedArtMini, 860,120,220,220);
-    t.drawImage(servedCardMini, 860,360,260,120);
+    // メインはfit
+    fitDraw(t, mainImg, 120, 120, 960, 640);
+    // アートミニ
+    t.drawImage(servedArtMini, 860, 120, 220, 220);
 
-    const a = document.createElement("a");
-    a.href = tmp.toDataURL("image/png");
-    a.download = "served_save.png";
+    const a = document.createElement('a');
+    a.href = tmp.toDataURL('image/png');
+    a.download = 'served_save.png';
     a.click();
   };
-  mainImg.onerror = ()=> alert("画像の読み込みに失敗しました");
-});
-
-/* home from eat */
-homeFromEat.addEventListener("click", ()=>{
-  hide(modalEat);
-  state.currentOrderIdForClient = null;
-  // pomodoro hidden
-  pomoPanel.classList.remove("show");
-});
-
-/* ===== Pomodoro ===== */
-const POMO = {
-  running:false,
-  phase:"idle", // work, break, paused, idle
-  loopTotal:1,
-  loopIndex:0,
-  workMin:25,
-  breakMin:5,
-  remainingMs:0,
-  tickInterval:null,
-  lastTickTs:0,
-  currentMenuKey:"rate",
-  _prevPhase:"work"
+  mainImg.onerror = ()=> alert('画像の読み込みに失敗しました');
 };
 
-function formatTime(ms){
-  if(ms<0) ms=0;
-  let s=Math.floor(ms/1000);
-  const h=Math.floor(s/3600); s%=3600;
-  const m=Math.floor(s/60);
-  const sec=s%60;
-  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");
-}
+/* ホームへ */
+homeFromEat.onclick = ()=>{
+  modalEat.style.display='none';
+  modalEat.setAttribute('aria-hidden','true');
+};
 
-function renderPomoUI(){
-  if(!POMO.running){
-    pomoSettings.style.display="block";
-    pomoRunning.style.display="none";
-    pomoTimerText.textContent="00:00:00";
-    pomoProgressBar.style.width="0%";
+/* ===========================
+   Reviews (星 + テキスト)
+=========================== */
+let pickedStars = 0;
+function renderStarPicker(){
+  reviewStarsPick.innerHTML='';
+  for (let i=1;i<=5;i++){
+    const b = document.createElement('button');
+    b.className='mini-btn';
+    b.style.padding='6px 10px';
+    b.style.fontSize='14px';
+    b.textContent = (i<=pickedStars) ? '★' : '☆';
+    b.onclick = ()=> setStars(i);
+    reviewStarsPick.appendChild(b);
+  }
+  reviewStarsValue.textContent = `${pickedStars}/5`;
+}
+function setStars(n){
+  pickedStars = n;
+  renderStarPicker();
+}
+renderStarPicker();
+
+reviewCancel.onclick = ()=>{
+  reviewText.value='';
+  setStars(0);
+};
+reviewSubmit.onclick = async ()=>{
+  if (!state.currentShopId || !state.currentMenuIdForClient){
+    alert('先に注文してください');
     return;
   }
-  pomoSettings.style.display="none";
-  pomoRunning.style.display="block";
-  pomoLoopCounter.textContent = `${POMO.loopIndex+1} / ${POMO.loopTotal}`;
-  pomoPhaseLabel.textContent = (POMO.phase==="work") ? "作業中" : (POMO.phase==="break" ? "休憩中" : (POMO.phase==="paused" ? "一時停止" : "待機"));
-  pomoTimerText.textContent = formatTime(POMO.remainingMs);
-
-  // progress
-  let total = (POMO.phase==="work") ? (POMO.workMin*60*1000) : (POMO.breakMin*60*1000);
-  if(POMO.phase==="paused") total = (POMO._prevPhase==="work") ? (POMO.workMin*60*1000) : (POMO.breakMin*60*1000);
-  const elapsed = Math.max(0, total - POMO.remainingMs);
-  const pct = Math.min(100, Math.floor((elapsed/total)*100));
-  pomoProgressBar.style.width = pct + "%";
-
-  pausePomoBtn.textContent = (POMO.phase==="paused") ? "▶" : "⏸";
-}
-
-function startPomoTick(){
-  if(POMO.tickInterval) return;
-  POMO.lastTickTs = Date.now();
-  POMO.tickInterval = setInterval(async ()=>{
-    const now = Date.now();
-    const delta = now - POMO.lastTickTs;
-    POMO.lastTickTs = now;
-
-    if(POMO.phase==="paused" || POMO.phase==="idle") return;
-
-    POMO.remainingMs -= delta;
-
-    if(POMO.remainingMs <= 0){
-      if(POMO.phase === "work"){
-        POMO.phase = "break";
-        try{ audioPiroBreak.currentTime=0; audioPiroBreak.play().catch(()=>{}); }catch(e){}
-        POMO.remainingMs = POMO.breakMin*60*1000;
-        await setServedImageFrame(POMO.currentMenuKey, pickBreakFrame(POMO.currentMenuKey));
-      }else if(POMO.phase === "break"){
-        POMO.loopIndex++;
-        if(POMO.loopIndex >= POMO.loopTotal){
-          stopPomo(true);
-          return;
-        }
-        POMO.phase = "work";
-        POMO.remainingMs = POMO.workMin*60*1000;
-        try{ audioPiroStart.currentTime=0; audioPiroStart.play().catch(()=>{}); }catch(e){}
-        await setServedImageFrame(POMO.currentMenuKey, 2);
-      }
-      renderPomoUI();
-      return;
-    }
-
-    // ✅ 作業中は経過に応じて ②以降の画像へ
-    if(POMO.phase==="work"){
-      const total = POMO.workMin*60*1000;
-      const elapsed = total - POMO.remainingMs;
-      const idx = getWorkFrameIndex(POMO.currentMenuKey, elapsed, total);
-      await setServedImageFrame(POMO.currentMenuKey, idx);
-    }
-    renderPomoUI();
-  }, 300);
-}
-
-function stopPomoTick(){
-  if(POMO.tickInterval){
-    clearInterval(POMO.tickInterval);
-    POMO.tickInterval = null;
+  const text = (reviewText.value||'').trim();
+  const stars = pickedStars;
+  if (!stars && !text){
+    alert('星か文章を入れてください');
+    return;
   }
-}
-
-function startPomo(){
-  POMO.loopTotal = Math.max(1, Math.min(10, parseInt(loopCountInput.value||"1",10)));
-  POMO.loopIndex = 0;
-  POMO.workMin = Math.max(1, Math.min(200, parseInt(workMinInput.value||"25",10)));
-  POMO.breakMin = Math.max(1, Math.min(200, parseInt(breakMinInput.value||"5",10)));
-
-  POMO.running = true;
-  POMO.phase = "work";
-  POMO.remainingMs = POMO.workMin*60*1000;
-
-  // ✅ count display
-  pomoCountDisplay.textContent = `${POMO.loopTotal} / ${POMO.loopTotal}`;
-
-  try{ audioPiroStart.currentTime=0; audioPiroStart.play().catch(()=>{}); }catch(e){}
-  setServedImageFrame(POMO.currentMenuKey, 2);
-  renderPomoUI();
-  startPomoTick();
-}
-
-function togglePausePomo(){
-  if(!POMO.running) return;
-  if(POMO.phase==="paused"){
-    POMO.phase = POMO._prevPhase || "work";
-    try{ audioPiroToggle.currentTime=0; audioPiroToggle.play().catch(()=>{}); }catch(e){}
-    startPomoTick();
-  }else{
-    POMO._prevPhase = POMO.phase;
-    POMO.phase = "paused";
-    stopPomoTick();
-    try{ audioPiroToggle.currentTime=0; audioPiroToggle.play().catch(()=>{}); }catch(e){}
-  }
-  renderPomoUI();
-}
-
-function stopPomo(resetToSettings){
-  POMO.running = false;
-  POMO.phase = "idle";
-  POMO.remainingMs = 0;
-  stopPomoTick();
-  if(resetToSettings){
-    pomoSettings.style.display="block";
-    pomoRunning.style.display="none";
-  }
-  renderPomoUI();
-}
-
-function skipPomo(){
-  if(!POMO.running) return;
-  POMO.remainingMs = 0;
-}
-
-/* Buttons */
-function wireHoldButton(buttonEl, inputEl, delta, min, max){
-  let timer=null;
-  function step(){
-    let v = parseInt(inputEl.value||"0",10);
-    v += delta;
-    if(typeof min==="number") v=Math.max(min,v);
-    if(typeof max==="number") v=Math.min(max,v);
-    inputEl.value = v;
-    pomoCountDisplay.textContent = `${Math.max(1,Math.min(10,parseInt(loopCountInput.value||"1",10)))} / ${Math.max(1,Math.min(10,parseInt(loopCountInput.value||"1",10)))}`;
-  }
-  function startHold(){
-    step();
-    timer=setTimeout(function repeat(){
-      step();
-      timer=setTimeout(repeat, 120);
-    }, 380);
-  }
-  function stopHold(){ if(timer){ clearTimeout(timer); timer=null; } }
-  buttonEl.addEventListener("mousedown",(e)=>{ e.preventDefault(); startHold(); });
-  buttonEl.addEventListener("touchstart",(e)=>{ e.preventDefault(); startHold(); }, {passive:false});
-  window.addEventListener("mouseup", stopHold);
-  window.addEventListener("touchend", stopHold);
-  buttonEl.addEventListener("click",(e)=>{ e.preventDefault(); step(); });
-}
-wireHoldButton(loopUp, loopCountInput, +1, 1, 10);
-wireHoldButton(loopDown, loopCountInput, -1, 1, 10);
-wireHoldButton(workUp, workMinInput, +1, 1, 200);
-wireHoldButton(workDown, workMinInput, -1, 1, 200);
-wireHoldButton(breakUp, breakMinInput, +1, 1, 200);
-wireHoldButton(breakDown, breakMinInput, -1, 1, 200);
-
-startPomoBtn.addEventListener("click", ()=>{ if(!POMO.running) startPomo(); });
-stopPomoBtn.addEventListener("click", ()=> stopPomo(true));
-pausePomoBtn.addEventListener("click", ()=> togglePausePomo());
-skipPomoBtn.addEventListener("click", ()=> skipPomo());
-
-/* ✅ 画像クリックでポロドーモ設定を開く（なくなってた動作の復活） */
-servedImage.addEventListener("click", ()=>{
-  pomoPanel.classList.toggle("show");
-  renderPomoUI();
-});
-
-/* ===== Sound permission ===== */
-function flushPendingPlays(){
-  while(state.pendingPlayQueue.length){
-    const req = state.pendingPlayQueue.shift();
-    if(req.type==="cook"){
-      try{ audioCookbgm.currentTime=0; audioCookbgm.loop=true; audioCookbgm.play().catch(()=>{}); }catch(e){}
-    }
-  }
-}
-function showSoundOverlay(){ soundOverlay.style.display="flex"; }
-function hideSoundOverlay(){ soundOverlay.style.display="none"; }
-
-enableSoundBtn.addEventListener("click", ()=>{
-  state.audioUnlocked = true;
-  // ✅ OKでも開くモーションが確実に動く
-  openCover();
-  try{ audioTyaimu.play().then(()=>{ audioTyaimu.pause(); audioTyaimu.currentTime=0; }).catch(()=>{}); }catch(e){}
-  hideSoundOverlay();
-  flushPendingPlays();
-});
-disableSoundBtn.addEventListener("click", ()=>{
-  state.audioUnlocked = false;
-  // ✅ NOでも開くモーション
-  openCover();
-  hideSoundOverlay();
-});
-
-/* X */
-bgmBtn.addEventListener("click", ()=> window.open("https://x.com/zzcafe_280", "_blank"));
-
-/* ===== New Menu Submission Feature ===== */
-function initNewMenuCanvas(){
-  newMenuBgCtx.clearRect(0,0,newMenuBg.width,newMenuBg.height);
-  newMenuBgCtx.fillStyle = newMenuBgColor.value || "#fff2e6";
-  newMenuBgCtx.fillRect(0,0,newMenuBg.width,newMenuBg.height);
-
-  newMenuLayerCtx.clearRect(0,0,newMenuLayer.width,newMenuLayer.height);
-  newMenuLayerCtx.lineCap="round";
-  newMenuLayerCtx.lineJoin="round";
-}
-
-let newMenuDrawing=false;
-let newMenuStroke=null;
-let newMenuStrokes=[];
-
-function newMenuPos(e, canvas){
-  const r = canvas.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : null;
-  const cx = t ? t.clientX : e.clientX;
-  const cy = t ? t.clientY : e.clientY;
-  return { x:(cx-r.left)*(canvas.width/r.width), y:(cy-r.top)*(canvas.height/r.height) };
-}
-function nmNorm(p){ return { x:p.x/newMenuLayer.width, y:p.y/newMenuLayer.height }; }
-function nmDen(p){ return { x:(p.x||0)*newMenuLayer.width, y:(p.y||0)*newMenuLayer.height }; }
-
-function drawNewMenuSeg(st){
-  if(!st || st.points.length<2) return;
-  const p1 = nmDen(st.points[st.points.length-2]);
-  const p2 = nmDen(st.points[st.points.length-1]);
-
-  if(st.tool==="draw"){
-    newMenuLayerCtx.globalCompositeOperation="source-over";
-    newMenuLayerCtx.strokeStyle = st.pen;
-    newMenuLayerCtx.lineWidth = st.width;
-  }else{
-    newMenuLayerCtx.globalCompositeOperation="destination-out";
-    newMenuLayerCtx.lineWidth = st.width;
-  }
-  newMenuLayerCtx.beginPath();
-  newMenuLayerCtx.moveTo(p1.x,p1.y);
-  newMenuLayerCtx.lineTo(p2.x,p2.y);
-  newMenuLayerCtx.stroke();
-  newMenuLayerCtx.closePath();
-  newMenuLayerCtx.globalCompositeOperation="source-over";
-}
-
-newMenuLayer.addEventListener("mousedown",(e)=>{
-  newMenuDrawing=true;
-  const p = newMenuPos(e,newMenuLayer);
-  newMenuStroke = { tool:newMenuMode.value, width:parseInt(newMenuSize.value,10), points:[nmNorm(p)], pen:newMenuPenColor.value||"#000" };
-});
-newMenuLayer.addEventListener("mousemove",(e)=>{
-  if(!newMenuDrawing || !newMenuStroke) return;
-  const p = newMenuPos(e,newMenuLayer);
-  newMenuStroke.points.push(nmNorm(p));
-  drawNewMenuSeg(newMenuStroke);
-});
-function endNewMenu(){
-  if(!newMenuDrawing) return;
-  newMenuDrawing=false;
-  if(newMenuStroke){
-    newMenuStrokes.push(newMenuStroke);
-    newMenuStroke=null;
-  }
-}
-newMenuLayer.addEventListener("mouseup", endNewMenu);
-newMenuLayer.addEventListener("mouseleave", endNewMenu);
-newMenuLayer.addEventListener("touchstart",(e)=>{ e.preventDefault(); const t=e.touches[0]; newMenuLayer.dispatchEvent(new MouseEvent("mousedown",{clientX:t.clientX,clientY:t.clientY})); }, {passive:false});
-newMenuLayer.addEventListener("touchmove",(e)=>{ e.preventDefault(); const t=e.touches[0]; newMenuLayer.dispatchEvent(new MouseEvent("mousemove",{clientX:t.clientX,clientY:t.clientY})); }, {passive:false});
-newMenuLayer.addEventListener("touchend",(e)=>{ e.preventDefault(); newMenuLayer.dispatchEvent(new MouseEvent("mouseup")); }, {passive:false});
-
-newMenuClear.addEventListener("click", ()=>{
-  initNewMenuCanvas();
-  newMenuStrokes=[];
-  newMenuStroke=null;
-});
-
-newMenuBgColor.addEventListener("input", ()=> initNewMenuCanvas());
-
-openNewMenuBtn.addEventListener("click", ()=> show(modalNewMenuInfo));
-cancelNewMenuInfo.addEventListener("click", ()=> hide(modalNewMenuInfo));
-goNewMenuPaint.addEventListener("click", ()=>{
-  hide(modalNewMenuInfo);
-  newMenuSubmitHint.textContent = "";
-  newMenuName.value = "";
-  initNewMenuCanvas();
-  newMenuStrokes=[];
-  show(modalNewMenuPaint);
-});
-closeNewMenuPaint.addEventListener("click", ()=>{
-  hide(modalNewMenuPaint);
-  show(modalNewMenuInfo);
-});
-
-submitNewMenu.addEventListener("click", async ()=>{
-  const name = newMenuName.value.trim();
-  if(!name){ alert("名前を入力してください"); return; }
-
-  // save to dataURL (軽め：jpeg 0.65 / 8秒更新などは今回は提出用なので単発保存)
-  const out = document.createElement("canvas");
-  out.width = 640; out.height = 640;
-  const octx = out.getContext("2d");
-  octx.fillStyle = newMenuBgColor.value || "#fff2e6";
-  octx.fillRect(0,0,out.width,out.height);
-
-  // draw strokes scaled
-  octx.lineCap="round"; octx.lineJoin="round";
-  for(const s of newMenuStrokes){
-    octx.beginPath();
-    octx.globalCompositeOperation = (s.tool==="draw") ? "source-over" : "destination-out";
-    octx.strokeStyle = s.pen || "#000";
-    octx.lineWidth = (s.width||6) * (out.width / newMenuLayer.width);
-    const pts = s.points||[];
-    for(let i=0;i<pts.length;i++){
-      const x = pts[i].x * out.width;
-      const y = pts[i].y * out.height;
-      if(i===0) octx.moveTo(x,y); else octx.lineTo(x,y);
-    }
-    octx.stroke(); octx.closePath();
-    octx.globalCompositeOperation="source-over";
-  }
-
-  const dataUrl = out.toDataURL("image/jpeg", 0.65);
-  const createdAt = Date.now();
-  const code = String(createdAt).slice(-6); // ✅ 数字になって表示（要件）
-  const payload = { code, name, imageData: dataUrl, createdAt };
-
-  submitNewMenu.disabled = true;
-  submitNewMenu.textContent = "提出中…";
-
+  const payload = {
+    menuId: state.currentMenuIdForClient,
+    text,
+    stars,
+    createdAt: Date.now()
+  };
   try{
-    if(db){
-      await addDoc(newMenusCol, payload);
+    if (db){
+      await addDoc(colReviews(), payload);
+
+      // 平均値は簡易：menuStats を sum/count で更新（競合は小規模想定）
+      try{
+        const sref = docMenuStat(state.currentMenuIdForClient);
+        const snap = await getDoc(sref);
+        if (snap.exists()){
+          const d = snap.data();
+          const sum = (Number(d.sumStars)||0) + (Number(stars)||0);
+          const count = (Number(d.count)||0) + 1;
+          await updateDoc(sref, { sumStars: sum, count, avg: sum/count, updatedAt: Date.now() });
+        }else{
+          // create相当は updateDocだと失敗することがあるので、失敗してもOK（UIはstate.reviewsから計算）
+        }
+      }catch(e){}
     }else{
-      payload.id = uid("nm");
-      state.newMenus.push(payload);
-      try{ localStorage.setItem("reiji_state_newMenus", JSON.stringify(state.newMenus)); }catch(e){}
-      renderNewMenuList();
+      state.reviews.unshift({ id:uid('r'), ...payload });
     }
-    newMenuSubmitHint.textContent = `提出しました！番号：${code}（スタッフ画面に表示されます）`;
-    setTimeout(()=> hide(modalNewMenuPaint), 900);
+    alert('投稿しました');
+    reviewText.value='';
+    setStars(0);
+    // メニュー画面の星反映は次回メニュー表示でOK（今すぐ見たい場合は buildMenu 再作成でもOK）
   }catch(e){
     console.warn(e);
-    alert("提出に失敗しました");
-  }finally{
-    submitNewMenu.disabled = false;
-    submitNewMenu.textContent = "保存して提出";
+    alert('投稿に失敗しました');
   }
+};
+
+/* ===========================
+   New menu offer + submissions
+=========================== */
+newMenuOfferBtn.onclick = ()=> show(modalNewMenuOffer);
+newMenuNo.onclick = ()=> hide(modalNewMenuOffer);
+newMenuYes.onclick = ()=>{
+  hide(modalNewMenuOffer);
+  openSubmissionPainter();
+};
+
+function initSubmitCanvas(){
+  subBgCtx.clearRect(0,0,subBg.width,subBg.height);
+  subBgCtx.fillStyle = subBgColor.value || '#fff2e6';
+  subBgCtx.fillRect(0,0,subBg.width,subBg.height);
+  // 白縁
+  subBgCtx.strokeStyle = '#ffffff';
+  subBgCtx.lineWidth = 6;
+  subBgCtx.strokeRect(3,3,subBg.width-6,subBg.height-6);
+
+  subLayerCtx.clearRect(0,0,subLayer.width,subLayer.height);
+  subLayerCtx.lineCap='round'; subLayerCtx.lineJoin='round';
+}
+
+let subStrokes=[], subCur=null, subDrawing=false;
+
+function subDrawSeg(stroke){
+  const pts = stroke.points;
+  if (pts.length<2) return;
+  const p1 = denorm(pts[pts.length-2], subLayer);
+  const p2 = denorm(pts[pts.length-1], subLayer);
+  if (stroke.tool==='draw'){
+    subLayerCtx.globalCompositeOperation='source-over';
+    subLayerCtx.strokeStyle=stroke.pen;
+  }else{
+    subLayerCtx.globalCompositeOperation='destination-out';
+    subLayerCtx.strokeStyle='#000';
+  }
+  subLayerCtx.lineWidth=stroke.width;
+  subLayerCtx.beginPath(); subLayerCtx.moveTo(p1.x,p1.y); subLayerCtx.lineTo(p2.x,p2.y); subLayerCtx.stroke();
+  subLayerCtx.globalCompositeOperation='source-over';
+}
+
+subLayer.addEventListener('mousedown',(e)=>{
+  subDrawing=true;
+  const p = getEventPos(e, subLayer);
+  subCur = { tool: subMode.value, width:parseInt(subSize.value,10), pen: subPenColor.value || '#000', points:[ norm(p, subLayer) ] };
 });
+subLayer.addEventListener('mousemove',(e)=>{
+  if (!subDrawing || !subCur) return;
+  const p = getEventPos(e, subLayer);
+  subCur.points.push(norm(p, subLayer));
+  subDrawSeg(subCur);
+});
+function subEnd(){
+  if (!subDrawing) return;
+  subDrawing=false;
+  if (subCur){ subStrokes.push(subCur); subCur=null; }
+}
+subLayer.addEventListener('mouseup', subEnd);
+subLayer.addEventListener('mouseleave', subEnd);
+subLayer.addEventListener('touchstart',(e)=>{ e.preventDefault(); subLayer.dispatchEvent(new MouseEvent('mousedown',{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY})); }, {passive:false});
+subLayer.addEventListener('touchmove',(e)=>{ e.preventDefault(); subLayer.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY})); }, {passive:false});
+subLayer.addEventListener('touchend',(e)=>{ e.preventDefault(); subLayer.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
 
-function renderNewMenuList(){
-  newMenuList.innerHTML = "";
+subClear.onclick = ()=>{
+  initSubmitCanvas();
+  subStrokes=[];
+};
+subBgColor.oninput = ()=> initSubmitCanvas();
 
-  if(state.currentUser.role !== "staff"){
-    newMenuList.innerHTML = '<div class="small-info">※スタッフでログインすると表示されます</div>';
+function exportSubmissionJPEG(){
+  const tmp = document.createElement('canvas');
+  tmp.width = 640; tmp.height = 640;
+  const ctx = tmp.getContext('2d');
+  // bg
+  ctx.fillStyle = subBgColor.value || '#fff2e6';
+  ctx.fillRect(0,0,tmp.width,tmp.height);
+  // replay strokes（eraseはbg色で上書き）
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  const bgc = subBgColor.value || '#fff2e6';
+  for (const s of subStrokes){
+    const pts=s.points||[];
+    if (pts.length<2) continue;
+    ctx.beginPath();
+    ctx.lineWidth = (s.width||6) * (tmp.width/subLayer.width);
+    ctx.globalCompositeOperation='source-over';
+    ctx.strokeStyle = (s.tool==='draw') ? (s.pen||'#000') : bgc;
+    for (let i=0;i<pts.length;i++){
+      const x = pts[i].x * tmp.width;
+      const y = pts[i].y * tmp.height;
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  return tmp.toDataURL('image/jpeg', 0.55);
+}
+
+function openSubmissionPainter(){
+  if (!state.currentShopId){ alert('先にお店を選んでください'); return; }
+  submitterName.value = '';
+  subStrokes=[];
+  initSubmitCanvas();
+  show(modalSubmitMenu);
+}
+
+subBackHome.onclick = ()=> hide(modalSubmitMenu);
+
+subSaveDraft.onclick = ()=>{
+  const data = exportSubmissionJPEG();
+  localStorage.setItem(`draft_${state.currentShopId}`, JSON.stringify({ name: submitterName.value||'', data, ts: Date.now() }));
+  alert('下書きを保存しました');
+};
+
+subSubmit.onclick = async ()=>{
+  if (!subStrokes.length){
+    if (!confirm('何も描かれていません。提出しますか？')) return;
+  }
+  const dataUrl = exportSubmissionJPEG();
+  const payload = {
+    name: (submitterName.value||'').trim() || '匿名',
+    imageDataUrl: dataUrl,
+    createdAt: Date.now()
+  };
+  try{
+    if (db){
+      await addDoc(colSubmissions(), payload);
+    }else{
+      state.submissions.unshift({ id:uid('sub'), ...payload });
+      renderSubmissionList();
+    }
+    hide(modalSubmitMenu);
+    alert('提出しました（スタッフ画面に表示されます）');
+  }catch(e){
+    console.warn(e);
+    alert('提出に失敗しました');
+  }
+};
+
+function renderSubmissionList(){
+  submissionList.innerHTML = '';
+  if (!state.submissions || !state.submissions.length){
+    submissionList.textContent = 'まだありません';
     return;
   }
+  state.submissions.forEach(s=>{
+    const wrap = document.createElement('div');
+    wrap.style.display='flex';
+    wrap.style.alignItems='center';
+    wrap.style.gap='10px';
+    wrap.style.padding='10px 0';
+    wrap.style.borderBottom='1px dashed #e6d0c6';
 
-  if(!state.newMenus || !state.newMenus.length){
-    newMenuList.innerHTML = '<div class="small-info">提出はまだありません</div>';
-    return;
-  }
+    const img = document.createElement('img');
+    img.src = s.imageDataUrl;
+    img.style.width='64px';
+    img.style.height='64px';
+    img.style.objectFit='cover';
+    img.style.borderRadius='12px';
+    img.style.border='1px solid #e6d0c6';
 
-  // newest last (already orderBy asc). display newest top:
-  const list = [...state.newMenus].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    const meta = document.createElement('div');
+    meta.style.flex='1';
+    const short = (s.id||'').slice(-4);
+    meta.innerHTML = `<div style="font-weight:900;">#${escapeHtml(short)} ${escapeHtml(s.name||'')}</div>
+                      <div class="small-info">${new Date(s.createdAt||0).toLocaleString()}</div>`;
 
-  for(const m of list){
-    const wrap = document.createElement("div");
-    wrap.style.display="flex";
-    wrap.style.gap="10px";
-    wrap.style.alignItems="center";
-    wrap.style.borderBottom="1px dashed #e6d0c6";
-    wrap.style.padding="10px 0";
-
-    const thumb = document.createElement("img");
-    thumb.src = m.imageData || "";
-    thumb.alt = "newmenu";
-    thumb.style.width="110px";
-    thumb.style.height="110px";
-    thumb.style.objectFit="cover";
-    thumb.style.borderRadius="10px";
-    thumb.style.border="1px solid #e6d0c6";
-    wrap.appendChild(thumb);
-
-    const info = document.createElement("div");
-    info.style.flex="1";
-    info.innerHTML = `
-      <div style="font-weight:900;">#${escapeHtml(m.code||"------")} <span class="small-info">提出者：${escapeHtml(m.name||"")}</span></div>
-      <div class="small-info">作成: ${new Date(m.createdAt||0).toLocaleString()}</div>
-    `;
-    wrap.appendChild(info);
-
-    const actions = document.createElement("div");
-    actions.style.display="flex";
-    actions.style.gap="8px";
-    actions.style.flexWrap="wrap";
-    actions.style.justifyContent="flex-end";
-
-    const saveBtn = document.createElement("button");
-    saveBtn.className="small";
-    saveBtn.textContent="画像保存";
-    saveBtn.onclick = ()=>{
-      const a = document.createElement("a");
-      a.href = m.imageData;
-      a.download = `newmenu_${m.code||"item"}.jpg`;
+    const dl = document.createElement('button');
+    dl.className='mini-btn';
+    dl.style.padding='6px 10px';
+    dl.style.fontSize='12px';
+    dl.textContent='画像保存';
+    dl.onclick = ()=>{
+      const a=document.createElement('a');
+      a.href = s.imageDataUrl;
+      a.download = `submission_${short}.jpg`;
       a.click();
     };
 
-    const delBtn = document.createElement("button");
-    delBtn.className="small";
-    delBtn.textContent="削除";
-    delBtn.onclick = async ()=>{
-      if(!confirm("この提出を削除しますか？")) return;
-      if(db){
-        try{ await deleteDoc(doc(db,"newMenus",m.id)); }catch(e){ console.warn(e); }
+    const del = document.createElement('button');
+    del.className='mini-btn danger';
+    del.style.padding='6px 10px';
+    del.style.fontSize='12px';
+    del.textContent='消す';
+    del.onclick = async ()=>{
+      if (!confirm('消しますか？')) return;
+      if (db){
+        try{ await deleteDoc(doc(db,'shops',state.currentShopId,'submissions',s.id)); }catch(e){}
       }else{
-        state.newMenus = state.newMenus.filter(x=>x.id!==m.id);
-        try{ localStorage.setItem("reiji_state_newMenus", JSON.stringify(state.newMenus)); }catch(e){}
-        renderNewMenuList();
+        state.submissions = state.submissions.filter(x=>x.id!==s.id);
+        renderSubmissionList();
       }
     };
 
-    actions.appendChild(saveBtn);
-    actions.appendChild(delBtn);
-    wrap.appendChild(actions);
-
-    newMenuList.appendChild(wrap);
-  }
-}
-
-/* ===== Signals (tyaimu broadcast) ===== */
-if(db && signalsCol){
-  let lastSignalTs=0;
-  onSnapshot(query(signalsCol, orderBy("ts","asc")), snap=>{
-    snap.docs.forEach(d=>{
-      const v=d.data();
-      if(!v || !v.ts) return;
-      if(v.ts <= lastSignalTs) return;
-      lastSignalTs = v.ts;
-      if(v.type==="tyaimu"){
-        try{ audioTyaimu.currentTime=0; audioTyaimu.play().catch(()=>{}); }catch(e){}
-      }
-    });
+    wrap.appendChild(img);
+    wrap.appendChild(meta);
+    wrap.appendChild(dl);
+    wrap.appendChild(del);
+    submissionList.appendChild(wrap);
   });
 }
 
-/* ===== Init ===== */
-function initAll(){
-  initArtCanvas();
-  initCardCanvas();
-  initNewMenuCanvas();
-  buildMenu().catch(()=>{});
-  startRealtime();
-  renderNewMenuList();
+/* ===========================
+   Bot produce (簡易)
+   - cookingPreview も返す（低画質）
+=========================== */
+async function botProduce(menuItem, customerName){
+  // cookingPreview: 低画質の仮画像
+  const c = document.createElement('canvas'); c.width=240; c.height=240;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = menuItem.artBg || '#6b3b24'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 8; ctx.strokeRect(4,4,c.width-8,c.height-8);
+  ctx.fillStyle = '#fff';
+  ctx.font = '20px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('料理中...', 120, 120);
+  const cookingPreview = c.toDataURL('image/jpeg', 0.45);
 
-  // show sound overlay
-  showSoundOverlay();
+  // served image
+  const tmp = document.createElement('canvas'); tmp.width=1200; tmp.height=1200;
+  const t = tmp.getContext('2d');
+  t.fillStyle='#fff8ef'; t.fillRect(0,0,tmp.width,tmp.height);
+
+  // circle
+  t.fillStyle = menuItem.artBg || '#6b3b24';
+  t.beginPath(); t.arc(600,400,180,0,Math.PI*2); t.fill();
+  t.strokeStyle='#fff'; t.lineWidth=10; t.beginPath(); t.arc(600,400,180,0,Math.PI*2); t.stroke();
+
+  // card
+  const card = document.createElement('canvas'); card.width=520; card.height=240;
+  const cctx = card.getContext('2d');
+  cctx.fillStyle = '#fff2e6'; cctx.fillRect(0,0,card.width,card.height);
+  cctx.strokeStyle = '#d4c0b8'; cctx.lineWidth = 4; cctx.strokeRect(8,8,card.width-16,card.height-16);
+  cctx.fillStyle = '#000'; cctx.textAlign='center';
+  cctx.font='28px sans-serif'; cctx.fillText('どうぞ', card.width/2, 70);
+  cctx.font='22px sans-serif'; cctx.fillText('ごゆっくり～☕', card.width/2, 110);
+  cctx.font='28px sans-serif'; cctx.fillText((customerName||'名無し')+'さん', card.width/2, 160);
+
+  const cardUrl = card.toDataURL('image/png');
+  const cardImg = new Image(); cardImg.src = cardUrl;
+  await new Promise(r=>{ cardImg.onload=r; cardImg.onerror=r; });
+  t.drawImage(cardImg, 430,720,340,160);
+
+  const servedImageData = tmp.toDataURL('image/png');
+  return { servedImageData, artDataUrl: null, cookingPreview };
 }
-initAll();
 
-/* When staff screen opens later, new menu list updates automatically by realtime; also keep non-staff hidden */
+/* ===========================
+   Pomodoro (復活 + 画像フレーム操作)
+   - “0だけ表示”問題を避ける：frames があればそれを使う
+=========================== */
+const POMO = {
+  running:false, phase:'idle',
+  loopTotal:2, loopIndex:0,
+  workMin:1, breakMin:5,
+  remainingMs:0, tick:null, lastTs:0,
+  currentMenuKey:'rate',
+  frames:[],
+  frameCount:6,
+};
+function formatTime(ms){
+  if (ms<0) ms=0;
+  let s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600); s=s%3600;
+  const m=Math.floor(s/60); const sec=s%60;
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+function updatePomoCountDisplay(){
+  const loops = Math.max(1, Math.min(10, parseInt(loopCountInput.value||'1')));
+  pomoCountDisplay.textContent = `${loops} / ${loops}`;
+}
+function wireHold(btn, input, delta, min, max){
+  let t=null, start=0;
+  function step(){
+    let v=parseInt(input.value||'0'); v+=delta;
+    if (min!=null) v=Math.max(min,v);
+    if (max!=null) v=Math.min(max,v);
+    input.value=v;
+    updatePomoCountDisplay();
+  }
+  function begin(){
+    start=Date.now();
+    step();
+    let interval=500;
+    t=setTimeout(function rep(){
+      const held=Date.now()-start;
+      const k=Math.min(1, held/2000);
+      interval=Math.max(80, Math.floor(500-(420*k)));
+      step();
+      t=setTimeout(rep, interval);
+    }, interval);
+  }
+  function end(){ if (t){ clearTimeout(t); t=null; } }
+  btn.addEventListener('mousedown',(e)=>{ e.preventDefault(); begin(); });
+  btn.addEventListener('touchstart',(e)=>{ e.preventDefault(); begin(); }, {passive:false});
+  window.addEventListener('mouseup', end);
+  window.addEventListener('touchend', end);
+  btn.addEventListener('click',(e)=>{ e.preventDefault(); step(); });
+}
+wireHold(loopUp, loopCountInput, +1, 1, 10);
+wireHold(loopDown, loopCountInput, -1, 1, 10);
+wireHold(workUp, workMinInput, +1, 1, 200);
+wireHold(workDown, workMinInput, -1, 1, 200);
+wireHold(breakUp, breakMinInput, +1, 1, 200);
+wireHold(breakDown, breakMinInput, -1, 1, 200);
+updatePomoCountDisplay();
+
+function setServedFrameByProgress(){
+  // frames があるなら、進捗で 2..end を出す（0のような表示を避ける）
+  if (!POMO.frames || !POMO.frames.length) return;
+  if (POMO.phase !== 'work') return;
+  const total = POMO.workMin*60*1000;
+  const elapsed = Math.max(0, total - POMO.remainingMs);
+  const ratio = Math.min(1, Math.max(0, elapsed/total));
+  const from = Math.min(1, POMO.frames.length-1) ? 1 : 0;
+  const to = POMO.frames.length-1;
+  const idx = Math.min(to, Math.max(0, Math.floor(from + (to-from)*ratio)));
+  servedImage.src = POMO.frames[idx] || servedImage.src;
+}
+
+function renderPomoUI(){
+  if (!POMO.running){
+    pomoSettings.style.display='block';
+    pomoRunning.style.display='none';
+    eatSoundInfo.textContent='↑ 画像クリックでタイマー';
+    pomoProgressBar.style.width='0%';
+    return;
+  }
+  pomoSettings.style.display='none';
+  pomoRunning.style.display='block';
+  pomoLoopCounter.textContent = `${POMO.loopIndex+1} / ${POMO.loopTotal}`;
+  pomoPhaseLabel.textContent = (POMO.phase==='work')?'作業中':(POMO.phase==='break')?'休憩中':'一時停止';
+  pomoTimerText.textContent = formatTime(POMO.remainingMs);
+
+  const total = (POMO.phase==='work'?POMO.workMin:POMO.breakMin)*60*1000;
+  const elapsed = Math.max(0, total - POMO.remainingMs);
+  const pct = Math.min(100, Math.floor(elapsed/total*100));
+  pomoProgressBar.style.width = pct + '%';
+}
+
+function startTick(){
+  if (POMO.tick) return;
+  POMO.lastTs = Date.now();
+  POMO.tick = setInterval(()=>{
+    if (!POMO.running) return;
+    const now = Date.now();
+    const dt = now - POMO.lastTs;
+    POMO.lastTs = now;
+    if (POMO.phase==='paused') return;
+
+    POMO.remainingMs -= dt;
+    if (POMO.remainingMs <= 0){
+      if (POMO.phase==='work'){
+        POMO.phase='break';
+        POMO.remainingMs = POMO.breakMin*60*1000;
+        // 休憩：最後の方のフレームに寄せる
+        if (POMO.frames && POMO.frames.length) servedImage.src = POMO.frames[POMO.frames.length-1];
+      }else if (POMO.phase==='break'){
+        POMO.loopIndex++;
+        if (POMO.loopIndex >= POMO.loopTotal){
+          stopPomo(true);
+          return;
+        }else{
+          POMO.phase='work';
+          POMO.remainingMs = POMO.workMin*60*1000;
+          if (POMO.frames && POMO.frames.length) servedImage.src = POMO.frames[0];
+        }
+      }
+    }else{
+      setServedFrameByProgress();
+    }
+    renderPomoUI();
+  }, 250);
+}
+function stopTick(){ if (POMO.tick){ clearInterval(POMO.tick); POMO.tick=null; } }
+
+function startPomo(){
+  POMO.loopTotal = Math.max(1, Math.min(10, parseInt(loopCountInput.value||'1')));
+  POMO.workMin = Math.max(1, Math.min(200, parseInt(workMinInput.value||'25')));
+  POMO.breakMin = Math.max(1, Math.min(200, parseInt(breakMinInput.value||'5')));
+  POMO.loopIndex = 0;
+  POMO.running = true;
+  POMO.phase = 'work';
+  POMO.remainingMs = POMO.workMin*60*1000;
+  startTick();
+  renderPomoUI();
+}
+function stopPomo(toSettings){
+  POMO.running=false;
+  POMO.phase='idle';
+  POMO.remainingMs=0;
+  stopTick();
+  if (toSettings){
+    pomoSettings.style.display='block';
+    pomoRunning.style.display='none';
+  }
+  renderPomoUI();
+}
+function togglePause(){
+  if (!POMO.running) return;
+  if (POMO.phase==='paused'){
+    POMO.phase = POMO._prev || 'work';
+  }else{
+    POMO._prev = POMO.phase;
+    POMO.phase='paused';
+  }
+  renderPomoUI();
+}
+function skipPhase(){
+  if (!POMO.running) return;
+  POMO.remainingMs = 0;
+}
+
+startPomoBtn.onclick = ()=> startPomo();
+stopPomoBtn.onclick = ()=> stopPomo(true);
+pausePomoBtn.onclick = ()=> togglePause();
+skipPomoBtn.onclick = ()=> skipPhase();
+
+/* 画像クリックで開く（復活） */
+servedImage.addEventListener('click', ()=>{
+  pomodoroPanel.classList.add('show');
+});
+/* 外クリックで閉じる（動作中は閉じない） */
+document.addEventListener('click',(e)=>{
+  if (!pomodoroPanel.contains(e.target) && e.target !== servedImage){
+    if (!POMO.running){
+      pomodoroPanel.classList.remove('show');
+    }
+  }
+});
+
+/* ===========================
+   Init
+=========================== */
+function initHome(){
+  // 初期は店選択
+  shopPicker.style.display='flex';
+  homePanel.style.display='none';
+  headerTitle.textContent = '仮想飲食';
+  miniShop.textContent = '未選択';
+  renderShopPicker();
+}
+initHome();
+
+/* 店選択後に表示が更新されないケース用：短いポーリング */
+setInterval(()=>{
+  if (state.currentShopId){
+    renderShiftShort();
+    updateOrderButtonState();
+    renderBusy();
+  }
+}, 1500);
+
+/* 調理プレビューが無い時の表示 */
+cookPreviewImg.alt = '調理中のアート（更新されます）';
+cookPreviewImg.src = '';
+
+/* 初期：音声はブラウザ制限があるので、最初のユーザー操作でアンロックだけしておく */
+document.body.addEventListener('click', ()=>{
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    ctx.resume && ctx.resume();
+    ctx.close && ctx.close();
+  }catch(e){}
+}, { once:true });
+
 </script>
 
 </body>
